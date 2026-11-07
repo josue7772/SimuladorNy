@@ -3,7 +3,7 @@ import numpy as np
 
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-# Estilos CSS estilo editorial de lujo, minimalista, en tonos grises y negros (Cero azul)
+# Estilos CSS de alta gama: tarjetas limpias y diseño profesional sin azul
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
@@ -76,7 +76,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cobertura global exhaustiva con escudos reales oficiales en alta definición
+# Cobertura global con escudos reales
 cartelera_global = {
     "🇺🇸 MLS, Estados Unidos": {
         "LA Galaxy vs Inter Miami": {
@@ -98,26 +98,6 @@ cartelera_global = {
             "local": "Atlanta", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/16537.png",
             "visitante": "Cincinnati", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/17652.png",
             "xg_l": 1.60, "xg_v": 1.40, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4
-        },
-        "CF Montréal vs Vancouver Whitecaps": {
-            "local": "CF Montréal", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/9707.png",
-            "visitante": "Vancouver", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/9772.png",
-            "xg_l": 1.30, "xg_v": 1.25, "c_l": 2.30, "c_x": 3.30, "c_v": 2.90, "corn_l": 4.8, "corn_v": 5.1, "tarjetas": 4
-        },
-        "Chicago Fire vs Columbus Crew": {
-            "local": "Chicago", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/182.png",
-            "visitante": "Columbus", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/184.png",
-            "xg_l": 1.20, "xg_v": 1.65, "c_l": 2.80, "c_x": 3.40, "c_v": 2.25, "corn_l": 5.2, "corn_v": 5.8, "tarjetas": 5
-        },
-        "Orlando City vs New England Revolution": {
-            "local": "Orlando", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/10492.png",
-            "visitante": "New England", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/190.png",
-            "xg_l": 1.55, "xg_v": 1.10, "c_l": 1.85, "c_x": 3.60, "c_v": 3.90, "corn_l": 5.7, "corn_v": 4.2, "tarjetas": 4
-        },
-        "Philadelphia Union vs Toronto FC": {
-            "local": "Philadelphia", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/6078.png",
-            "visitante": "Toronto", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/7318.png",
-            "xg_l": 1.70, "xg_v": 1.05, "c_l": 1.65, "c_x": 3.75, "c_v": 4.80, "corn_l": 6.1, "corn_v": 3.9, "tarjetas": 3
         }
     },
     "🇲🇽 Liga MX, México": {
@@ -140,11 +120,6 @@ cartelera_global = {
             "local": "Pumas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png",
             "visitante": "America", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
             "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5
-        },
-        "Chivas vs Leon": {
-            "local": "Chivas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2322.png",
-            "visitante": "Leon", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2330.png",
-            "xg_l": 1.40, "xg_v": 1.20, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 5.3, "corn_v": 4.7, "tarjetas": 4
         }
     },
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League, Inglaterra": {
@@ -157,11 +132,6 @@ cartelera_global = {
             "local": "Man City", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
             "visitante": "Liverpool", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
             "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5
-        },
-        "Manchester United vs Tottenham": {
-            "local": "Man United", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
-            "visitante": "Tottenham", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/367.png",
-            "xg_l": 1.45, "xg_v": 1.40, "c_l": 2.35, "c_x": 3.40, "c_v": 2.90, "corn_l": 5.6, "corn_v": 5.4, "tarjetas": 5
         }
     },
     "🇪🇸 LaLiga, España": {
@@ -169,37 +139,6 @@ cartelera_global = {
             "local": "Real Madrid", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
             "visitante": "Barcelona", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
             "xg_l": 1.80, "xg_v": 1.70, "c_l": 2.15, "c_x": 3.60, "c_v": 3.00, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6
-        },
-        "Atletico Madrid vs Sevilla": {
-            "local": "Atletico", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png",
-            "visitante": "Sevilla", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png",
-            "xg_l": 1.55, "xg_v": 0.95, "c_l": 1.65, "c_x": 3.70, "c_v": 5.20, "corn_l": 5.4, "corn_v": 4.1, "tarjetas": 5
-        }
-    },
-    "🇮🇹 Serie A, Italia": {
-        "Inter Milan vs AC Milan": {
-            "local": "Inter Milan", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
-            "visitante": "AC Milan", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
-            "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5
-        },
-        "Juventus vs Napoli": {
-            "local": "Juventus", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png",
-            "visitante": "Napoli", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png",
-            "xg_l": 1.35, "xg_v": 1.30, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20, "corn_l": 5.3, "corn_v": 5.2, "tarjetas": 4
-        }
-    },
-    "🇩🇪 Bundesliga, Alemania": {
-        "Bayern Munich vs Borussia Dortmund": {
-            "local": "Bayern", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
-            "visitante": "Dortmund", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/124.png",
-            "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4
-        }
-    },
-    "🇫🇷 Ligue 1, Francia": {
-        "PSG vs Marseille": {
-            "local": "PSG", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/160.png",
-            "visitante": "Marseille", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/176.png",
-            "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5
         }
     }
 }
@@ -229,20 +168,14 @@ if st.session_state["vista"] == "cartelera":
 
         st.markdown(f'<div class="league-section-title">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos_filtrados.items():
-            # Fila interactiva con los logos reales integrados al lado del botón
-            col_l, col_btn, col_v = st.columns([0.1, 0.8, 0.1])
-            with col_l:
-                st.image(datos["logo_l"], width=22)
-            with col_v:
-                st.image(datos["logo_v"], width=22)
-            with col_btn:
-                if st.button(f"{datos['local']} vs {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
-                    st.session_state["partido_sel"] = nombre_partido
-                    st.session_state["liga_sel"] = liga
-                    st.session_state["vista"] = "detalle"
-                    st.rerun()
+            # Tarjeta de selección limpia utilizando markdown HTML interactivo integrado
+            if st.button(f"{datos['local']}  vs  {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
+                st.session_state["partido_sel"] = nombre_partido
+                st.session_state["liga_sel"] = liga
+                st.session_state["vista"] = "detalle"
+                st.rerun()
 
-# VISTA 2: DETALLE AUTOMÁTICO CON LOGOS Y DISEÑO PREMIUM
+# VISTA 2: DETALLE DEL PARTIDO CON LOGOS JUNTO AL NOMBRE
 elif st.session_state["vista"] == "detalle":
     if st.button("← Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
@@ -250,18 +183,18 @@ elif st.session_state["vista"] == "detalle":
 
     p = cartelera_global[st.session_state["liga_sel"]][st.session_state["partido_sel"]]
 
-    # Cabecera de partido con escudos reales grandes
-    col_h1, col_h2, col_h3, col_h4, col_h5 = st.columns([1, 2, 0.6, 2, 1])
-    with col_h2:
-        st.image(p["logo_l"], width=45)
-        st.markdown(f"<div style='font-weight: 700; font-size: 14px; margin-top: 5px;'>{p['local']}</div>", unsafe_allow_html=True)
-    with col_h3:
-        st.markdown("<div style='text-align: center; color: #6b7280; font-weight: 700; font-size: 16px; margin-top: 15px;'>VS</div>", unsafe_allow_html=True)
-    with col_h4:
-        st.image(p["logo_v"], width=45)
-        st.markdown(f"<div style='font-weight: 700; font-size: 14px; margin-top: 5px;'>{p['visitante']}</div>", unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Cabecera limpia con los escudos exactamente al lado del nombre de cada equipo
+    st.markdown(f"""
+        <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin: 20px 0 25px 0;">
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px;">
+                <img src="{p['logo_l']}" width="30" style="vertical-align: middle;"> {p['local']}
+            </div>
+            <div style="color: #6b7280; font-weight: 700; font-size: 14px;">VS</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px;">
+                <img src="{p['logo_v']}" width="30" style="vertical-align: middle;"> {p['visitante']}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
     # Cálculo automático con Monte Carlo
     simulaciones = 10000
@@ -277,7 +210,7 @@ elif st.session_state["vista"] == "detalle":
     ganador_proyectado = p['local'] if prob_l > prob_v else p['visitante']
     btts_texto = "Sí" if prob_btts > 50 else "No"
 
-    # Tarjetas de estadísticas limpias calculadas por el modelo
+    # Estadísticas calculadas por el modelo
     st.markdown(f"""
     <div class="stat-row-clean">
         <span style="color: #9ca3af;">Tarjetas amarillas proyectadas</span>
@@ -297,7 +230,7 @@ elif st.session_state["vista"] == "detalle":
     </div>
     """, unsafe_allow_html=True)
 
-    # Bloque de probabilidades elegante con los escudos en miniatura
+    # Bloque de probabilidades elegante
     st.markdown(f"""
     <div class="prob-glass-box">
         <div style="color: #6b7280; font-size: 10px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 2px;">Probabilidad de Victoria en Vivo</div>
