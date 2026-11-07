@@ -1,12 +1,13 @@
 import streamlit as st
 import numpy as np
 
+# Configuración móvil de Streamlit
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-# Estilos CSS minimalistas en tonos grises oscuros y negros (Cero azul)
+# Estilos CSS estilo editorial de lujo (Paleta monocromática carbón/gris, cero azul)
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
     
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -22,37 +23,40 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
     
+    /* Encabezado Principal */
     .editorial-header {
         text-align: center;
-        padding: 30px 20px 15px 20px;
+        padding: 25px 15px 15px 15px;
     }
     .brand-title {
         font-size: 24px;
-        font-weight: 700;
-        letter-spacing: 2px;
+        font-weight: 800;
+        letter-spacing: 2.5px;
         color: #ffffff;
         text-transform: uppercase;
         margin-bottom: 4px;
     }
     .brand-subtitle {
         font-size: 10px;
-        font-weight: 500;
+        font-weight: 600;
         letter-spacing: 3px;
         color: #6b7280;
         text-transform: uppercase;
     }
 
+    /* Títulos de liga */
     .league-section-title {
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
         color: #9ca3af;
         text-transform: uppercase;
         letter-spacing: 2px;
-        margin: 25px 0 10px 4px;
+        margin: 22px 0 10px 4px;
         border-left: 2px solid #4b5563;
         padding-left: 8px;
     }
 
+    /* Filas estadísticas */
     .stat-row-clean {
         display: flex;
         justify-content: space-between;
@@ -65,18 +69,19 @@ st.markdown("""
         font-size: 14px;
     }
     
+    /* Contenedores de Cristal */
     .prob-glass-box {
         background: rgba(18, 22, 29, 0.9);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
         padding: 22px;
-        margin-top: 25px;
+        margin-top: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Registro individual y riguroso de cada escudo por equipo
+# Registro individual de escudos en alta definición (SVG / Wikimedia) por equipo
 logos_equipos = {
     "LA Galaxy": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/LA_Galaxy_logo_%282007%E2%80%932023%29.svg/500px-LA_Galaxy_logo_%282007%E2%80%932023%29.svg.png",
     "Inter Miami": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Inter_Miami_CF_logo.svg/500px-Inter_Miami_CF_logo.svg.png",
@@ -112,44 +117,45 @@ logos_equipos = {
     "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/SE_Palmeiras_logo.svg/500px-SE_Palmeiras_logo.svg.png"
 }
 
-# Cobertura global masiva con sus respectivas ligas
+# Cartelera global completa de ligas profesionales
 cartelera_global = {
     "🇺🇸 MLS, Estados Unidos": {
-        "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
-        "LAFC vs NYCFC": {"local": "LAFC", "visitante": "NYCFC", "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3},
-        "Seattle Sounders vs Portland Timbers": {"local": "Seattle", "visitante": "Portland", "xg_l": 1.50, "xg_v": 1.20, "c_l": 2.00, "c_x": 3.40, "c_v": 3.50, "corn_l": 5.0, "corn_v": 5.0, "tarjetas": 5},
-        "Atlanta United vs FC Cincinnati": {"local": "Atlanta", "visitante": "Cincinnati", "xg_l": 1.60, "xg_v": 1.40, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4}
+        "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
+        "LAFC vs NYCFC": {"local": "LAFC", "visitante": "NYCFC", "xg_l": 1.80, "xg_v": 1.25, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3},
+        "Seattle vs Portland": {"local": "Seattle", "visitante": "Portland", "xg_l": 1.50, "xg_v": 1.20, "corn_l": 5.0, "corn_v": 5.0, "tarjetas": 5},
+        "Atlanta vs Cincinnati": {"local": "Atlanta", "visitante": "Cincinnati", "xg_l": 1.60, "xg_v": 1.40, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4}
     },
     "🇲🇽 Liga MX, México": {
-        "Atlas vs Pachuca": {"local": "Atlas", "visitante": "Pachuca", "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5},
-        "Toluca vs Monterrey": {"local": "Toluca", "visitante": "Monterrey", "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80, "corn_l": 6.0, "corn_v": 5.8, "tarjetas": 4},
-        "Tigres vs Cruz Azul": {"local": "Tigres", "visitante": "Cruz Azul", "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00, "corn_l": 5.5, "corn_v": 5.2, "tarjetas": 6},
-        "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5}
+        "Atlas vs Pachuca": {"local": "Atlas", "visitante": "Pachuca", "xg_l": 1.15, "xg_v": 1.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5},
+        "Toluca vs Monterrey": {"local": "Toluca", "visitante": "Monterrey", "xg_l": 1.55, "xg_v": 1.50, "corn_l": 6.0, "corn_v": 5.8, "tarjetas": 4},
+        "Tigres vs Cruz Azul": {"local": "Tigres", "visitante": "Cruz Azul", "xg_l": 1.45, "xg_v": 1.35, "corn_l": 5.5, "corn_v": 5.2, "tarjetas": 6},
+        "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5}
     },
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League, Inglaterra": {
-        "Arsenal vs Chelsea": {"local": "Arsenal", "visitante": "Chelsea", "xg_l": 1.75, "xg_v": 1.15, "c_l": 1.75, "c_x": 3.70, "c_v": 4.50, "corn_l": 6.4, "corn_v": 4.9, "tarjetas": 4},
-        "Manchester City vs Liverpool": {"local": "Man City", "visitante": "Liverpool", "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5}
+        "Arsenal vs Chelsea": {"local": "Arsenal", "visitante": "Chelsea", "xg_l": 1.75, "xg_v": 1.15, "corn_l": 6.4, "corn_v": 4.9, "tarjetas": 4},
+        "Man City vs Liverpool": {"local": "Man City", "visitante": "Liverpool", "xg_l": 1.90, "xg_v": 1.65, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5}
     },
     "🇪🇸 LaLiga, España": {
-        "Real Madrid vs Barcelona": {"local": "Real Madrid", "visitante": "Barcelona", "xg_l": 1.80, "xg_v": 1.70, "c_l": 2.15, "c_x": 3.60, "c_v": 3.00, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6}
+        "Real Madrid vs Barcelona": {"local": "Real Madrid", "visitante": "Barcelona", "xg_l": 1.80, "xg_v": 1.70, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6}
     },
     "🇮🇹 Serie A, Italia": {
-        "Inter Milan vs AC Milan": {"local": "Inter Milan", "visitante": "AC Milan", "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5}
+        "Inter Milan vs AC Milan": {"local": "Inter Milan", "visitante": "AC Milan", "xg_l": 1.60, "xg_v": 1.25, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5}
     },
     "🇩🇪 Bundesliga, Alemania": {
-        "Bayern Munich vs Borussia Dortmund": {"local": "Bayern", "visitante": "Dortmund", "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4}
+        "Bayern vs Dortmund": {"local": "Bayern", "visitante": "Dortmund", "xg_l": 2.30, "xg_v": 1.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4}
     },
     "🇫🇷 Ligue 1, Francia": {
-        "PSG vs Marseille": {"local": "PSG", "visitante": "Marseille", "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5}
+        "PSG vs Marseille": {"local": "PSG", "visitante": "Marseille", "xg_l": 2.10, "xg_v": 1.10, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5}
     },
     "🇦🇷 Liga Profesional, Argentina": {
-        "Boca Juniors vs River Plate": {"local": "Boca Juniors", "visitante": "River Plate", "xg_l": 1.25, "xg_v": 1.20, "c_l": 2.40, "c_x": 3.00, "c_v": 3.10, "corn_l": 5.1, "corn_v": 4.9, "tarjetas": 7}
+        "Boca Juniors vs River Plate": {"local": "Boca Juniors", "visitante": "River Plate", "xg_l": 1.25, "xg_v": 1.20, "corn_l": 5.1, "corn_v": 4.9, "tarjetas": 7}
     },
     "🇧🇷 Brasileirão, Brasil": {
-        "Flamengo vs Palmeiras": {"local": "Flamengo", "visitante": "Palmeiras", "xg_l": 1.55, "xg_v": 1.30, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 6.1, "corn_v": 5.2, "tarjetas": 5}
+        "Flamengo vs Palmeiras": {"local": "Flamengo", "visitante": "Palmeiras", "xg_l": 1.55, "xg_v": 1.30, "corn_l": 6.1, "corn_v": 5.2, "tarjetas": 5}
     }
 }
 
+# Manejo de vistas (Cartelera vs Detalle)
 if "vista" not in st.session_state:
     st.session_state["vista"] = "cartelera"
     st.session_state["partido_sel"] = None
@@ -160,7 +166,7 @@ if st.session_state["vista"] == "cartelera":
     st.markdown("""
         <div class="editorial-header">
             <div class="brand-title">SimuladorNy</div>
-            <div class="brand-subtitle">Match Intelligence & Analytics</div>
+            <div class="brand-subtitle">Análisis Predictivo Cuantitativo</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -175,17 +181,13 @@ if st.session_state["vista"] == "cartelera":
 
         st.markdown(f'<div class="league-section-title">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos_filtrados.items():
-            logo_l_url = logos_equipos.get(datos['local'], "")
-            logo_v_url = logos_equipos.get(datos['visitante'], "")
-            
-            # Botón con imagen HTML integrada de manera estricta para cada equipo individual
-            if st.button(f"{datos['local']} vs {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
+            if st.button(f"{datos['local']}   vs   {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
                 st.session_state["partido_sel"] = nombre_partido
                 st.session_state["liga_sel"] = liga
                 st.session_state["vista"] = "detalle"
                 st.rerun()
 
-# VISTA 2: DETALLE DEL PARTIDO CON LOGOS REGISTRADOS INDIVIDUALMENTE
+# VISTA 2: DETALLE AUTOMÁTICO DEL PARTIDO
 elif st.session_state["vista"] == "detalle":
     if st.button("← Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
@@ -195,9 +197,9 @@ elif st.session_state["vista"] == "detalle":
     l_url = logos_equipos.get(p['local'], "")
     v_url = logos_equipos.get(p['visitante'], "")
 
-    # Cabecera con los logos individuales extraídos y renderizados con seguridad
+    # Cabecera con escudos oficiales garantizados
     st.markdown(f"""
-        <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin: 20px 0 25px 0;">
+        <div style="display: flex; justify-content: center; align-items: center; gap: 18px; margin: 20px 0 25px 0;">
             <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px;">
                 <img src="{l_url}" width="32" style="object-fit: contain;"> {p['local']}
             </div>
@@ -208,7 +210,7 @@ elif st.session_state["vista"] == "detalle":
         </div>
     """, unsafe_allow_html=True)
 
-    # Cálculo automático con Monte Carlo
+    # Simulación Monte Carlo (10,000 iteraciones automáticas)
     simulaciones = 10000
     goles_l = np.random.poisson(p['xg_l'], simulaciones)
     goles_v = np.random.poisson(p['xg_v'], simulaciones)
@@ -222,7 +224,7 @@ elif st.session_state["vista"] == "detalle":
     ganador_proyectado = p['local'] if prob_l > prob_v else p['visitante']
     btts_texto = "Sí" if prob_btts > 50 else "No"
 
-    # Estadísticas calculadas por el modelo
+    # Tarjetas estadísticas calculadas
     st.markdown(f"""
     <div class="stat-row-clean">
         <span style="color: #9ca3af;">Tarjetas amarillas proyectadas</span>
@@ -242,7 +244,7 @@ elif st.session_state["vista"] == "detalle":
     </div>
     """, unsafe_allow_html=True)
 
-    # Bloque de probabilidades elegante
+    # Probabilidades de victoria en vivo
     st.markdown(f"""
     <div class="prob-glass-box">
         <div style="color: #6b7280; font-size: 10px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 2px;">Probabilidad de Victoria en Vivo</div>
