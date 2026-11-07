@@ -3,10 +3,10 @@ import numpy as np
 
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-# Estilos CSS grises oscuros, metálicos y sin rastros de color azul
+# Estilos CSS con efecto Glassmorphism (Cristal translúcido) y paleta Gris/Negro Premium tipo editorial de moda/deporte
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
     
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
@@ -17,56 +17,82 @@ st.markdown("""
     div[data-testid="stToolbar"] {display: none !important;}
     
     .stApp {
-        background-color: #090a0f;
-        color: #e2e8f0;
-        font-family: 'Inter', sans-serif;
+        background-color: #0b0d10;
+        color: #f3f4f6;
+        font-family: 'Plus Jakarta Sans', sans-serif;
     }
     
-    .app-card-header {
-        background: #12151c;
-        padding: 24px;
-        border-radius: 16px;
-        margin-bottom: 20px;
-        border: 1px solid #222733;
+    /* Cabecera minimalista editorial */
+    .editorial-header {
         text-align: center;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        padding: 30px 20px 15px 20px;
     }
-    
-    .league-title {
-        font-size: 11px;
+    .brand-title {
+        font-size: 24px;
         font-weight: 700;
-        color: #9ca3af;
-        margin-top: 22px;
-        margin-bottom: 8px;
+        letter-spacing: 2px;
+        color: #ffffff;
         text-transform: uppercase;
-        letter-spacing: 1.2px;
-        border-left: 3px solid #6b7280;
-        padding-left: 8px;
+        margin-bottom: 4px;
+    }
+    .brand-subtitle {
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 3px;
+        color: #6b7280;
+        text-transform: uppercase;
     }
 
-    .stat-card-gray {
+    /* Tarjetas flotantes translúcidas estilo glassmorphism */
+    .glass-card {
+        background: rgba(25, 30, 39, 0.65);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 14px 18px;
-        background: #12151c;
-        border-radius: 12px;
-        margin-bottom: 10px;
-        border: 1px solid #1f2430;
-        font-size: 14px;
+        transition: all 0.3s ease;
     }
     
-    .prob-container {
-        background: #12151c;
+    .league-section-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #9ca3af;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin: 25px 0 10px 4px;
+        border-left: 2px solid #4b5563;
+        padding-left: 8px;
+    }
+
+    .stat-row-clean {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 16px;
+        background: rgba(18, 22, 29, 0.8);
+        border-radius: 10px;
+        margin-bottom: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        font-size: 13px;
+    }
+    
+    .prob-glass-box {
+        background: rgba(18, 22, 29, 0.85);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
         padding: 20px;
         margin-top: 20px;
-        border: 1px solid #1f2430;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Cobertura global completa de ligas profesionales del mundo
+# Cobertura de ligas profesionales mundiales
 cartelera_global = {
     "🇺🇸 MLS, Estados Unidos": {
         "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
@@ -110,14 +136,6 @@ cartelera_global = {
     "🇫🇷 Ligue 1, Francia": {
         "PSG vs Marseille": {"local": "PSG", "visitante": "Marseille", "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5},
         "Monaco vs Lyon": {"local": "Monaco", "visitante": "Lyon", "xg_l": 1.65, "xg_v": 1.35, "c_l": 2.05, "c_x": 3.50, "c_v": 3.30, "corn_l": 5.8, "corn_v": 4.7, "tarjetas": 4}
-    },
-    "🇦🇷 Liga Profesional, Argentina": {
-        "Boca Juniors vs River Plate": {"local": "Boca Juniors", "visitante": "River Plate", "xg_l": 1.25, "xg_v": 1.20, "c_l": 2.40, "c_x": 3.00, "c_v": 3.10, "corn_l": 5.1, "corn_v": 4.9, "tarjetas": 7},
-        "Racing Club vs Independiente": {"local": "Racing", "visitante": "Independiente", "xg_l": 1.35, "xg_v": 1.10, "c_l": 2.15, "c_x": 3.10, "c_v": 3.50, "corn_l": 5.4, "corn_v": 4.2, "tarjetas": 6}
-    },
-    "🇧🇷 Brasileirão, Brasil": {
-        "Flamengo vs Palmeiras": {"local": "Flamengo", "visitante": "Palmeiras", "xg_l": 1.55, "xg_v": 1.30, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 6.1, "corn_v": 5.2, "tarjetas": 5},
-        "São Paulo vs Corinthians": {"local": "São Paulo", "visitante": "Corinthians", "xg_l": 1.40, "xg_v": 1.15, "c_l": 2.20, "c_x": 3.20, "c_v": 3.30, "corn_l": 5.5, "corn_v": 4.5, "tarjetas": 6}
     }
 }
 
@@ -126,16 +144,16 @@ if "vista" not in st.session_state:
     st.session_state["partido_sel"] = None
     st.session_state["liga_sel"] = None
 
-# VISTA 1: CARTELERA PRINCIPAL
+# VISTA 1: CARTELERA PRINCIPAL (Estilo Editorial Premium)
 if st.session_state["vista"] == "cartelera":
     st.markdown("""
-        <div class="app-card-header">
-            <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0 0 6px 0;">⚽ SimuladorNy</h1>
-            <p style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin: 0;">Global League Intelligence & Analytics</p>
+        <div class="editorial-header">
+            <div class="brand-title">SimuladorNy</div>
+            <div class="brand-subtitle">Match Intelligence & Analytics</div>
         </div>
     """, unsafe_allow_html=True)
 
-    busqueda = st.text_input("🔍 Buscar partido o liga...", placeholder="Escribe un equipo (ej. Miami, Madrid, Atlas)...")
+    busqueda = st.text_input("🔍 Buscar encuentro o liga...", placeholder="Escribe un equipo...")
 
     for liga, partidos in cartelera_global.items():
         partidos_filtrados = {k: v for k, v in partidos.items() if busqueda.lower() in k.lower() or busqueda.lower() in liga.lower()}
@@ -144,31 +162,31 @@ if st.session_state["vista"] == "cartelera":
         if not partidos_filtrados:
             partidos_filtrados = partidos
 
-        st.markdown(f'<div class="league-title">{liga}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="league-section-title">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos_filtrados.items():
-            if st.button(f"▪️  {datos['local']}   VS   {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
+            if st.button(f"▪️  {datos['local']}   —   {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
                 st.session_state["partido_sel"] = nombre_partido
                 st.session_state["liga_sel"] = liga
                 st.session_state["vista"] = "detalle"
                 st.rerun()
 
-# VISTA 2: DETALLE INTERACTIVO CON SLIDERS GRISES
+# VISTA 2: DETALLE INTERACTIVO CON EFECTO CRISTAL (Glassmorphism)
 elif st.session_state["vista"] == "detalle":
-    if st.button("⬅️ Volver a la cartelera"):
+    if st.button("← Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
         st.rerun()
 
     p = cartelera_global[st.session_state["liga_sel"]][st.session_state["partido_sel"]]
 
     st.markdown(f"""
-        <div style="text-align: center; margin: 15px 0 20px 0;">
-            <h2 style="color: #ffffff; font-size: 21px; font-weight: 800; margin: 0;">{p['local']} vs {p['visitante']}</h2>
-            <p style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">Simulador Cuantitativo en Vivo</p>
+        <div style="text-align: center; margin: 20px 0;">
+            <h2 style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">{p['local']} vs {p['visitante']}</h2>
+            <p style="color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;">Quantitative Match Simulation</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Sliders para interactuar con los xG
-    st.markdown("<p style='color: #9ca3af; font-size: 12px; font-weight: 600; margin-bottom: 6px;'>🎛️ Modifica el xG (Goles Esperados) para recalcular:</p>", unsafe_allow_html=True)
+    # Sliders Interactivos minimalistas
+    st.markdown("<p style='color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;'>🎛️ Ajuste de Goles Esperados (xG):</p>", unsafe_allow_html=True)
     col_s1, col_s2 = st.columns(2)
     with col_s1:
         xg_l_input = st.slider(f"xG {p['local']}", 0.2, 4.0, float(p['xg_l']), 0.05)
@@ -191,44 +209,44 @@ elif st.session_state["vista"] == "detalle":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Bloques de estadísticas grises
+    # Estadísticas con estilo translúcido
     st.markdown(f"""
-    <div class="stat-card-gray">
+    <div class="stat-row-clean">
         <span style="color: #9ca3af;">Tarjetas amarillas proyectadas</span>
-        <span style="color: #ffffff; font-weight: 700;">{p['tarjetas']}</span>
+        <span style="color: #ffffff; font-weight: 600;">{p['tarjetas']}</span>
     </div>
-    <div class="stat-card-gray">
+    <div class="stat-row-clean">
         <span style="color: #9ca3af;">Tiros de esquina (Córners)</span>
-        <span style="color: #e2e8f0; font-weight: 700;">{tot_corners}</span>
+        <span style="color: #f3f4f6; font-weight: 600;">{tot_corners}</span>
     </div>
-    <div class="stat-card-gray">
+    <div class="stat-row-clean">
         <span style="color: #9ca3af;">Ambos equipos marcarán (BTTS)</span>
-        <span style="color: #ffffff; font-weight: 700;">{btts_texto} ({prob_btts:.0f}%)</span>
+        <span style="color: #ffffff; font-weight: 600;">{btts_texto} ({prob_btts:.0f}%)</span>
     </div>
-    <div class="stat-card-gray">
+    <div class="stat-row-clean">
         <span style="color: #9ca3af;">Ganador probable</span>
-        <span style="color: #ffffff; font-weight: 700;">{ganador_proyectado}</span>
+        <span style="color: #ffffff; font-weight: 600;">{ganador_proyectado}</span>
     </div>
     """, unsafe_allow_html=True)
 
-    # Tarjeta de probabilidades
+    # Caja de probabilidades estilo cristal esmerilado
     st.markdown(f"""
-    <div class="prob-container">
-        <div style="color: #9ca3af; font-size: 11px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px;">Probabilidad de Victoria en Tiempo Real</div>
+    <div class="prob-glass-box">
+        <div style="color: #6b7280; font-size: 10px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 2px;">Probabilidad de Victoria en Vivo</div>
         <div style="display: flex; justify-content: space-around; align-items: center; text-align: center;">
             <div>
-                <div style="font-size: 20px; font-weight: 800; color: #ffffff;">{prob_l:.0f}%</div>
-                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">{p['local']}</div>
+                <div style="font-size: 19px; font-weight: 700; color: #ffffff;">{prob_l:.0f}%</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">{p['local']}</div>
             </div>
-            <div style="color: #2b3240; font-size: 18px;">|</div>
+            <div style="color: #2b3240; font-size: 16px;">|</div>
             <div>
-                <div style="font-size: 20px; font-weight: 800; color: #ffffff;">{prob_x:.0f}%</div>
-                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">Empate</div>
+                <div style="font-size: 19px; font-weight: 700; color: #ffffff;">{prob_x:.0f}%</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Empate</div>
             </div>
-            <div style="color: #2b3240; font-size: 18px;">|</div>
+            <div style="color: #2b3240; font-size: 16px;">|</div>
             <div>
-                <div style="font-size: 20px; font-weight: 800; color: #ffffff;">{prob_v:.0f}%</div>
-                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">{p['visitante']}</div>
+                <div style="font-size: 19px; font-weight: 700; color: #ffffff;">{prob_v:.0f}%</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">{p['visitante']}</div>
             </div>
         </div>
     </div>
