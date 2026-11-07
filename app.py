@@ -1,4 +1,5 @@
 import streamlit as st
+import numpy as np
 
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
@@ -82,7 +83,7 @@ html_code = """
                 </div>
             </div>
             <div class="flex items-center space-x-2">
-                <span class="text-[10px] px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-textMuted font-bold">Mis partidos</span>
+                <span class="text-[10px] px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-textMuted font-bold">Modelos Activos</span>
             </div>
         </div>
     </header>
@@ -225,12 +226,11 @@ html_code = """
 
             runSimulation(m) {
                 if(m.is_nba) {
-                    // Simulación tipo distribución normal aproximada para básquetbol
                     let simL = Math.round(m.base_l + (Math.random() * 6 - 3));
                     let simV = Math.round(m.base_v + (Math.random() * 6 - 3));
-                    if(simL === simV) simL += 2; // Evitar empate exacto en NBA
+                    if(simL === simV) simL += 2;
                     let totalPts = simL + simV;
-                    let probL = simL > simV ? 54 : 46;
+                    let probL = simL > simV ? 56 : 44;
                     let probV = 100 - probL;
                     return {
                         ptsL: simL,
@@ -249,8 +249,6 @@ html_code = """
                         if(gL > gV) wL++; else if(gL === gV) d++; else wV++;
                     }
                     return {
-                        ptsL: m.base_l,
-                        ptsV: m.base_v,
                         ganador: wL >= wV ? m.local : m.visitante,
                         probL: Math.round((wL/sims)*100),
                         probX: Math.round((d/sims)*100),
