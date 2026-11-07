@@ -133,56 +133,45 @@ html_code = """
 
     <script>
         const teamBadges = {
-            // Fútbol
             "LA Galaxy": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png",
             "Inter Miami": "https://a.espncdn.com/i/teamlogos/soccer/500/18226.png",
-            "Atlas": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
-            "Pachuca": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
-            "America": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
-            "Cruz Azul": "https://a.espncdn.com/i/teamlogos/soccer/500/2324.png",
             
-            // NBA Teams (Logotipos oficiales ESPN)
+            // NBA Official Logos (ESPN)
+            "Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
+            "Timberwolves": "https://a.espncdn.com/i/teamlogos/nba/500/min.png",
             "Lakers": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png",
             "Celtics": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png",
             "Warriors": "https://a.espncdn.com/i/teamlogos/nba/500/gs.png",
-            "Bulls": "https://a.espncdn.com/i/teamlogos/nba/500/chi.png",
-            "Heat": "https://a.espncdn.com/i/teamlogos/nba/500/mia.png",
-            "Nets": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png",
-            "Bucks": "https://a.espncdn.com/i/teamlogos/nba/500/mil.png",
             "Suns": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png",
-            "Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
             "Mavericks": "https://a.espncdn.com/i/teamlogos/nba/500/dal.png",
+            "Heat": "https://a.espncdn.com/i/teamlogos/nba/500/mia.png",
+            "Bucks": "https://a.espncdn.com/i/teamlogos/nba/500/mil.png",
             "Knicks": "https://a.espncdn.com/i/teamlogos/nba/500/ny.png",
             "76ers": "https://a.espncdn.com/i/teamlogos/nba/500/phi.png",
-            "Pacers": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
-            "Hawks": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
-            "Thunder": "https://a.espncdn.com/i/teamlogos/nba/500/okc.png",
-            "Grizzlies": "https://a.espncdn.com/i/teamlogos/nba/500/mem.png"
+            "Thunder": "https://a.espncdn.com/i/teamlogos/nba/500/okc.png"
         };
 
         const sportsData = {
             "nba": {
-                "🇺🇸 NBA, Temporada Regular": {
-                    "Lakers vs Celtics": { local: "Lakers", visitante: "Celtics", estado: "EN VIVO", marcador: "98 - 94", periodo: "4Q 03:12", base_l: 114.0, base_v: 116.5, is_nba: true },
-                    "Warriors vs Bulls": { local: "Warriors", visitante: "Bulls", estado: "EN VIVO", marcador: "105 - 102", periodo: "3Q 01:45", base_l: 118.0, base_v: 112.0, is_nba: true },
-                    "Heat vs Suns": { local: "Heat", visitante: "Suns", hora: "6:00 p.m.", base_l: 109.5, base_v: 111.0, is_nba: true },
-                    "Nuggets vs Mavericks": { local: "Nuggets", visitante: "Mavericks", hora: "7:30 p.m.", base_l: 115.0, base_v: 117.5, is_nba: true },
-                    "Knicks vs 76ers": { local: "Knicks", visitante: "76ers", hora: "8:00 p.m.", base_l: 108.5, base_v: 107.0, is_nba: true },
-                    "Bucks vs Thunder": { local: "Bucks", visitante: "Thunder", hora: "9:15 p.m.", base_l: 116.0, base_v: 119.0, is_nba: true },
-                    "Pacers vs Hawks": { local: "Pacers", visitante: "Hawks", hora: "10:00 p.m.", base_l: 112.5, base_v: 110.0, is_nba: true }
+                "🇺🇸 NBA, Temporada Regular (HOY)": {
+                    "Nuggets vs Timberwolves": { local: "Nuggets", visitante: "Timberwolves", estado: "EN VIVO", marcador: "64 - 61", periodo: "2Q 04:20", base_l: 114.5, base_v: 112.0, is_nba: true },
+                    "Lakers vs Celtics": { local: "Lakers", visitante: "Celtics", hora: "6:30 p.m.", base_l: 112.0, base_v: 116.5, is_nba: true },
+                    "Warriors vs Suns": { local: "Warriors", visitante: "Suns", hora: "7:00 p.m.", base_l: 115.0, base_v: 113.5, is_nba: true },
+                    "Mavericks vs Heat": { local: "Mavericks", visitante: "Heat", hora: "7:30 p.m.", base_l: 111.0, base_v: 108.5, is_nba: true },
+                    "Bucks vs Knicks": { local: "Bucks", visitante: "Knicks", hora: "8:00 p.m.", base_l: 116.0, base_v: 114.0, is_nba: true },
+                    "76ers vs Thunder": { local: "76ers", visitante: "Thunder", hora: "9:00 p.m.", base_l: 110.0, base_v: 118.5, is_nba: true }
                 }
             },
             "futbol": {
                 "🇲🇽 Mexico · Liga MX": {
-                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", estado: "EN VIVO", marcador: "1 - 1", periodo: "2T 78'", base_l: 1.15, base_v: 1.40, metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" },
-                    "America vs Cruz Azul": { local: "America", visitante: "Cruz Azul", hora: "8:00 p.m.", base_l: 1.55, base_v: 1.35, metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.5" }
+                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", estado: "EN VIVO", marcador: "1 - 1", periodo: "2T 78'", base_l: 1.15, base_v: 1.40, metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" }
                 }
             }
         };
 
         class SimuladorApp {
             constructor() {
-                this.currentSport = 'nba'; // Arranca en NBA directo
+                this.currentSport = 'nba';
                 this.currentView = 'list';
                 this.selectedLeague = null;
                 this.selectedMatch = null;
@@ -236,7 +225,7 @@ html_code = """
                     let simV = Math.round(m.base_v + (Math.random() * 6 - 3));
                     if(simL === simV) simL += 2;
                     let totalPts = simL + simV;
-                    let probL = simL > simV ? 57 : 43;
+                    let probL = simL > simV ? 56 : 44;
                     let probV = 100 - probL;
                     return {
                         ptsL: simL,
@@ -387,21 +376,20 @@ html_code = """
                         const badgeL = teamBadges[datos.local] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
                         const badgeV = teamBadges[datos.visitante] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
 
-                        // Control de estado En Vivo vs Horario programado
                         let timeBadgeHTML = '';
                         if(datos.estado === "EN VIVO") {
                             timeBadgeHTML = `
-                                <div class="flex flex-col">
+                                <div class="flex flex-col w-20">
                                     <div class="flex items-center space-x-1">
                                         <span class="w-2 h-2 rounded-full bg-red-500 live-dot"></span>
-                                        <span class="text-[10px] text-red-400 font-extrabold uppercase">EN VIVO</span>
+                                        <span class="text-[9px] text-red-400 font-extrabold uppercase">EN VIVO</span>
                                     </div>
                                     <span class="text-[10px] text-white font-bold mt-0.5">${datos.marcador}</span>
                                     <span class="text-[9px] text-neutral-400">${datos.periodo}</span>
                                 </div>
                             `;
                         } else {
-                            timeBadgeHTML = `<div class="w-16 text-[10px] text-neutral-400 font-semibold">${datos.hora}</div>`;
+                            timeBadgeHTML = `<div class="w-20 text-[10px] text-neutral-400 font-semibold">${datos.hora}</div>`;
                         }
 
                         html += `
