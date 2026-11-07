@@ -125,51 +125,45 @@ html_code = """
     </nav>
 
     <script>
-        // Únicamente logotipos oficiales estables para NBA (eliminados en fútbol para evitar errores)
-        const teamBadges = {
-            "Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
-            "Pacers": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
-            "Nets": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png",
-            "Hawks": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
-            "Knicks": "https://a.espncdn.com/i/teamlogos/nba/500/ny.png",
-            "Cavaliers": "https://a.espncdn.com/i/teamlogos/nba/500/cle.png",
-            "Warriors": "https://a.espncdn.com/i/teamlogos/nba/500/gs.png",
-            "Lakers": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png",
-            "Celtics": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
-        };
-
         const sportsData = {
             "futbol": {
                 "🇲🇽 México · Liga MX": {
-                    "América vs Cruz Azul": { local: "América", visitante: "Cruz Azul", hora: "5:00 p.m.", base_l: 1.55, base_v: 1.35, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.8" },
-                    "Monterrey vs Tigres": { local: "Monterrey", visitante: "Tigres", hora: "7:00 p.m.", base_l: 1.60, base_v: 1.50, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.2" }
+                    "Nax vs Pumas": { local: "Nax", visitante: "Pumas", estado: "EN VIVO", periodo: "En juego", base_l: 1.2, base_v: 1.1, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.5" }
                 },
                 "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra · Premier League": {
-                    "Arsenal vs Chelsea": { local: "Arsenal", visitante: "Chelsea", hora: "7:30 a.m.", base_l: 1.75, base_v: 1.15, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "11.4" },
-                    "Man City vs Liverpool": { local: "Man City", visitante: "Liverpool", hora: "10:00 a.m.", base_l: 1.90, base_v: 1.65, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "3", metric2_lbl: "Córners", metric2_val: "12.2" }
+                    "Arsenal vs Chelsea": { local: "Arsenal", visitante: "Chelsea", hora: "Programado", base_l: 1.75, base_v: 1.15, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "11.4" }
                 },
-                "🇪🇸 España · La Liga": {
-                    "Real Madrid vs Barcelona": { local: "Real Madrid", visitante: "Barcelona", hora: "2:00 p.m.", base_l: 1.80, base_v: 1.70, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.0" }
+                "🇪🇸 España · LaLiga": {
+                    "Real Madrid vs Barcelona": { local: "Real Madrid", visitante: "Barcelona", hora: "Programado", base_l: 1.80, base_v: 1.70, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.0" }
+                },
+                "🇮🇹 Italia · Serie A": {
+                    "Inter vs Milan": { local: "Inter", visitante: "Milan", hora: "Programado", base_l: 1.50, base_v: 1.30, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.2" }
+                },
+                "🇪🇺 UEFA · Champions League": {
+                    "Bayern vs PSG": { local: "Bayern", visitante: "PSG", hora: "Programado", base_l: 1.85, base_v: 1.60, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "10.8" }
                 }
             },
             "nba": {
                 "🇺🇸 NBA, Estados Unidos": {
-                    "Nuggets vs Pacers": { local: "Nuggets", visitante: "Pacers", estado: "EN VIVO", periodo: "Medio Tiempo", base_l: 114.5, base_v: 104.0, sport: "nba" },
-                    "Nets vs Hawks": { local: "Nets", visitante: "Hawks", hora: "5:30 p.m.", base_l: 108.0, base_v: 112.5, sport: "nba" },
-                    "Knicks vs Cavaliers": { local: "Knicks", visitante: "Cavaliers", hora: "6:00 p.m.", base_l: 110.0, base_v: 113.0, sport: "nba" },
-                    "Lakers vs Celtics": { local: "Lakers", visitante: "Celtics", hora: "8:30 p.m.", base_l: 112.0, base_v: 116.5, sport: "nba" }
+                    "Nuggets vs Pacers": { local: "Nuggets", visitante: "Pacers", estado: "EN VIVO", periodo: "En curso", base_l: 114.5, base_v: 104.0, sport: "nba" },
+                    "Nets vs Hawks": { local: "Nets", visitante: "Hawks", hora: "Programado", base_l: 108.0, base_v: 112.5, sport: "nba" },
+                    "Knicks vs Cavaliers": { local: "Knicks", visitante: "Cavaliers", hora: "Programado", base_l: 110.0, base_v: 113.0, sport: "nba" },
+                    "Wizards vs Thunder": { local: "Wizards", visitante: "Thunder", hora: "Programado", base_l: 105.5, base_v: 119.0, sport: "nba" },
+                    "Magic vs Warriors": { local: "Magic", visitante: "Warriors", hora: "Programado", base_l: 107.0, base_v: 112.0, sport: "nba" },
+                    "Rockets vs Suns": { local: "Rockets", visitante: "Suns", hora: "Programado", base_l: 111.0, base_v: 114.5, sport: "nba" },
+                    "Spurs vs Trail Blazers": { local: "Spurs", visitante: "Trail Blazers", hora: "Programado", base_l: 109.0, base_v: 107.5, sport: "nba" }
                 }
             },
             "kbo": {
                 "🇰🇷 KBO League, Corea del Sur": {
-                    "Doosan Bears vs LG Twins": { local: "Doosan Bears", visitante: "LG Twins", hora: "1:00 a.m.", base_l: 4.5, base_v: 5.0, sport: "beisbol" },
-                    "KIA Tigers vs Samsung Lions": { local: "KIA Tigers", visitante: "Samsung Lions", hora: "3:00 a.m.", base_l: 5.2, base_v: 4.8, sport: "beisbol" }
+                    "Doosan Bears vs LG Twins": { local: "Doosan Bears", visitante: "LG Twins", hora: "Programado", base_l: 4.5, base_v: 5.0, sport: "kbo" },
+                    "KIA Tigers vs Samsung Lions": { local: "KIA Tigers", visitante: "Samsung Lions", hora: "Programado", base_l: 5.2, base_v: 4.8, sport: "kbo" }
                 }
             },
             "nhl": {
-                "🇨🇦🇺🇸 NHL, Hockey Hielo": {
-                    "Maple Leafs vs Canadiens": { local: "Maple Leafs", visitante: "Canadiens", hora: "6:00 p.m.", base_l: 3.5, base_v: 2.8, sport: "hockey" },
-                    "Rangers vs Bruins": { local: "Rangers", visitante: "Bruins", hora: "7:30 p.m.", base_l: 3.2, base_v: 3.4, sport: "hockey" }
+                "🇨🇦🇺🇸 NHL, Hockey sobre Hielo": {
+                    "Maple Leafs vs Canadiens": { local: "Maple Leafs", visitante: "Canadiens", hora: "Programado", base_l: 3.5, base_v: 2.8, sport: "nhl" },
+                    "Rangers vs Bruins": { local: "Rangers", visitante: "Bruins", hora: "Programado", base_l: 3.2, base_v: 3.4, sport: "nhl" }
                 }
             }
         };
@@ -295,7 +289,7 @@ html_code = """
                                 <span class="font-bold text-white">${sim.ptsV} pts</span>
                             </div>
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Puntos totales</span>
+                                <span class="text-textMuted">Puntos totales del partido</span>
                                 <span class="font-bold text-white">${sim.totalPts} pts</span>
                             </div>
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
@@ -310,7 +304,7 @@ html_code = """
                                 <div><div class="text-lg font-black text-white">${sim.probV}%</div><div class="text-[9px] text-textMuted uppercase">${m.visitante}</div></div>
                             </div>
                         `;
-                    } else if(m.sport === 'beisbol' || m.sport === 'hockey') {
+                    } else if(m.sport === 'kbo' || m.sport === 'nhl') {
                         const sim = this.runGenericSimulation(m);
                         statsHTML = `
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
@@ -423,17 +417,7 @@ html_code = """
                                 </div>
                             `;
                         } else {
-                            timeBadgeHTML = `<div class="w-24 text-[10px] text-neutral-400 font-semibold">${datos.hora}</div>`;
-                        }
-
-                        // Renderizado condicional de logos solo para NBA
-                        let badgeLHTML = '';
-                        let badgeVHTML = '';
-                        if(datos.sport === 'nba') {
-                            const bL = teamBadges[datos.local] || '';
-                            const bV = teamBadges[datos.visitante] || '';
-                            badgeLHTML = `<img src="${bL}" class="w-5 h-5 object-contain">`;
-                            badgeVHTML = `<img src="${bV}" class="w-5 h-5 object-contain">`;
+                            timeBadgeHTML = `<div class="w-24 text-[10px] text-neutral-400 font-semibold">${datos.hora || 'Programado'}</div>`;
                         }
 
                         html += `
@@ -441,11 +425,9 @@ html_code = """
                                 ${timeBadgeHTML}
                                 <div class="flex-1 space-y-2 px-2">
                                     <div class="flex items-center space-x-2">
-                                        ${badgeLHTML}
                                         <span class="text-xs font-bold text-white truncate">${datos.local}</span>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        ${badgeVHTML}
                                         <span class="text-xs font-bold text-white truncate">${datos.visitante}</span>
                                     </div>
                                 </div>
