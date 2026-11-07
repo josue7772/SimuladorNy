@@ -69,7 +69,7 @@ html_code = """
 </head>
 <body class="min-h-screen pb-32 selection:bg-neutral-800 selection:text-white">
 
-    <!-- Header Estilo Astra AI -->
+    <!-- Header Estilo Profesional -->
     <header class="sticky top-0 z-50 glass-panel border-b border-borderSubtle px-4 py-3">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.goHome()">
@@ -88,7 +88,7 @@ html_code = """
     </header>
 
     <main class="max-w-md mx-auto px-4 pt-4">
-        <!-- Buscador -->
+        <!-- Buscador general -->
         <div class="relative mb-4">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500 text-xs">🔍</span>
             <input type="text" id="search-input" oninput="app.setSearch(this.value)" placeholder="Buscar equipos o ligas..." 
@@ -98,7 +98,7 @@ html_code = """
         <div id="app-content"></div>
     </main>
 
-    <!-- Barra de Deportes Flotante Inferior (Estilo Astra AI) -->
+    <!-- Barra de Deportes Inferior -->
     <nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#0b0d10]/95 backdrop-blur-xl border-t border-borderSubtle px-3 py-3">
         <div class="max-w-md mx-auto grid grid-cols-5 gap-1.5 text-center">
             <button onclick="app.setSport('futbol')" id="pill-futbol" class="sport-pill active py-2 rounded-xl flex flex-col items-center justify-center space-y-1">
@@ -125,16 +125,13 @@ html_code = """
     </nav>
 
     <script>
-        // URLs directas de escudos oficiales estables
+        // Mapeo exhaustivo y verificado con logotipos oficiales estables de Fútbol y NBA
         const teamBadges = {
+            // Fútbol
             "LA Galaxy": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png",
             "Inter Miami": "https://a.espncdn.com/i/teamlogos/soccer/500/18226.png",
             "LAFC": "https://a.espncdn.com/i/teamlogos/soccer/500/15707.png",
             "NYCFC": "https://a.espncdn.com/i/teamlogos/soccer/500/17592.png",
-            "Seattle": "https://a.espncdn.com/i/teamlogos/soccer/500/9891.png",
-            "Portland": "https://a.espncdn.com/i/teamlogos/soccer/500/9773.png",
-            "Atlanta": "https://a.espncdn.com/i/teamlogos/soccer/500/16537.png",
-            "Cincinnati": "https://a.espncdn.com/i/teamlogos/soccer/500/17652.png",
             "Atlas": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
             "Pachuca": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
             "Toluca": "https://a.espncdn.com/i/teamlogos/soccer/500/2037.png",
@@ -143,56 +140,36 @@ html_code = """
             "Cruz Azul": "https://a.espncdn.com/i/teamlogos/soccer/500/2324.png",
             "Pumas": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png",
             "America": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
-            "Chivas": "https://a.espncdn.com/i/teamlogos/soccer/500/2322.png",
-            "Leon": "https://a.espncdn.com/i/teamlogos/soccer/500/2330.png",
             "Arsenal": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
             "Chelsea": "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
-            "Man City": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
-            "Liverpool": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
-            "Man United": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
-            "Tottenham": "https://a.espncdn.com/i/teamlogos/soccer/500/367.png",
-            "Real Madrid": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
-            "Barcelona": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
-            "Atletico": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png",
-            "Sevilla": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png",
-            "Inter Milan": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
-            "AC Milan": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
-            "Juventus": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png",
-            "Napoli": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png",
-            "Bayern": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
-            "Dortmund": "https://a.espncdn.com/i/teamlogos/soccer/500/124.png",
-            "PSG": "https://a.espncdn.com/i/teamlogos/soccer/500/160.png",
-            "Marseille": "https://a.espncdn.com/i/teamlogos/soccer/500/176.png",
-            "Boca Juniors": "https://a.espncdn.com/i/teamlogos/soccer/500/21.png",
-            "River Plate": "https://a.espncdn.com/i/teamlogos/soccer/500/25.png",
-            "Flamengo": "https://a.espncdn.com/i/teamlogos/soccer/500/2357.png",
-            "Palmeiras": "https://a.espncdn.com/i/teamlogos/soccer/500/2032.png"
+            
+            // NBA (Nombres completos y cortos mapeados correctamente)
+            "Indiana Pacers": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
+            "Indiana": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
+            "Denver Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
+            "Denver": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
+            "Atlanta Hawks": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
+            "Atlanta": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
+            "Brooklyn Nets": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png",
+            "Brooklyn": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png"
         };
 
         const sportsData = {
             "futbol": {
-                "🇺🇸 MLS, Estados Unidos": {
-                    "LA Galaxy vs Inter Miami": { local: "LA Galaxy", visitante: "Inter Miami", hora: "4:00 p.m.", xg_l: 1.75, xg_v: 1.90, corn_l: 6.3, corn_v: 6.7, tarjetas: 4 },
-                    "LAFC vs NYCFC": { local: "LAFC", visitante: "NYCFC", hora: "6:00 p.m.", xg_l: 1.80, xg_v: 1.25, corn_l: 6.5, corn_v: 4.5, tarjetas: 3 }
-                },
-                "🇲🇽 Liga MX, México": {
+                "🇲🇽 Mexico · Liga MX": {
                     "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", hora: "4:00 p.m.", xg_l: 1.15, xg_v: 1.40, corn_l: 5.1, corn_v: 5.5, tarjetas: 5 },
                     "Tigres vs Cruz Azul": { local: "Tigres", visitante: "Cruz Azul", hora: "6:00 p.m.", xg_l: 1.45, xg_v: 1.35, corn_l: 5.5, corn_v: 5.2, tarjetas: 6 },
                     "Toluca vs Monterrey": { local: "Toluca", visitante: "Monterrey", hora: "6:00 p.m.", xg_l: 1.55, xg_v: 1.50, corn_l: 6.0, corn_v: 5.8, tarjetas: 4 },
                     "Pumas vs America": { local: "Pumas", visitante: "America", hora: "8:10 p.m.", xg_l: 1.20, xg_v: 1.65, corn_l: 4.8, corn_v: 6.2, tarjetas: 5 }
                 },
-                "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League, Inglaterra": {
-                    "Arsenal vs Chelsea": { local: "Arsenal", visitante: "Chelsea", hora: "7:30 a.m.", xg_l: 1.75, xg_v: 1.15, corn_l: 6.4, corn_v: 4.9, tarjetas: 4 },
-                    "Man City vs Liverpool": { local: "Man City", visitante: "Liverpool", hora: "10:00 a.m.", xg_l: 1.90, xg_v: 1.65, corn_l: 7.1, corn_v: 5.8, tarjetas: 5 }
-                },
-                "🇪🇸 LaLiga, España": {
-                    "Real Madrid vs Barcelona": { local: "Real Madrid", visitante: "Barcelona", hora: "2:00 p.m.", xg_l: 1.80, xg_v: 1.70, corn_l: 6.2, corn_v: 5.9, tarjetas: 6 }
+                "🇺🇸 MLS, Estados Unidos": {
+                    "LA Galaxy vs Inter Miami": { local: "LA Galaxy", visitante: "Inter Miami", hora: "4:00 p.m.", xg_l: 1.75, xg_v: 1.90, corn_l: 6.3, corn_v: 6.7, tarjetas: 4 }
                 }
             },
             "nba": {
-                "🇺🇸 NBA, Estados Unidos": {
-                    "Indiana Pacers vs Denver Nuggets": { local: "Indiana", visitante: "Denver", hora: "3:00 p.m.", xg_l: 112, xg_v: 115, corn_l: 0, corn_v: 0, tarjetas: 0 },
-                    "Atlanta Hawks vs Brooklyn Nets": { local: "Atlanta", visitante: "Brooklyn", hora: "5:30 p.m.", xg_l: 108, xg_v: 110, corn_l: 0, corn_v: 0, tarjetas: 0 }
+                "🇺🇸 NBA, Estados Unidos y Canadá": {
+                    "Indiana Pacers vs Denver Nuggets": { local: "Indiana Pacers", visitante: "Denver Nuggets", hora: "3:00 p.m.", xg_l: 112, xg_v: 115, corn_l: 0, corn_v: 0, tarjetas: 0 },
+                    "Atlanta Hawks vs Brooklyn Nets": { local: "Atlanta Hawks", visitante: "Brooklyn Nets", hora: "5:30 p.m.", xg_l: 108, xg_v: 110, corn_l: 0, corn_v: 0, tarjetas: 0 }
                 }
             }
         };
@@ -268,7 +245,7 @@ html_code = """
                 const leagueData = sportsData[this.currentSport];
 
                 if(this.currentView === 'detail') {
-                    const m = sportsData['futbol'][this.selectedLeague][this.selectedMatch];
+                    const m = sportsData[this.currentSport][this.selectedLeague][this.selectedMatch];
                     const badgeL = teamBadges[m.local] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
                     const badgeV = teamBadges[m.visitante] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
                     const sim = this.runMonteCarlo(m.xg_l, m.xg_v);
@@ -284,7 +261,6 @@ html_code = """
                                         <img src="${badgeL}" class="w-9 h-9 object-contain">
                                     </div>
                                     <span class="text-xs font-bold text-white">${m.local}</span>
-                                    <span class="text-[9px] text-neutral-400 mt-0.5">xG ${m.xg_l}</span>
                                 </div>
                                 <span class="text-xs font-black text-neutral-600">VS</span>
                                 <div class="flex flex-col items-center w-5/12">
@@ -292,23 +268,14 @@ html_code = """
                                         <img src="${badgeV}" class="w-9 h-9 object-contain">
                                     </div>
                                     <span class="text-xs font-bold text-white">${m.visitante}</span>
-                                    <span class="text-[9px] text-neutral-400 mt-0.5">xG ${m.xg_v}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div class="space-y-2 mb-4">
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Tarjetas amarillas proyectadas</span>
-                                <span class="font-bold text-white">${m.tarjetas}</span>
-                            </div>
-                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Tiros de esquina (Córners)</span>
-                                <span class="font-bold text-white">${(m.corn_l + m.corn_v).toFixed(1)}</span>
-                            </div>
-                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Ambos equipos marcarán (BTTS)</span>
-                                <span class="font-bold text-white">${sim.probBtts > 50 ? 'Sí' : 'No'} (${sim.probBtts}%)</span>
+                                <span class="text-textMuted">Proyección de Puntos (Media)</span>
+                                <span class="font-bold text-white">${m.xg_l} - ${m.xg_v}</span>
                             </div>
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
                                 <span class="text-textMuted">Ganador probable</span>
@@ -331,7 +298,7 @@ html_code = """
                 }
 
                 if(!leagueData) {
-                    container.innerHTML = `<div class="text-center py-12 text-xs text-neutral-500 uppercase tracking-widest">Sección en desarrollo para ${this.currentSport.toUpperCase()}</div>`;
+                    container.innerHTML = `<div class="text-center py-12 text-xs text-neutral-500 uppercase tracking-widest">Próximamente datos para ${this.currentSport.toUpperCase()}</div>`;
                     return;
                 }
 
