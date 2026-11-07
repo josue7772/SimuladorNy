@@ -145,7 +145,11 @@ html_code = """
             "Suns": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png",
             "Spurs": "https://a.espncdn.com/i/teamlogos/nba/500/sas.png",
             "Trail Blazers": "https://a.espncdn.com/i/teamlogos/nba/500/por.png",
-            // Fútbol / Liga MX
+            "Lakers": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png",
+            "Celtics": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png",
+            "Bucks": "https://a.espncdn.com/i/teamlogos/nba/500/mil.png",
+            "Mavericks": "https://a.espncdn.com/i/teamlogos/nba/500/dal.png",
+            // Fútbol Ligas Profesionales
             "Atlas": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
             "Pachuca": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
             "America": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
@@ -154,29 +158,41 @@ html_code = """
             "Tigres": "https://a.espncdn.com/i/teamlogos/soccer/500/2343.png",
             "Chivas": "https://a.espncdn.com/i/teamlogos/soccer/500/2322.png",
             "Pumas": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png",
-            "Toluca": "https://a.espncdn.com/i/teamlogos/soccer/500/2037.png",
-            "Santos": "https://a.espncdn.com/i/teamlogos/soccer/500/2342.png"
+            "Arsenal": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+            "Chelsea": "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+            "Man City": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+            "Liverpool": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
+            "Real Madrid": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
+            "Barcelona": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png"
         };
 
         const sportsData = {
             "nba": {
-                "🇺🇸 NBA, Estados Unidos": {
-                    "Nuggets vs Pacers": { local: "Nuggets", visitante: "Pacers", estado: "EN VIVO", marcador: "64 - 41", periodo: "HT", base_l: 114.5, base_v: 104.0, sport: "nba" },
+                "🇺🇸 NBA, Temporada Regular": {
+                    "Nuggets vs Pacers": { local: "Nuggets", visitante: "Pacers", estado: "EN VIVO", periodo: "En curso (Medio Tiempo)", base_l: 114.5, base_v: 104.0, sport: "nba" },
                     "Nets vs Hawks": { local: "Nets", visitante: "Hawks", hora: "5:30 p.m.", base_l: 108.0, base_v: 112.5, sport: "nba" },
                     "Knicks vs Cavaliers": { local: "Knicks", visitante: "Cavaliers", hora: "6:00 p.m.", base_l: 110.0, base_v: 113.0, sport: "nba" },
                     "Wizards vs Thunder": { local: "Wizards", visitante: "Thunder", hora: "6:00 p.m.", base_l: 105.5, base_v: 119.0, sport: "nba" },
                     "Magic vs Warriors": { local: "Magic", visitante: "Warriors", hora: "6:30 p.m.", base_l: 107.0, base_v: 112.0, sport: "nba" },
                     "Rockets vs Suns": { local: "Rockets", visitante: "Suns", hora: "7:00 p.m.", base_l: 111.0, base_v: 114.5, sport: "nba" },
-                    "Spurs vs Trail Blazers": { local: "Spurs", visitante: "Trail Blazers", hora: "8:00 p.m.", base_l: 109.0, base_v: 107.5, sport: "nba" }
+                    "Spurs vs Trail Blazers": { local: "Spurs", visitante: "Trail Blazers", hora: "8:00 p.m.", base_l: 109.0, base_v: 107.5, sport: "nba" },
+                    "Lakers vs Celtics": { local: "Lakers", visitante: "Celtics", hora: "8:30 p.m.", base_l: 112.0, base_v: 116.5, sport: "nba" },
+                    "Bucks vs Mavericks": { local: "Bucks", visitante: "Mavericks", hora: "9:00 p.m.", base_l: 115.0, base_v: 114.0, sport: "nba" }
                 }
             },
             "futbol": {
                 "🇲🇽 México · Liga MX": {
-                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", estado: "EN VIVO", marcador: "1 - 1", periodo: "2T 78'", base_l: 1.15, base_v: 1.40, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" },
+                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", estado: "EN VIVO", periodo: "Segundo Tiempo", base_l: 1.15, base_v: 1.40, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" },
                     "America vs Cruz Azul": { local: "America", visitante: "Cruz Azul", hora: "5:00 p.m.", base_l: 1.55, base_v: 1.35, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.8" },
                     "Monterrey vs Tigres": { local: "Monterrey", visitante: "Tigres", hora: "7:00 p.m.", base_l: 1.60, base_v: 1.50, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.2" },
-                    "Chivas vs Pumas": { local: "Chivas", visitante: "Pumas", hora: "9:05 p.m.", base_l: 1.40, base_v: 1.30, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.1" },
-                    "Toluca vs Santos": { local: "Toluca", visitante: "Santos", hora: "9:00 p.m.", base_l: 1.70, base_v: 1.20, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "3", metric2_lbl: "Córners", metric2_val: "11.5" }
+                    "Chivas vs Pumas": { local: "Chivas", visitante: "Pumas", hora: "9:05 p.m.", base_l: 1.40, base_v: 1.30, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.1" }
+                },
+                "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra · Premier League": {
+                    "Arsenal vs Chelsea": { local: "Arsenal", visitante: "Chelsea", hora: "7:30 a.m.", base_l: 1.75, base_v: 1.15, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "11.4" },
+                    "Man City vs Liverpool": { local: "Man City", visitante: "Liverpool", hora: "10:00 a.m.", base_l: 1.90, base_v: 1.65, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "3", metric2_lbl: "Córners", metric2_val: "12.2" }
+                },
+                "🇪🇸 España · La Liga": {
+                    "Real Madrid vs Barcelona": { local: "Real Madrid", visitante: "Barcelona", hora: "2:00 p.m.", base_l: 1.80, base_v: 1.70, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.0" }
                 }
             }
         };
@@ -390,17 +406,16 @@ html_code = """
                         let timeBadgeHTML = '';
                         if(datos.estado === "EN VIVO") {
                             timeBadgeHTML = `
-                                <div class="flex flex-col w-20">
+                                <div class="flex flex-col w-24">
                                     <div class="flex items-center space-x-1">
                                         <span class="w-2 h-2 rounded-full bg-red-500 live-dot"></span>
                                         <span class="text-[9px] text-red-400 font-extrabold uppercase">EN VIVO</span>
                                     </div>
-                                    <span class="text-[10px] text-white font-bold mt-0.5">${datos.marcador}</span>
-                                    <span class="text-[9px] text-neutral-400">${datos.periodo}</span>
+                                    <span class="text-[9px] text-neutral-400 font-semibold mt-1">${datos.periodo}</span>
                                 </div>
                             `;
                         } else {
-                            timeBadgeHTML = `<div class="w-20 text-[10px] text-neutral-400 font-semibold">${datos.hora}</div>`;
+                            timeBadgeHTML = `<div class="w-24 text-[10px] text-neutral-400 font-semibold">${datos.hora}</div>`;
                         }
 
                         html += `
