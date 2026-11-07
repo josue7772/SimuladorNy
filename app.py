@@ -106,9 +106,12 @@ cartelera_global = {
     }
 }
 
-if "partido_activo" not in st.session_state:
-    st.session_state["partido_activo"] = "Atlas vs Pachuca"
-    st.session_state["liga_activa"] = "🇲🇽 Liga MX, Apertura"
+# Validación robusta de estado para evitar errores de claves
+if "liga_activa" not in st.session_state or st.session_state["liga_activa"] not in cartelera_global:
+    st.session_state["liga_activa"] = list(cartelera_global.keys())[0]
+
+if "partido_activo" not in st.session_state or st.session_state["partido_activo"] not in cartelera_global[st.session_state["liga_activa"]]:
+    st.session_state["partido_activo"] = list(cartelera_global[st.session_state["liga_activa"]].keys())[0]
 
 st.markdown('<div class="section-header">📅 Cartelera Mundial de Partidos</div>', unsafe_allow_html=True)
 st.markdown('<span style="color: #64748b; font-size: 12px;">Explora las ligas y selecciona un encuentro activo:</span>', unsafe_allow_html=True)
