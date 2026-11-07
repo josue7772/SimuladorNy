@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.set_page_config(page_title="SimuladorNy", page_icon="🏀", layout="centered")
+st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
 html_code = """
 <!DOCTYPE html>
@@ -80,7 +80,7 @@ html_code = """
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.goHome()">
                 <div class="w-8 h-8 rounded-xl bg-neutral-900 border border-neutral-700 flex items-center justify-center text-sm shadow-inner" id="header-icon">
-                    🏀
+                    ⚽
                 </div>
                 <div>
                     <h1 class="font-extrabold text-sm tracking-wider text-white uppercase leading-tight">Simulador<span class="text-neutral-400">Ny</span></h1>
@@ -104,82 +104,79 @@ html_code = """
     </main>
 
     <nav class="fixed bottom-0 left-0 right-0 z-50 bg-[#0b0d10]/95 backdrop-blur-xl border-t border-borderSubtle px-3 py-3">
-        <div class="max-w-md mx-auto grid grid-cols-5 gap-1.5 text-center">
-            <button onclick="app.setSport('futbol')" id="pill-futbol" class="sport-pill py-2 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
+        <div class="max-w-md mx-auto grid grid-cols-4 gap-2 text-center">
+            <button onclick="app.setSport('futbol')" id="pill-futbol" class="sport-pill active py-2.5 rounded-xl flex flex-col items-center justify-center space-y-1">
                 <span class="text-base">⚽</span>
                 <span class="text-[9px] uppercase font-bold tracking-wider">Fútbol</span>
             </button>
-            <button onclick="app.setSport('nhl')" id="pill-nhl" class="sport-pill py-2 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
-                <span class="text-base">🏒</span>
-                <span class="text-[9px] uppercase font-bold tracking-wider">NHL</span>
-            </button>
-            <button onclick="app.setSport('nba')" id="pill-nba" class="sport-pill active py-2 rounded-xl flex flex-col items-center justify-center space-y-1">
+            <button onclick="app.setSport('nba')" id="pill-nba" class="sport-pill py-2.5 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
                 <span class="text-base">🏀</span>
                 <span class="text-[9px] uppercase font-bold tracking-wider">NBA</span>
             </button>
-            <button onclick="app.setSport('nfl')" id="pill-nfl" class="sport-pill py-2 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
-                <span class="text-base">🏈</span>
-                <span class="text-[9px] uppercase font-bold tracking-wider">NFL</span>
-            </button>
-            <button onclick="app.setSport('mlb')" id="pill-mlb" class="sport-pill py-2 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
+            <button onclick="app.setSport('kbo')" id="pill-kbo" class="sport-pill py-2.5 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
                 <span class="text-base">⚾</span>
-                <span class="text-[9px] uppercase font-bold tracking-wider">MLB</span>
+                <span class="text-[9px] uppercase font-bold tracking-wider">KBO</span>
+            </button>
+            <button onclick="app.setSport('nhl')" id="pill-nhl" class="sport-pill py-2.5 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400">
+                <span class="text-base">🏒</span>
+                <span class="text-[9px] uppercase font-bold tracking-wider">NHL</span>
             </button>
         </div>
     </nav>
 
     <script>
+        // Únicamente logotipos oficiales estables para NBA (eliminados en fútbol para evitar errores)
         const teamBadges = {
-            // NBA
             "Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
             "Pacers": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
             "Nets": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png",
             "Hawks": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
             "Knicks": "https://a.espncdn.com/i/teamlogos/nba/500/ny.png",
             "Cavaliers": "https://a.espncdn.com/i/teamlogos/nba/500/cle.png",
-            "Wizards": "https://a.espncdn.com/i/teamlogos/nba/500/wsh.png",
-            "Thunder": "https://a.espncdn.com/i/teamlogos/nba/500/okc.png",
-            "Magic": "https://a.espncdn.com/i/teamlogos/nba/500/orl.png",
             "Warriors": "https://a.espncdn.com/i/teamlogos/nba/500/gs.png",
-            "Rockets": "https://a.espncdn.com/i/teamlogos/nba/500/hou.png",
-            "Suns": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png",
-            "Spurs": "https://a.espncdn.com/i/teamlogos/nba/500/sas.png",
-            "Trail Blazers": "https://a.espncdn.com/i/teamlogos/nba/500/por.png",
-            // Liga MX (Escudos corregidos sin interrogaciones)
-            "Atlas": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
-            "Pachuca": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
-            "America": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
-            "Cruz Azul": "https://a.espncdn.com/i/teamlogos/soccer/500/2324.png",
-            "Monterrey": "https://a.espncdn.com/i/teamlogos/soccer/500/2338.png",
-            "Tigres": "https://a.espncdn.com/i/teamlogos/soccer/500/2343.png",
-            "Chivas": "https://a.espncdn.com/i/teamlogos/soccer/500/2322.png",
-            "Pumas": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png"
+            "Lakers": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png",
+            "Celtics": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png"
         };
 
         const sportsData = {
-            "nba": {
-                "🇺🇸 NBA, Partidos de Hoy": {
-                    "Nuggets vs Pacers": { local: "Nuggets", visitante: "Pacers", estado: "EN VIVO", periodo: "En curso", base_l: 114.5, base_v: 104.0, sport: "nba" },
-                    "Nets vs Hawks": { local: "Nets", visitante: "Hawks", hora: "5:30 p.m.", base_l: 108.0, base_v: 112.5, sport: "nba" },
-                    "Knicks vs Cavaliers": { local: "Knicks", visitante: "Cavaliers", hora: "6:00 p.m.", base_l: 110.0, base_v: 113.0, sport: "nba" },
-                    "Wizards vs Thunder": { local: "Wizards", visitante: "Thunder", hora: "6:00 p.m.", base_l: 105.5, base_v: 119.0, sport: "nba" },
-                    "Magic vs Warriors": { local: "Magic", visitante: "Warriors", hora: "6:30 p.m.", base_l: 107.0, base_v: 112.0, sport: "nba" },
-                    "Rockets vs Suns": { local: "Rockets", visitante: "Suns", hora: "7:00 p.m.", base_l: 111.0, base_v: 114.5, sport: "nba" },
-                    "Spurs vs Trail Blazers": { local: "Spurs", visitante: "Trail Blazers", hora: "8:00 p.m.", base_l: 109.0, base_v: 107.5, sport: "nba" }
+            "futbol": {
+                "🇲🇽 México · Liga MX": {
+                    "América vs Cruz Azul": { local: "América", visitante: "Cruz Azul", hora: "5:00 p.m.", base_l: 1.55, base_v: 1.35, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.8" },
+                    "Monterrey vs Tigres": { local: "Monterrey", visitante: "Tigres", hora: "7:00 p.m.", base_l: 1.60, base_v: 1.50, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.2" }
+                },
+                "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra · Premier League": {
+                    "Arsenal vs Chelsea": { local: "Arsenal", visitante: "Chelsea", hora: "7:30 a.m.", base_l: 1.75, base_v: 1.15, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "11.4" },
+                    "Man City vs Liverpool": { local: "Man City", visitante: "Liverpool", hora: "10:00 a.m.", base_l: 1.90, base_v: 1.65, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "3", metric2_lbl: "Córners", metric2_val: "12.2" }
+                },
+                "🇪🇸 España · La Liga": {
+                    "Real Madrid vs Barcelona": { local: "Real Madrid", visitante: "Barcelona", hora: "2:00 p.m.", base_l: 1.80, base_v: 1.70, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.0" }
                 }
             },
-            "futbol": {
-                "🇲🇽 México · Liga MX (Partidos de Hoy)": {
-                    "America vs Cruz Azul": { local: "America", visitante: "Cruz Azul", hora: "5:00 p.m.", base_l: 1.55, base_v: 1.35, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.8" },
-                    "Monterrey vs Tigres": { local: "Monterrey", visitante: "Tigres", hora: "7:00 p.m.", base_l: 1.60, base_v: 1.50, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.2" },
-                    "Chivas vs Pumas": { local: "Chivas", visitante: "Pumas", hora: "9:05 p.m.", base_l: 1.40, base_v: 1.30, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.1" }
+            "nba": {
+                "🇺🇸 NBA, Estados Unidos": {
+                    "Nuggets vs Pacers": { local: "Nuggets", visitante: "Pacers", estado: "EN VIVO", periodo: "Medio Tiempo", base_l: 114.5, base_v: 104.0, sport: "nba" },
+                    "Nets vs Hawks": { local: "Nets", visitante: "Hawks", hora: "5:30 p.m.", base_l: 108.0, base_v: 112.5, sport: "nba" },
+                    "Knicks vs Cavaliers": { local: "Knicks", visitante: "Cavaliers", hora: "6:00 p.m.", base_l: 110.0, base_v: 113.0, sport: "nba" },
+                    "Lakers vs Celtics": { local: "Lakers", visitante: "Celtics", hora: "8:30 p.m.", base_l: 112.0, base_v: 116.5, sport: "nba" }
+                }
+            },
+            "kbo": {
+                "🇰🇷 KBO League, Corea del Sur": {
+                    "Doosan Bears vs LG Twins": { local: "Doosan Bears", visitante: "LG Twins", hora: "1:00 a.m.", base_l: 4.5, base_v: 5.0, sport: "beisbol" },
+                    "KIA Tigers vs Samsung Lions": { local: "KIA Tigers", visitante: "Samsung Lions", hora: "3:00 a.m.", base_l: 5.2, base_v: 4.8, sport: "beisbol" }
+                }
+            },
+            "nhl": {
+                "🇨🇦🇺🇸 NHL, Hockey Hielo": {
+                    "Maple Leafs vs Canadiens": { local: "Maple Leafs", visitante: "Canadiens", hora: "6:00 p.m.", base_l: 3.5, base_v: 2.8, sport: "hockey" },
+                    "Rangers vs Bruins": { local: "Rangers", visitante: "Bruins", hora: "7:30 p.m.", base_l: 3.2, base_v: 3.4, sport: "hockey" }
                 }
             }
         };
 
         class SimuladorApp {
             constructor() {
-                this.currentSport = 'nba';
+                this.currentSport = 'futbol';
                 this.currentView = 'list';
                 this.selectedLeague = null;
                 this.selectedMatch = null;
@@ -198,14 +195,15 @@ html_code = """
 
             setSport(sport) {
                 this.currentSport = sport;
-                ['futbol', 'nhl', 'nba', 'nfl', 'mlb'].forEach(s => {
+                ['futbol', 'nba', 'kbo', 'nhl'].forEach(s => {
                     const el = document.getElementById(`pill-${s}`);
                     if(el) {
-                        if(s === sport) el.className = "sport-pill active py-2 rounded-xl flex flex-col items-center justify-center space-y-1";
-                        else el.className = "sport-pill py-2 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400";
+                        if(s === sport) el.className = "sport-pill active py-2.5 rounded-xl flex flex-col items-center justify-center space-y-1";
+                        else el.className = "sport-pill py-2.5 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400";
                     }
                 });
-                document.getElementById('header-icon').innerText = sport === 'futbol' ? '⚽' : '🏀';
+                const icons = { 'futbol': '⚽', 'nba': '🏀', 'kbo': '⚾', 'nhl': '🏒' };
+                document.getElementById('header-icon').innerText = icons[sport] || '⚽';
                 this.goHome();
             }
 
@@ -261,15 +259,27 @@ html_code = """
                 };
             }
 
+            runGenericSimulation(m) {
+                let simL = (m.base_l + Math.random() * 1.5).toFixed(1);
+                let simV = (m.base_v + Math.random() * 1.5).toFixed(1);
+                let total = (parseFloat(simL) + parseFloat(simV)).toFixed(1);
+                let probL = parseFloat(simL) >= parseFloat(simV) ? 55 : 45;
+                return {
+                    ptsL: simL,
+                    ptsV: simV,
+                    totalPts: total,
+                    ganador: parseFloat(simL) >= parseFloat(simV) ? m.local : m.visitante,
+                    probL: probL,
+                    probV: 100 - probL
+                };
+            }
+
             render() {
                 const container = document.getElementById('app-content');
                 const leagueData = sportsData[this.currentSport];
 
                 if(this.currentView === 'detail') {
                     const m = sportsData[this.currentSport][this.selectedLeague][this.selectedMatch];
-                    const badgeL = teamBadges[m.local] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
-                    const badgeV = teamBadges[m.visitante] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
-
                     let statsHTML = '';
                     let probHTML = '';
 
@@ -285,8 +295,35 @@ html_code = """
                                 <span class="font-bold text-white">${sim.ptsV} pts</span>
                             </div>
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Puntos totales del partido</span>
+                                <span class="text-textMuted">Puntos totales</span>
                                 <span class="font-bold text-white">${sim.totalPts} pts</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Ganador probable</span>
+                                <span class="font-bold text-white">${sim.ganador}</span>
+                            </div>
+                        `;
+                        probHTML = `
+                            <div class="flex justify-around text-center">
+                                <div><div class="text-lg font-black text-white">${sim.probL}%</div><div class="text-[9px] text-textMuted uppercase">${m.local}</div></div>
+                                <div class="text-neutral-600">|</div>
+                                <div><div class="text-lg font-black text-white">${sim.probV}%</div><div class="text-[9px] text-textMuted uppercase">${m.visitante}</div></div>
+                            </div>
+                        `;
+                    } else if(m.sport === 'beisbol' || m.sport === 'hockey') {
+                        const sim = this.runGenericSimulation(m);
+                        statsHTML = `
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Carreras/Goles (${m.local})</span>
+                                <span class="font-bold text-white">${sim.ptsL}</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Carreras/Goles (${m.visitante})</span>
+                                <span class="font-bold text-white">${sim.ptsV}</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Total estimado</span>
+                                <span class="font-bold text-white">${sim.totalPts}</span>
                             </div>
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
                                 <span class="text-textMuted">Ganador probable</span>
@@ -333,17 +370,11 @@ html_code = """
                             <p class="text-[9px] text-textMuted uppercase tracking-widest font-bold mb-3">${this.selectedLeague}</p>
                             <div class="flex items-center justify-between">
                                 <div class="flex flex-col items-center w-5/12">
-                                    <div class="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5 mb-2 shadow">
-                                        <img src="${badgeL}" class="w-9 h-9 object-contain">
-                                    </div>
-                                    <span class="text-xs font-bold text-white">${m.local}</span>
+                                    <span class="text-sm font-bold text-white mb-2">${m.local}</span>
                                 </div>
                                 <span class="text-xs font-black text-neutral-600">VS</span>
                                 <div class="flex flex-col items-center w-5/12">
-                                    <div class="w-12 h-12 rounded-xl bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1.5 mb-2 shadow">
-                                        <img src="${badgeV}" class="w-9 h-9 object-contain">
-                                    </div>
-                                    <span class="text-xs font-bold text-white">${m.visitante}</span>
+                                    <span class="text-sm font-bold text-white mb-2">${m.visitante}</span>
                                 </div>
                             </div>
                         </div>
@@ -361,7 +392,7 @@ html_code = """
                 }
 
                 if(!leagueData) {
-                    container.innerHTML = `<div class="text-center py-12 text-xs text-neutral-500 uppercase tracking-widest">Próximamente datos para ${this.currentSport.toUpperCase()}</div>`;
+                    container.innerHTML = `<div class="text-center py-12 text-xs text-neutral-500 uppercase tracking-widest">Próximamente datos</div>`;
                     return;
                 }
 
@@ -380,9 +411,6 @@ html_code = """
                     `;
 
                     matches.forEach(([partidoKey, datos]) => {
-                        const badgeL = teamBadges[datos.local] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
-                        const badgeV = teamBadges[datos.visitante] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
-
                         let timeBadgeHTML = '';
                         if(datos.estado === "EN VIVO") {
                             timeBadgeHTML = `
@@ -398,16 +426,26 @@ html_code = """
                             timeBadgeHTML = `<div class="w-24 text-[10px] text-neutral-400 font-semibold">${datos.hora}</div>`;
                         }
 
+                        // Renderizado condicional de logos solo para NBA
+                        let badgeLHTML = '';
+                        let badgeVHTML = '';
+                        if(datos.sport === 'nba') {
+                            const bL = teamBadges[datos.local] || '';
+                            const bV = teamBadges[datos.visitante] || '';
+                            badgeLHTML = `<img src="${bL}" class="w-5 h-5 object-contain">`;
+                            badgeVHTML = `<img src="${bV}" class="w-5 h-5 object-contain">`;
+                        }
+
                         html += `
                             <div class="flex items-center justify-between py-2 border-b border-neutral-900/50 last:border-0">
                                 ${timeBadgeHTML}
                                 <div class="flex-1 space-y-2 px-2">
                                     <div class="flex items-center space-x-2">
-                                        <img src="${badgeL}" class="w-5 h-5 object-contain">
+                                        ${badgeLHTML}
                                         <span class="text-xs font-bold text-white truncate">${datos.local}</span>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        <img src="${badgeV}" class="w-5 h-5 object-contain">
+                                        ${badgeVHTML}
                                         <span class="text-xs font-bold text-white truncate">${datos.visitante}</span>
                                     </div>
                                 </div>
