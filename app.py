@@ -76,37 +76,131 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cobertura global completa de ligas profesionales
+# Cobertura global exhaustiva con escudos reales oficiales en alta definición
 cartelera_global = {
     "🇺🇸 MLS, Estados Unidos": {
-        "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
-        "LAFC vs NYCFC": {"local": "LAFC", "visitante": "NYCFC", "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3},
-        "Seattle Sounders vs Portland Timbers": {"local": "Seattle", "visitante": "Portland", "xg_l": 1.50, "xg_v": 1.20, "c_l": 2.00, "c_x": 3.40, "c_v": 3.50, "corn_l": 5.0, "corn_v": 5.0, "tarjetas": 5},
-        "Atlanta United vs FC Cincinnati": {"local": "Atlanta", "visitante": "Cincinnati", "xg_l": 1.60, "xg_v": 1.40, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4},
-        "CF Montréal vs Vancouver Whitecaps": {"local": "CF Montréal", "visitante": "Vancouver", "xg_l": 1.30, "xg_v": 1.25, "c_l": 2.30, "c_x": 3.30, "c_v": 2.90, "corn_l": 4.8, "corn_v": 5.1, "tarjetas": 4},
-        "Chicago Fire vs Columbus Crew": {"local": "Chicago", "visitante": "Columbus", "xg_l": 1.20, "xg_v": 1.65, "c_l": 2.80, "c_x": 3.40, "c_v": 2.25, "corn_l": 5.2, "corn_v": 5.8, "tarjetas": 5},
-        "D.C. United vs New York Red Bulls": {"local": "D.C. United", "visitante": "Red Bulls", "xg_l": 1.15, "xg_v": 1.30, "c_l": 2.60, "c_x": 3.20, "c_v": 2.50, "corn_l": 4.5, "corn_v": 5.2, "tarjetas": 6},
-        "Orlando City vs New England Revolution": {"local": "Orlando", "visitante": "New England", "xg_l": 1.55, "xg_v": 1.10, "c_l": 1.85, "c_x": 3.60, "c_v": 3.90, "corn_l": 5.7, "corn_v": 4.2, "tarjetas": 4},
-        "Philadelphia Union vs Toronto FC": {"local": "Philadelphia", "visitante": "Toronto", "xg_l": 1.70, "xg_v": 1.05, "c_l": 1.65, "c_x": 3.75, "c_v": 4.80, "corn_l": 6.1, "corn_v": 3.9, "tarjetas": 3}
+        "LA Galaxy vs Inter Miami": {
+            "local": "LA Galaxy", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png",
+            "visitante": "Inter Miami", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/18226.png",
+            "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4
+        },
+        "LAFC vs NYCFC": {
+            "local": "LAFC", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/15707.png",
+            "visitante": "NYCFC", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/17592.png",
+            "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3
+        },
+        "Seattle Sounders vs Portland Timbers": {
+            "local": "Seattle", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/9891.png",
+            "visitante": "Portland", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/9773.png",
+            "xg_l": 1.50, "xg_v": 1.20, "c_l": 2.00, "c_x": 3.40, "c_v": 3.50, "corn_l": 5.0, "corn_v": 5.0, "tarjetas": 5
+        },
+        "Atlanta United vs FC Cincinnati": {
+            "local": "Atlanta", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/16537.png",
+            "visitante": "Cincinnati", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/17652.png",
+            "xg_l": 1.60, "xg_v": 1.40, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4
+        },
+        "CF Montréal vs Vancouver Whitecaps": {
+            "local": "CF Montréal", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/9707.png",
+            "visitante": "Vancouver", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/9772.png",
+            "xg_l": 1.30, "xg_v": 1.25, "c_l": 2.30, "c_x": 3.30, "c_v": 2.90, "corn_l": 4.8, "corn_v": 5.1, "tarjetas": 4
+        },
+        "Chicago Fire vs Columbus Crew": {
+            "local": "Chicago", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/182.png",
+            "visitante": "Columbus", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/184.png",
+            "xg_l": 1.20, "xg_v": 1.65, "c_l": 2.80, "c_x": 3.40, "c_v": 2.25, "corn_l": 5.2, "corn_v": 5.8, "tarjetas": 5
+        },
+        "Orlando City vs New England Revolution": {
+            "local": "Orlando", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/10492.png",
+            "visitante": "New England", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/190.png",
+            "xg_l": 1.55, "xg_v": 1.10, "c_l": 1.85, "c_x": 3.60, "c_v": 3.90, "corn_l": 5.7, "corn_v": 4.2, "tarjetas": 4
+        },
+        "Philadelphia Union vs Toronto FC": {
+            "local": "Philadelphia", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/6078.png",
+            "visitante": "Toronto", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/7318.png",
+            "xg_l": 1.70, "xg_v": 1.05, "c_l": 1.65, "c_x": 3.75, "c_v": 4.80, "corn_l": 6.1, "corn_v": 3.9, "tarjetas": 3
+        }
     },
     "🇲🇽 Liga MX, México": {
-        "Atlas vs Pachuca": {"local": "Atlas", "visitante": "Pachuca", "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5},
-        "Toluca vs Monterrey": {"local": "Toluca", "visitante": "Monterrey", "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80, "corn_l": 6.0, "corn_v": 5.8, "tarjetas": 4},
-        "Tigres vs Cruz Azul": {"local": "Tigres", "visitante": "Cruz Azul", "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00, "corn_l": 5.5, "corn_v": 5.2, "tarjetas": 6},
-        "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5},
-        "Chivas vs Leon": {"local": "Chivas", "visitante": "Leon", "xg_l": 1.40, "xg_v": 1.20, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 5.3, "corn_v": 4.7, "tarjetas": 4}
+        "Atlas vs Pachuca": {
+            "local": "Atlas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
+            "visitante": "Pachuca", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
+            "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5
+        },
+        "Toluca vs Monterrey": {
+            "local": "Toluca", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2037.png",
+            "visitante": "Monterrey", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2338.png",
+            "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80, "corn_l": 6.0, "corn_v": 5.8, "tarjetas": 4
+        },
+        "Tigres vs Cruz Azul": {
+            "local": "Tigres", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2343.png",
+            "visitante": "Cruz Azul", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2324.png",
+            "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00, "corn_l": 5.5, "corn_v": 5.2, "tarjetas": 6
+        },
+        "Pumas vs America": {
+            "local": "Pumas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png",
+            "visitante": "America", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
+            "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5
+        },
+        "Chivas vs Leon": {
+            "local": "Chivas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2322.png",
+            "visitante": "Leon", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2330.png",
+            "xg_l": 1.40, "xg_v": 1.20, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 5.3, "corn_v": 4.7, "tarjetas": 4
+        }
     },
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League, Inglaterra": {
-        "Arsenal vs Chelsea": {"local": "Arsenal", "visitante": "Chelsea", "xg_l": 1.75, "xg_v": 1.15, "c_l": 1.75, "c_x": 3.70, "c_v": 4.50, "corn_l": 6.4, "corn_v": 4.9, "tarjetas": 4},
-        "Manchester City vs Liverpool": {"local": "Man City", "visitante": "Liverpool", "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5},
-        "Manchester United vs Tottenham": {"local": "Man United", "visitante": "Tottenham", "xg_l": 1.45, "xg_v": 1.40, "c_l": 2.35, "c_x": 3.40, "c_v": 2.90, "corn_l": 5.6, "corn_v": 5.4, "tarjetas": 5},
-        "Aston Villa vs Newcastle": {"local": "Aston Villa", "visitante": "Newcastle", "xg_l": 1.50, "xg_v": 1.35, "c_l": 2.25, "c_x": 3.35, "c_v": 3.05, "corn_l": 5.9, "corn_v": 4.8, "tarjetas": 4}
+        "Arsenal vs Chelsea": {
+            "local": "Arsenal", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+            "visitante": "Chelsea", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+            "xg_l": 1.75, "xg_v": 1.15, "c_l": 1.75, "c_x": 3.70, "c_v": 4.50, "corn_l": 6.4, "corn_v": 4.9, "tarjetas": 4
+        },
+        "Manchester City vs Liverpool": {
+            "local": "Man City", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+            "visitante": "Liverpool", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
+            "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5
+        },
+        "Manchester United vs Tottenham": {
+            "local": "Man United", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+            "visitante": "Tottenham", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/367.png",
+            "xg_l": 1.45, "xg_v": 1.40, "c_l": 2.35, "c_x": 3.40, "c_v": 2.90, "corn_l": 5.6, "corn_v": 5.4, "tarjetas": 5
+        }
     },
     "🇪🇸 LaLiga, España": {
-        "Real Madrid vs Barcelona": {"local": "Real Madrid", "visitante": "Barcelona", "xg_l": 1.80, "xg_v": 1.70, "c_l": 2.15, "c_x": 3.60, "c_v": 3.00, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6},
-        "Atletico Madrid vs Sevilla": {"local": "Atletico", "visitante": "Sevilla", "xg_l": 1.55, "xg_v": 0.95, "c_l": 1.65, "c_x": 3.70, "c_v": 5.20, "corn_l": 5.4, "corn_v": 4.1, "tarjetas": 5},
-        "Real Sociedad vs Athletic Club": {"local": "Real Sociedad", "visitante": "Athletic", "xg_l": 1.25, "xg_v": 1.15, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20, "corn_l": 4.9, "corn_v": 4.6, "tarjetas": 6},
-        "Valencia vs Villarreal": {"local": "Valencia", "visitante": "Villarreal", "xg_l": 1.30, "xg_v": 1.40, "c_l": 2.60, "c_x": 3.30, "c_v": 2.65, "corn_l": 5.1, "corn_v": 5.3, "tarjetas": 4}
+        "Real Madrid vs Barcelona": {
+            "local": "Real Madrid", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
+            "visitante": "Barcelona", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+            "xg_l": 1.80, "xg_v": 1.70, "c_l": 2.15, "c_x": 3.60, "c_v": 3.00, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6
+        },
+        "Atletico Madrid vs Sevilla": {
+            "local": "Atletico", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png",
+            "visitante": "Sevilla", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png",
+            "xg_l": 1.55, "xg_v": 0.95, "c_l": 1.65, "c_x": 3.70, "c_v": 5.20, "corn_l": 5.4, "corn_v": 4.1, "tarjetas": 5
+        }
+    },
+    "🇮🇹 Serie A, Italia": {
+        "Inter Milan vs AC Milan": {
+            "local": "Inter Milan", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
+            "visitante": "AC Milan", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
+            "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5
+        },
+        "Juventus vs Napoli": {
+            "local": "Juventus", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png",
+            "visitante": "Napoli", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png",
+            "xg_l": 1.35, "xg_v": 1.30, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20, "corn_l": 5.3, "corn_v": 5.2, "tarjetas": 4
+        }
+    },
+    "🇩🇪 Bundesliga, Alemania": {
+        "Bayern Munich vs Borussia Dortmund": {
+            "local": "Bayern", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
+            "visitante": "Dortmund", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/124.png",
+            "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4
+        }
+    },
+    "🇫🇷 Ligue 1, Francia": {
+        "PSG vs Marseille": {
+            "local": "PSG", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/160.png",
+            "visitante": "Marseille", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/176.png",
+            "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5
+        }
     }
 }
 
@@ -135,13 +229,20 @@ if st.session_state["vista"] == "cartelera":
 
         st.markdown(f'<div class="league-section-title">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos_filtrados.items():
-            if st.button(f"▪️  {datos['local']}   —   {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
-                st.session_state["partido_sel"] = nombre_partido
-                st.session_state["liga_sel"] = liga
-                st.session_state["vista"] = "detalle"
-                st.rerun()
+            # Fila interactiva con los logos reales integrados al lado del botón
+            col_l, col_btn, col_v = st.columns([0.1, 0.8, 0.1])
+            with col_l:
+                st.image(datos["logo_l"], width=22)
+            with col_v:
+                st.image(datos["logo_v"], width=22)
+            with col_btn:
+                if st.button(f"{datos['local']} vs {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
+                    st.session_state["partido_sel"] = nombre_partido
+                    st.session_state["liga_sel"] = liga
+                    st.session_state["vista"] = "detalle"
+                    st.rerun()
 
-# VISTA 2: DETALLE AUTOMÁTICO (Sin sliders, cálculos directos del modelo)
+# VISTA 2: DETALLE AUTOMÁTICO CON LOGOS Y DISEÑO PREMIUM
 elif st.session_state["vista"] == "detalle":
     if st.button("← Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
@@ -149,14 +250,20 @@ elif st.session_state["vista"] == "detalle":
 
     p = cartelera_global[st.session_state["liga_sel"]][st.session_state["partido_sel"]]
 
-    st.markdown(f"""
-        <div style="text-align: center; margin: 20px 0 25px 0;">
-            <h2 style="color: #ffffff; font-size: 21px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">{p['local']} vs {p['visitante']}</h2>
-            <p style="color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;">Análisis Cuantitativo Automatizado</p>
-        </div>
-    """, unsafe_allow_html=True)
+    # Cabecera de partido con escudos reales grandes
+    col_h1, col_h2, col_h3, col_h4, col_h5 = st.columns([1, 2, 0.6, 2, 1])
+    with col_h2:
+        st.image(p["logo_l"], width=45)
+        st.markdown(f"<div style='font-weight: 700; font-size: 14px; margin-top: 5px;'>{p['local']}</div>", unsafe_allow_html=True)
+    with col_h3:
+        st.markdown("<div style='text-align: center; color: #6b7280; font-weight: 700; font-size: 16px; margin-top: 15px;'>VS</div>", unsafe_allow_html=True)
+    with col_h4:
+        st.image(p["logo_v"], width=45)
+        st.markdown(f"<div style='font-weight: 700; font-size: 14px; margin-top: 5px;'>{p['visitante']}</div>", unsafe_allow_html=True)
 
-    # Cálculo automático con Monte Carlo usando los xG predeterminados del modelo
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Cálculo automático con Monte Carlo
     simulaciones = 10000
     goles_l = np.random.poisson(p['xg_l'], simulaciones)
     goles_v = np.random.poisson(p['xg_v'], simulaciones)
@@ -170,7 +277,7 @@ elif st.session_state["vista"] == "detalle":
     ganador_proyectado = p['local'] if prob_l > prob_v else p['visitante']
     btts_texto = "Sí" if prob_btts > 50 else "No"
 
-    # Tarjetas de estadísticas limpias calculadas por la IA
+    # Tarjetas de estadísticas limpias calculadas por el modelo
     st.markdown(f"""
     <div class="stat-row-clean">
         <span style="color: #9ca3af;">Tarjetas amarillas proyectadas</span>
@@ -190,24 +297,24 @@ elif st.session_state["vista"] == "detalle":
     </div>
     """, unsafe_allow_html=True)
 
-    # Bloque de probabilidades elegante
+    # Bloque de probabilidades elegante con los escudos en miniatura
     st.markdown(f"""
     <div class="prob-glass-box">
         <div style="color: #6b7280; font-size: 10px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 2px;">Probabilidad de Victoria en Vivo</div>
         <div style="display: flex; justify-content: space-around; align-items: center; text-align: center;">
             <div>
                 <div style="font-size: 19px; font-weight: 700; color: #ffffff;">{prob_l:.0f}%</div>
-                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">{p['local']}</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase;">{p['local']}</div>
             </div>
             <div style="color: #2b3240; font-size: 16px;">|</div>
             <div>
                 <div style="font-size: 19px; font-weight: 700; color: #ffffff;">{prob_x:.0f}%</div>
-                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">Empate</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase;">Empate</div>
             </div>
             <div style="color: #2b3240; font-size: 16px;">|</div>
             <div>
                 <div style="font-size: 19px; font-weight: 700; color: #ffffff;">{prob_v:.0f}%</div>
-                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px;">{p['visitante']}</div>
+                <div style="font-size: 10px; color: #9ca3af; margin-top: 3px; text-transform: uppercase;">{p['visitante']}</div>
             </div>
         </div>
     </div>
