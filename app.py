@@ -125,7 +125,6 @@ html_code = """
     </nav>
 
     <script>
-        // Mapeo exhaustivo y verificado con logotipos oficiales estables de Fútbol y NBA
         const teamBadges = {
             // Fútbol
             "LA Galaxy": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png",
@@ -143,7 +142,7 @@ html_code = """
             "Arsenal": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
             "Chelsea": "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
             
-            // NBA (Nombres completos y cortos mapeados correctamente)
+            // NBA
             "Indiana Pacers": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
             "Indiana": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
             "Denver Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
@@ -157,19 +156,19 @@ html_code = """
         const sportsData = {
             "futbol": {
                 "🇲🇽 Mexico · Liga MX": {
-                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", hora: "4:00 p.m.", xg_l: 1.15, xg_v: 1.40, corn_l: 5.1, corn_v: 5.5, tarjetas: 5 },
-                    "Tigres vs Cruz Azul": { local: "Tigres", visitante: "Cruz Azul", hora: "6:00 p.m.", xg_l: 1.45, xg_v: 1.35, corn_l: 5.5, corn_v: 5.2, tarjetas: 6 },
-                    "Toluca vs Monterrey": { local: "Toluca", visitante: "Monterrey", hora: "6:00 p.m.", xg_l: 1.55, xg_v: 1.50, corn_l: 6.0, corn_v: 5.8, tarjetas: 4 },
-                    "Pumas vs America": { local: "Pumas", visitante: "America", hora: "8:10 p.m.", xg_l: 1.20, xg_v: 1.65, corn_l: 4.8, corn_v: 6.2, tarjetas: 5 }
+                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", hora: "4:00 p.m.", base_l: 1.15, base_v: 1.40, metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" },
+                    "Tigres vs Cruz Azul": { local: "Tigres", visitante: "Cruz Azul", hora: "6:00 p.m.", base_l: 1.45, base_v: 1.35, metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "10.7" },
+                    "Toluca vs Monterrey": { local: "Toluca", visitante: "Monterrey", hora: "6:00 p.m.", base_l: 1.55, base_v: 1.50, metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "11.8" },
+                    "Pumas vs America": { local: "Pumas", visitante: "America", hora: "8:10 p.m.", base_l: 1.20, base_v: 1.65, metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "11.0" }
                 },
                 "🇺🇸 MLS, Estados Unidos": {
-                    "LA Galaxy vs Inter Miami": { local: "LA Galaxy", visitante: "Inter Miami", hora: "4:00 p.m.", xg_l: 1.75, xg_v: 1.90, corn_l: 6.3, corn_v: 6.7, tarjetas: 4 }
+                    "LA Galaxy vs Inter Miami": { local: "LA Galaxy", visitante: "Inter Miami", hora: "4:00 p.m.", base_l: 1.75, base_v: 1.90, metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "13.0" }
                 }
             },
             "nba": {
                 "🇺🇸 NBA, Estados Unidos y Canadá": {
-                    "Indiana Pacers vs Denver Nuggets": { local: "Indiana Pacers", visitante: "Denver Nuggets", hora: "3:00 p.m.", xg_l: 112, xg_v: 115, corn_l: 0, corn_v: 0, tarjetas: 0 },
-                    "Atlanta Hawks vs Brooklyn Nets": { local: "Atlanta Hawks", visitante: "Brooklyn Nets", hora: "5:30 p.m.", xg_l: 108, xg_v: 110, corn_l: 0, corn_v: 0, tarjetas: 0 }
+                    "Indiana Pacers vs Denver Nuggets": { local: "Indiana Pacers", visitante: "Denver Nuggets", hora: "3:00 p.m.", base_l: 112.5, base_v: 115.0, is_nba: true },
+                    "Atlanta Hawks vs Brooklyn Nets": { local: "Atlanta Hawks", visitante: "Brooklyn Nets", hora: "5:30 p.m.", base_l: 108.0, base_v: 110.5, is_nba: true }
                 }
             }
         };
@@ -224,20 +223,40 @@ html_code = """
                 return k - 1;
             }
 
-            runMonteCarlo(xg_l, xg_v) {
-                const sims = 10000;
-                let wL = 0, d = 0, wV = 0, btts = 0;
-                for(let i=0; i<sims; i++) {
-                    let gL = this.poissonRandom(xg_l), gV = this.poissonRandom(xg_v);
-                    if(gL > gV) wL++; else if(gL === gV) d++; else wV++;
-                    if(gL > 0 && gV > 0) btts++;
+            runSimulation(m) {
+                if(m.is_nba) {
+                    // Simulación tipo distribución normal aproximada para básquetbol
+                    let simL = Math.round(m.base_l + (Math.random() * 6 - 3));
+                    let simV = Math.round(m.base_v + (Math.random() * 6 - 3));
+                    if(simL === simV) simL += 2; // Evitar empate exacto en NBA
+                    let totalPts = simL + simV;
+                    let probL = simL > simV ? 54 : 46;
+                    let probV = 100 - probL;
+                    return {
+                        ptsL: simL,
+                        ptsV: simV,
+                        totalPts: totalPts,
+                        ganador: simL > simV ? m.local : m.visitante,
+                        probL: probL,
+                        probX: 0,
+                        probV: probV
+                    };
+                } else {
+                    const sims = 10000;
+                    let wL = 0, d = 0, wV = 0;
+                    for(let i=0; i<sims; i++) {
+                        let gL = this.poissonRandom(m.base_l), gV = this.poissonRandom(m.base_v);
+                        if(gL > gV) wL++; else if(gL === gV) d++; else wV++;
+                    }
+                    return {
+                        ptsL: m.base_l,
+                        ptsV: m.base_v,
+                        ganador: wL >= wV ? m.local : m.visitante,
+                        probL: Math.round((wL/sims)*100),
+                        probX: Math.round((d/sims)*100),
+                        probV: Math.round((wV/sims)*100)
+                    };
                 }
-                return {
-                    probL: Math.round((wL/sims)*100),
-                    probX: Math.round((d/sims)*100),
-                    probV: Math.round((wV/sims)*100),
-                    probBtts: Math.round((btts/sims)*100)
-                };
             }
 
             render() {
@@ -248,8 +267,65 @@ html_code = """
                     const m = sportsData[this.currentSport][this.selectedLeague][this.selectedMatch];
                     const badgeL = teamBadges[m.local] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
                     const badgeV = teamBadges[m.visitante] || 'https://a.espncdn.com/i/teamlogos/soccer/500/default.png';
-                    const sim = this.runMonteCarlo(m.xg_l, m.xg_v);
-                    const ganador = sim.probL >= sim.probV ? m.local : m.visitante;
+                    const sim = this.runSimulation(m);
+
+                    let statsHTML = '';
+                    if(m.is_nba) {
+                        statsHTML = `
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Puntos proyectados (${m.local})</span>
+                                <span class="font-bold text-white">${sim.ptsL} pts</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Puntos proyectados (${m.visitante})</span>
+                                <span class="font-bold text-white">${sim.ptsV} pts</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Puntos totales del partido</span>
+                                <span class="font-bold text-white">${sim.totalPts} pts</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Ganador probable</span>
+                                <span class="font-bold text-white">${sim.ganador}</span>
+                            </div>
+                        `;
+                    } else {
+                        statsHTML = `
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">${m.metric1_lbl}</span>
+                                <span class="font-bold text-white">${m.metric1_val}</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">${m.metric2_lbl}</span>
+                                <span class="font-bold text-white">${m.metric2_val}</span>
+                            </div>
+                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
+                                <span class="text-textMuted">Ganador probable</span>
+                                <span class="font-bold text-white">${sim.ganador}</span>
+                            </div>
+                        `;
+                    }
+
+                    let probHTML = '';
+                    if(m.is_nba) {
+                        probHTML = `
+                            <div class="flex justify-around text-center">
+                                <div><div class="text-lg font-black text-white">${sim.probL}%</div><div class="text-[9px] text-textMuted uppercase">${m.local}</div></div>
+                                <div class="text-neutral-600">|</div>
+                                <div><div class="text-lg font-black text-white">${sim.probV}%</div><div class="text-[9px] text-textMuted uppercase">${m.visitante}</div></div>
+                            </div>
+                        `;
+                    } else {
+                        probHTML = `
+                            <div class="flex justify-around text-center">
+                                <div><div class="text-lg font-black text-white">${sim.probL}%</div><div class="text-[9px] text-textMuted uppercase">${m.local}</div></div>
+                                <div class="text-neutral-600">|</div>
+                                <div><div class="text-lg font-black text-white">${sim.probX}%</div><div class="text-[9px] text-textMuted uppercase">Empate</div></div>
+                                <div class="text-neutral-600">|</div>
+                                <div><div class="text-lg font-black text-white">${sim.probV}%</div><div class="text-[9px] text-textMuted uppercase">${m.visitante}</div></div>
+                            </div>
+                        `;
+                    }
 
                     container.innerHTML = `
                         <button onclick="app.goHome()" class="mb-4 text-xs font-semibold px-3 py-1.5 rounded-xl bg-cardBg border border-borderSubtle text-textLight">← Volver</button>
@@ -273,25 +349,12 @@ html_code = """
                         </div>
 
                         <div class="space-y-2 mb-4">
-                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Proyección de Puntos (Media)</span>
-                                <span class="font-bold text-white">${m.xg_l} - ${m.xg_v}</span>
-                            </div>
-                            <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
-                                <span class="text-textMuted">Ganador probable</span>
-                                <span class="font-bold text-white">${ganador}</span>
-                            </div>
+                            ${statsHTML}
                         </div>
 
                         <div class="glass-panel rounded-2xl p-4 text-center">
                             <p class="text-[9px] text-textMuted uppercase tracking-widest font-bold mb-3">Probabilidad de Victoria en Vivo</p>
-                            <div class="flex justify-around text-center">
-                                <div><div class="text-lg font-black text-white">${sim.probL}%</div><div class="text-[9px] text-textMuted uppercase">${m.local}</div></div>
-                                <div class="text-neutral-600">|</div>
-                                <div><div class="text-lg font-black text-white">${sim.probX}%</div><div class="text-[9px] text-textMuted uppercase">Empate</div></div>
-                                <div class="text-neutral-600">|</div>
-                                <div><div class="text-lg font-black text-white">${sim.probV}%</div><div class="text-[9px] text-textMuted uppercase">${m.visitante}</div></div>
-                            </div>
+                            ${probHTML}
                         </div>
                     `;
                     return;
