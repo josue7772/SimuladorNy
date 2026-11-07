@@ -1,18 +1,30 @@
 import streamlit as st
 import numpy as np
 
-st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="SimuladorNy", page_icon="soccer", layout="centered")
 
-# Estilos CSS personalizados para darle un look moderno tipo Sofascore
+# Estilos CSS estilo Sofascore (Dark Theme moderno)
 st.markdown("""
     <style>
     .stApp {
         background-color: #0b0f19;
         color: #f8fafc;
     }
+    .league-card {
+        background-color: #161e2e;
+        padding: 14px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+        border: 1px solid #233044;
+    }
+    .match-row {
+        padding: 8px 0px;
+        border-bottom: 1px solid #1f293d;
+        font-size: 15px;
+    }
     .card-match {
         background-color: #161e2e;
-        padding: 16px;
+        padding: 18px;
         border-radius: 14px;
         margin-bottom: 15px;
         border: 1px solid #233044;
@@ -22,59 +34,48 @@ st.markdown("""
         font-size: 13px;
         font-weight: 500;
     }
-    .metric-value {
-        color: #ffffff;
-        font-size: 24px;
-        font-weight: bold;
-    }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("⚽ SimuladorNy")
-st.caption("Cartelera de Partidos & Análisis Cuantitativo")
+st.title("SimuladorNy")
+st.caption("Cartelera en Vivo & Analisis Cuantitativo")
 
-# Cartelera global
+# Cartelera global organizada por ligas (Simulando Sofascore)
 cartelera_global = {
-    "Liga MX": {
-        "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20},
-        "Cruz Azul vs Tigres": {"local": "Cruz Azul", "visitante": "Tigres", "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00},
-        "Monterrey vs Chivas": {"local": "Monterrey", "visitante": "Chivas", "xg_l": 1.70, "xg_v": 1.10, "c_l": 1.95, "c_x": 3.50, "c_v": 3.80},
-        "Atlas vs Toluca": {"local": "Atlas", "visitante": "Toluca", "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40}
+    "Liga MX, Apertura": {
+        "Atlas vs Pachuca": {"local": "Atlas", "visitante": "Pachuca", "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40},
+        "Toluca vs Monterrey": {"local": "Toluca", "visitante": "Monterrey", "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80},
+        "Tigres vs Cruz Azul": {"local": "Tigres", "visitante": "Cruz Azul", "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00},
+        "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20}
     },
-    "LaLiga": {
+    "LaLiga, Espana": {
         "Valencia vs Real Madrid": {"local": "Valencia", "visitante": "Real Madrid", "xg_l": 0.90, "xg_v": 2.10, "c_l": 5.50, "c_x": 4.10, "c_v": 1.55},
         "Osasuna vs Athletic Club": {"local": "Osasuna", "visitante": "Athletic Club", "xg_l": 1.10, "xg_v": 1.25, "c_l": 2.80, "c_x": 3.10, "c_v": 2.60},
-        "Barcelona vs Atletico Madrid": {"local": "Barcelona", "visitante": "Atletico Madrid", "xg_l": 1.85, "xg_v": 1.20, "c_l": 1.80, "c_x": 3.60, "c_v": 4.20},
-        "Sevilla vs Real Betis": {"local": "Sevilla", "visitante": "Real Betis", "xg_l": 1.30, "xg_v": 1.30, "c_l": 2.50, "c_x": 3.20, "c_v": 2.80}
+        "Barcelona vs Atletico Madrid": {"local": "Barcelona", "visitante": "Atletico Madrid", "xg_l": 1.85, "xg_v": 1.20, "c_l": 1.80, "c_x": 3.60, "c_v": 4.20}
     },
-    "Premier League": {
+    "Premier League, Inglaterra": {
         "Leeds vs Tottenham": {"local": "Leeds", "visitante": "Tottenham", "xg_l": 1.27, "xg_v": 1.00, "c_l": 2.60, "c_x": 3.40, "c_v": 2.65},
         "Arsenal vs Chelsea": {"local": "Arsenal", "visitante": "Chelsea", "xg_l": 1.75, "xg_v": 1.15, "c_l": 1.75, "c_x": 3.70, "c_v": 4.50},
-        "Manchester City vs Liverpool": {"local": "Man City", "visitante": "Liverpool", "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20},
-        "Manchester United vs Newcastle": {"local": "Man United", "visitante": "Newcastle", "xg_l": 1.40, "xg_v": 1.40, "c_l": 2.40, "c_x": 3.40, "c_v": 2.90}
-    },
-    "Serie A": {
-        "Inter Milan vs AC Milan": {"local": "Inter Milan", "visitante": "AC Milan", "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60},
-        "Juventus vs Napoli": {"local": "Juventus", "visitante": "Napoli", "xg_l": 1.35, "xg_v": 1.30, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20}
-    },
-    "Bundesliga": {
-        "Bayern Munich vs Borussia Dortmund": {"local": "Bayern", "visitante": "Dortmund", "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50},
-        "RB Leipzig vs Bayer Leverkusen": {"local": "RB Leipzig", "visitante": "Leverkusen", "xg_l": 1.55, "xg_v": 1.60, "c_l": 2.60, "c_x": 3.50, "c_v": 2.50}
+        "Manchester City vs Liverpool": {"local": "Man City", "visitante": "Liverpool", "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20}
     }
 }
 
-col_l1, col_l2 = st.columns(2)
-with col_l1:
-    liga_elegida = st.selectbox("🏆 Liga", list(cartelera_global.keys()))
+# Crear lista plana de todos los partidos disponibles para un selector directo tipo cartelera
+opciones_partidos = []
+mapa_partidos = {}
 
-partidos_disponibles = cartelera_global[liga_elegida]
+for liga, partidos in cartelera_global.items():
+    for partido, datos in partidos.items():
+        etiqueta = f"[{liga}] {partido}"
+        opciones_partidos.append(etiqueta)
+        mapa_partidos[etiqueta] = datos
 
-with col_l2:
-    partido_elegido = st.selectbox("⚽ Partido", list(partidos_disponibles.keys()))
+st.markdown("### Cartelera del Dia")
+partido_seleccionado = st.selectbox("Selecciona un partido para ver el analisis:", opciones_partidos)
 
-p = partidos_disponibles[partido_elegido]
+p = mapa_partidos[partido_seleccionado]
 
-# Simulación Monte Carlo
+# Simulacion automatica de Monte Carlo
 simulaciones = 10000
 goles_l = np.random.poisson(p["xg_l"], simulaciones)
 goles_v = np.random.poisson(p["xg_v"], simulaciones)
@@ -86,7 +87,7 @@ prob_btts = (np.sum((goles_l > 0) & (goles_v > 0)) / simulaciones) * 100
 
 st.markdown("---")
 
-# Tarjeta Principal de Partido
+# Tarjeta de Datos del Partido
 st.markdown(f"""
 <div class="card-match">
     <div style="font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 12px; text-align: center;">
@@ -103,9 +104,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Tarjeta de Probabilidades Moneyline en Columnas Horizontales
+# Tarjeta de Probabilidades Moneyline
 st.markdown("""
-<div class="card-match">
+<div class="card-match" style="padding-bottom: 5px;">
     <div class="metric-label" style="text-align: center; margin-bottom: 10px;">PROBABILIDAD DE VICTORIA (MONEYLINE)</div>
 </div>
 """, unsafe_allow_html=True)
@@ -118,24 +119,19 @@ with col2:
 with col3:
     st.metric(label=str(p['visitante']), value=f"{prob_v:.0f}%", delta=f"Cuota {p['c_v']}")
 
-# Detección de Valor estilizada
 st.markdown("---")
-st.markdown("### 🎯 Detección de Valor (Caliente.mx)")
 
-ev_l = (prob_l / 100) * p["c_l"]
-ev_x = (prob_x / 100) * p["c_x"]
-ev_v = (prob_v / 100) * p["c_v"]
+# Análisis Breve del Partido (Reemplazando la detección de valor)
+st.markdown("### Analisis Breve del Encuentro")
 
-hay_alerta = False
-if ev_l > 1.05:
-    st.success(f"🔥 **¡Valor detectado!** Apuesta recomendada a favor de **{p['local']}** (EV: {ev_l:.2f})")
-    hay_alerta = True
-if ev_x > 1.05:
-    st.success(f"🔥 **¡Valor detectado!** Apuesta recomendada al **Empate** (EV: {ev_x:.2f})")
-    hay_alerta = True
-if ev_v > 1.05:
-    st.success(f"🔥 **¡Valor detectado!** Apuesta recomendada a favor de **{p['visitante']}** (EV: {ev_v:.2f})")
-    hay_alerta = True
+# Generar un resumen dinámico inteligente basado en los xG y probabilidades
+favorito = p['local'] if prob_l > prob_v else p['visitante']
+max_prob = max(prob_l, prob_v)
 
-if not hay_alerta:
-    st.info("ℹ️ Mercado estable. Sin valor claro detectado frente a las cuotas actuales.")
+analisis_texto = f"""
+- **Tendencia Ofensiva:** Las métricas de goles esperados ($xG$) indican un duelo donde **{p['local']}** genera un promedio de **{p['xg_l']}** goles por encuentro, mientras que **{p['visitante']}** registra **{p['xg_v']}** goles esperados.
+- **Probabilidad de Goles:** Existe una probabilidad del **{prob_btts:.1f}%** de que ambos equipos consigan marcar al menos un tanto durante los 90 minutos regulatorios.
+- **Conclusion Tactica:** El modelo estadístico proyecta a **{favorito}** con mayor control del trámite del partido ({max_prob:.0f}% de probabilidad de victoria), aunque las cuotas de mercado sugieren un margen estrecho que exige precaución táctica en las líneas de apuestas.
+"""
+
+st.info(analisis_texto)
