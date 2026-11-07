@@ -123,47 +123,18 @@ html_code = """
     </nav>
 
     <script>
-        const teamBadges = {
-            "LA Galaxy": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/LA_Galaxy_logo_%282007%E2%80%932023%29.svg/500px-LA_Galaxy_logo_%282007%E2%80%932023%29.svg.png",
-            "Inter Miami": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Inter_Miami_CF_logo.svg/500px-Inter_Miami_CF_logo.svg.png",
-            "LAFC": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Los_Angeles_FC_%28logo%29.svg/500px-Los_Angeles_FC_%28logo%29.svg.png",
-            "NYCFC": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/New_York_City_FC_logo.svg/500px-New_York_City_FC_logo.svg.png",
-            "Seattle": "https://upload.wikimedia.org/wikipedia/en/thumb/c/ce/Seattle_Sounders_FC_logo_%282024%29.svg/500px-Seattle_Sounders_FC_logo_%282024%29.svg.png",
-            "Portland": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d7/Portland_Timbers_logo.svg/500px-Portland_Timbers_logo.svg.png",
-            "Atlanta": "https://upload.wikimedia.org/wikipedia/en/thumb/0/07/Atlanta_United_FC_logo.svg/500px-Atlanta_United_FC_logo.svg.png",
-            "Cincinnati": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d5/FC_Cincinnati_logo.svg/500px-FC_Cincinnati_logo.svg.png",
-            "Atlas": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Atlas_FC_logo.svg/500px-Atlas_FC_logo.svg.png",
-            "Pachuca": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/CF_Pachuca_logo.svg/500px-CF_Pachuca_logo.svg.png",
-            "Toluca": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Deportivo_Toluca_FC_logo.svg/500px-Deportivo_Toluca_FC_logo.svg.png",
-            "Monterrey": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/CF_Monterrey_logo.svg/500px-CF_Monterrey_logo.svg.png",
-            "Tigres": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Tigres_UANL_logo.svg/500px-Tigres_UANL_logo.svg.png",
-            "Cruz Azul": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Cruz_Azul_fc_logo.svg/500px-Cruz_Azul_fc_logo.svg.png",
-            "Pumas": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Pumas_UNAM_logo.svg/500px-Pumas_UNAM_logo.svg.png",
-            "America": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Club_Am%C3%A9rica_logo_%282023%29.svg/500px-Club_Am%C3%A9rica_logo_%282023%29.svg.png",
-            "Chivas": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Guadalajara_logo.svg/500px-Guadalajara_logo.svg.png",
-            "Leon": "https://upload.wikimedia.org/wikipedia/en/thumb/9/9f/Club_Le%C3%B3n_logo.svg/500px-Club_Le%C3%B3n_logo.svg.png",
-            "Arsenal": "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/500px-Arsenal_FC.svg.png",
-            "Chelsea": "https://upload.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/500px-Chelsea_FC.svg.png",
-            "Man City": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/500px-Manchester_City_FC_badge.svg.png",
-            "Liverpool": "https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/500px-Liverpool_FC.svg.png",
-            "Man United": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Manchester_United_FC_crest.svg/500px-Manchester_United_FC_crest.svg.png",
-            "Tottenham": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b4/Tottenham_Hotspur.svg/500px-Tottenham_Hotspur.svg.png",
-            "Real Madrid": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/500px-Real_Madrid_CF.svg.png",
-            "Barcelona": "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/500px-FC_Barcelona_%28crest%29.svg.png",
-            "Atletico": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f4/Atletico_Madrid_2024_logo.svg/500px-Atletico_Madrid_2024_logo.svg.png",
-            "Sevilla": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3b/Sevilla_FC_logo.svg/500px-Sevilla_FC_logo.svg.png",
-            "Inter Milan": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/500px-FC_Internazionale_Milano_2021.svg.png",
-            "AC Milan": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/500px-Logo_of_AC_Milan.svg.png",
-            "Juventus": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Juventus_FC_2017_icon_%28black%29.svg/500px-Juventus_FC_2017_icon_%28black%29.svg.png",
-            "Napoli": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/SSC_Napoli_logo_%282022%29.svg/500px-SSC_Napoli_logo_%282022%29.svg.png",
-            "Bayern": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282002%E2%80%932024%29.svg/500px-FC_Bayern_M%C3%BCnchen_logo_%282002%E2%80%932024%29.svg.png",
-            "Dortmund": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Borussia_Dortmund_logo.svg/500px-Borussia_Dortmund_logo.svg.png",
-            "PSG": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/500px-Paris_Saint-Germain_F.C..svg.png",
-            "Marseille": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d8/Olympique_de_Marseille_logo.svg/500px-Olympique_de_Marseille_logo.svg.png",
-            "Boca Juniors": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/CA_Boca_Juniors_logo_%282010s%29.svg/500px-CA_Boca_Juniors_logo_%282010s%29.svg.png",
-            "River Plate": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/CA_River_Plate_logo_%282022%29.svg/500px-CA_River_Plate_logo_%282022%29.svg.png",
-            "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/CR_Flamengo_logo.svg/500px-CR_Flamengo_logo.svg.png",
-            "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/SE_Palmeiras_logo.svg/500px-SE_Palmeiras_logo.svg.png"
+        // Identificadores visuales limpios y garantizados para cada equipo
+        const teamIcons = {
+            "LA Galaxy": "⭐", "Inter Miami": "⚡", "LAFC": "🦅", "NYCFC": "🏙️",
+            "Seattle": "🌊", "Portland": "🌲", "Atlanta": "🚂", "Cincinnati": "🦁",
+            "Atlas": "🦊", "Pachuca": "⛏️", "Toluca": "👹", "Monterrey": "🤠",
+            "Tigres": "🐅", "Cruz Azul": "🚂", "Pumas": "🐾", "America": "🦅",
+            "Chivas": "🐐", "Leon": "🦁", "Arsenal": "💣", "Chelsea": "🦁",
+            "Man City": "🛡️", "Liverpool": "🔴", "Man United": "😈", "Tottenham": "🐓",
+            "Real Madrid": "👑", "Barcelona": "🔵", "Atletico": "🥷", "Sevilla": "⚽",
+            "Inter Milan": "🐍", "AC Milan": "👹", "Juventus": "🦓", "Napoli": "🌋",
+            "Bayern": "🔴", "Dortmund": "🐝", "PSG": "🗼", "Marseille": "⚓",
+            "Boca Juniors": "💙", "River Plate": "🤍", "Flamengo": "🥷", "Palmeiras": "🐷"
         };
 
         const carteleraGlobal = {
@@ -317,23 +288,19 @@ html_code = """
                     `;
 
                     matchEntries.forEach(([nombrePartido, datos]) => {
-                        const badgeL = teamBadges[datos.local] || 'https://upload.wikimedia.org/wikipedia/commons/a/a7/Blank_flag.svg';
-                        const badgeV = teamBadges[datos.visitante] || 'https://upload.wikimedia.org/wikipedia/commons/a/a7/Blank_flag.svg';
+                        const iconL = teamIcons[datos.local] || '⚽';
+                        const iconV = teamIcons[datos.visitante] || '⚽';
 
                         html += `
                             <button onclick="app.openDetail('${liga}', '${nombrePartido}')" class="glass-card w-full rounded-xl p-3.5 flex items-center justify-between text-left group">
                                 <div class="flex items-center space-x-3 w-11/12">
                                     <div class="flex items-center space-x-2 w-1/2 justify-end">
                                         <span class="text-xs font-semibold text-textLight text-right truncate">${datos.local}</span>
-                                        <div class="w-7 h-7 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1 flex-shrink-0">
-                                            <img src="${badgeL}" alt="${datos.local}" class="w-5 h-5 object-contain">
-                                        </div>
+                                        <span class="text-base">${iconL}</span>
                                     </div>
                                     <span class="text-[10px] text-neutral-600 font-extrabold tracking-wider">VS</span>
                                     <div class="flex items-center space-x-2 w-1/2 justify-start">
-                                        <div class="w-7 h-7 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center p-1 flex-shrink-0">
-                                            <img src="${badgeV}" alt="${datos.visitante}" class="w-5 h-5 object-contain">
-                                        </div>
+                                        <span class="text-base">${iconV}</span>
                                         <span class="text-xs font-semibold text-textLight text-left truncate">${datos.visitante}</span>
                                     </div>
                                 </div>
@@ -381,12 +348,13 @@ html_code = """
                         </button>
                     `;
                     const m = carteleraGlobal[this.selectedLeague][this.selectedMatch];
-                    const badgeL = teamBadges[m.local] || '';
-                    const badgeV = teamBadges[m.visitante] || '';
+                    const iconL = teamIcons[m.local] || '⚽';
+                    const iconV = teamIcons[m.visitante] || '⚽';
                     
                     const sim = this.runMonteCarloSimulation(m.xg_l, m.xg_v);
                     const corners = (m.corn_l + m.corn_v).toFixed(1);
                     const ganador = sim.probL >= sim.probV ? m.local : m.visitante;
+                    const ganadorIcon = sim.probL >= sim.probV ? iconL : iconV;
 
                     container.innerHTML = `
                         <div class="pt-1">
@@ -395,8 +363,8 @@ html_code = """
                                 
                                 <div class="flex items-center justify-between">
                                     <div class="flex flex-col items-center w-5/12">
-                                        <div class="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center p-2 mb-2.5 shadow-md">
-                                            <img src="${badgeL}" alt="${m.local}" class="w-11 h-11 object-contain">
+                                        <div class="w-14 h-14 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-2xl mb-2.5 shadow-md">
+                                            ${iconL}
                                         </div>
                                         <h3 class="font-bold text-sm text-white leading-tight">${m.local}</h3>
                                         <span class="text-[10px] text-neutral-400 mt-1">xG ${m.xg_l}</span>
@@ -407,8 +375,8 @@ html_code = """
                                     </div>
 
                                     <div class="flex flex-col items-center w-5/12">
-                                        <div class="w-16 h-16 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center p-2 mb-2.5 shadow-md">
-                                            <img src="${badgeV}" alt="${m.visitante}" class="w-11 h-11 object-contain">
+                                        <div class="w-14 h-14 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center text-2xl mb-2.5 shadow-md">
+                                            ${iconV}
                                         </div>
                                         <h3 class="font-bold text-sm text-white leading-tight">${m.visitante}</h3>
                                         <span class="text-[10px] text-neutral-400 mt-1">xG ${m.xg_v}</span>
@@ -435,7 +403,7 @@ html_code = """
                                 </div>
                                 <div class="glass-card rounded-xl p-3.5 flex items-center justify-between">
                                     <span class="text-xs text-textMuted">Ganador probable</span>
-                                    <span class="text-xs font-bold text-white">${ganador}</span>
+                                    <span class="text-xs font-bold text-white">${ganadorIcon} ${ganador}</span>
                                 </div>
                             </div>
 
@@ -444,7 +412,7 @@ html_code = """
                                 <div class="flex items-center justify-around text-center">
                                     <div>
                                         <div class="text-xl font-extrabold text-white">${sim.probL}%</div>
-                                        <div class="text-[10px] text-textMuted uppercase tracking-wider mt-1 font-medium">${m.local}</div>
+                                        <div class="text-[10px] text-textMuted uppercase tracking-wider mt-1 font-medium">${iconL} ${m.local}</div>
                                     </div>
                                     <div class="text-neutral-700 font-light text-lg">|</div>
                                     <div>
@@ -454,7 +422,7 @@ html_code = """
                                     <div class="text-neutral-700 font-light text-lg">|</div>
                                     <div>
                                         <div class="text-xl font-extrabold text-white">${sim.probV}%</div>
-                                        <div class="text-[10px] text-textMuted uppercase tracking-wider mt-1 font-medium">${m.visitante}</div>
+                                        <div class="text-[10px] text-textMuted uppercase tracking-wider mt-1 font-medium">${iconV} ${m.visitante}</div>
                                     </div>
                                 </div>
                             </div>
