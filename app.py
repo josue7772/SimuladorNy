@@ -79,7 +79,7 @@ html_code = """
     <header class="sticky top-0 z-50 glass-panel border-b border-borderSubtle px-4 py-3">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.goHome()">
-                <div class="w-8 h-8 rounded-xl bg-neutral-900 border border-neutral-700 flex items-center justify-center text-sm shadow-inner">
+                <div class="w-8 h-8 rounded-xl bg-neutral-900 border border-neutral-700 flex items-center justify-center text-sm shadow-inner" id="header-icon">
                     🏀
                 </div>
                 <div>
@@ -130,6 +130,7 @@ html_code = """
 
     <script>
         const teamBadges = {
+            // NBA
             "Nuggets": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
             "Pacers": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
             "Nets": "https://a.espncdn.com/i/teamlogos/nba/500/bkn.png",
@@ -144,8 +145,17 @@ html_code = """
             "Suns": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png",
             "Spurs": "https://a.espncdn.com/i/teamlogos/nba/500/sas.png",
             "Trail Blazers": "https://a.espncdn.com/i/teamlogos/nba/500/por.png",
+            // Fútbol / Liga MX
             "Atlas": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
-            "Pachuca": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png"
+            "Pachuca": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
+            "America": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
+            "Cruz Azul": "https://a.espncdn.com/i/teamlogos/soccer/500/2324.png",
+            "Monterrey": "https://a.espncdn.com/i/teamlogos/soccer/500/2338.png",
+            "Tigres": "https://a.espncdn.com/i/teamlogos/soccer/500/2343.png",
+            "Chivas": "https://a.espncdn.com/i/teamlogos/soccer/500/2322.png",
+            "Pumas": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png",
+            "Toluca": "https://a.espncdn.com/i/teamlogos/soccer/500/2037.png",
+            "Santos": "https://a.espncdn.com/i/teamlogos/soccer/500/2342.png"
         };
 
         const sportsData = {
@@ -161,8 +171,12 @@ html_code = """
                 }
             },
             "futbol": {
-                "🇲🇽 Mexico · Liga MX": {
-                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", estado: "EN VIVO", marcador: "1 - 1", periodo: "2T 78'", base_l: 1.15, base_v: 1.40, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" }
+                "🇲🇽 México · Liga MX": {
+                    "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", estado: "EN VIVO", marcador: "1 - 1", periodo: "2T 78'", base_l: 1.15, base_v: 1.40, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.6" },
+                    "America vs Cruz Azul": { local: "America", visitante: "Cruz Azul", hora: "5:00 p.m.", base_l: 1.55, base_v: 1.35, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "4", metric2_lbl: "Córners", metric2_val: "9.8" },
+                    "Monterrey vs Tigres": { local: "Monterrey", visitante: "Tigres", hora: "7:00 p.m.", base_l: 1.60, base_v: 1.50, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "6", metric2_lbl: "Córners", metric2_val: "11.2" },
+                    "Chivas vs Pumas": { local: "Chivas", visitante: "Pumas", hora: "9:05 p.m.", base_l: 1.40, base_v: 1.30, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "5", metric2_lbl: "Córners", metric2_val: "10.1" },
+                    "Toluca vs Santos": { local: "Toluca", visitante: "Santos", hora: "9:00 p.m.", base_l: 1.70, base_v: 1.20, sport: "futbol", metric1_lbl: "Tarjetas amarillas", metric1_val: "3", metric2_lbl: "Córners", metric2_val: "11.5" }
                 }
             }
         };
@@ -195,6 +209,7 @@ html_code = """
                         else el.className = "sport-pill py-2 rounded-xl flex flex-col items-center justify-center space-y-1 text-neutral-400";
                     }
                 });
+                document.getElementById('header-icon').innerText = sport === 'futbol' ? '⚽' : '🏀';
                 this.goHome();
             }
 
@@ -211,7 +226,6 @@ html_code = """
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
 
-            // Script exclusivo de simulación para FÚTBOL (Distribución de Poisson para Goles)
             runSoccerSimulation(m) {
                 let poissonRandom = (lambda) => {
                     let L = Math.exp(-lambda), k = 0, p = 1;
@@ -234,7 +248,6 @@ html_code = """
                 };
             }
 
-            // Script exclusivo de simulación para BÁSQUETBOL / NBA (Proyección de Puntos y Totales)
             runNBASimulation(m) {
                 let simL = Math.round(m.base_l + (Math.random() * 6 - 3));
                 let simV = Math.round(m.base_v + (Math.random() * 6 - 3));
@@ -265,7 +278,6 @@ html_code = """
                     let probHTML = '';
 
                     if(m.sport === 'nba') {
-                        // Ejecuta script exclusivo NBA
                         const sim = this.runNBASimulation(m);
                         statsHTML = `
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
@@ -293,7 +305,6 @@ html_code = """
                             </div>
                         `;
                     } else {
-                        // Ejecuta script exclusivo Fútbol
                         const sim = this.runSoccerSimulation(m);
                         statsHTML = `
                             <div class="match-card rounded-xl p-3 flex justify-between items-center text-xs">
