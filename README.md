@@ -1,0 +1,2 @@
+# SimuladorNy
+Simulador de Partidos 
