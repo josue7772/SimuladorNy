@@ -1,12 +1,39 @@
 import streamlit as st
 import numpy as np
 
-st.set_page_config(page_title="SimuladorNy", page_icon="soccer", layout="centered")
+st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-st.title("SimuladorNy")
-st.caption("Cartelera de Partidos & Analisis Cuantitativo")
+# Estilos CSS personalizados para darle un look moderno tipo Sofascore
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0b0f19;
+        color: #f8fafc;
+    }
+    .card-match {
+        background-color: #161e2e;
+        padding: 16px;
+        border-radius: 14px;
+        margin-bottom: 15px;
+        border: 1px solid #233044;
+    }
+    .metric-label {
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .metric-value {
+        color: #ffffff;
+        font-size: 24px;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# Cartelera global limpia y estandarizada
+st.title("⚽ SimuladorNy")
+st.caption("Cartelera de Partidos & Análisis Cuantitativo")
+
+# Cartelera global
 cartelera_global = {
     "Liga MX": {
         "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20},
@@ -38,16 +65,16 @@ cartelera_global = {
 
 col_l1, col_l2 = st.columns(2)
 with col_l1:
-    liga_elegida = st.selectbox("Liga:", list(cartelera_global.keys()))
+    liga_elegida = st.selectbox("🏆 Liga", list(cartelera_global.keys()))
 
 partidos_disponibles = cartelera_global[liga_elegida]
 
 with col_l2:
-    partido_elegido = st.selectbox("Partido:", list(partidos_disponibles.keys()))
+    partido_elegido = st.selectbox("⚽ Partido", list(partidos_disponibles.keys()))
 
 p = partidos_disponibles[partido_elegido]
 
-# Monte Carlo simulation
+# Simulación Monte Carlo
 simulaciones = 10000
 goles_l = np.random.poisson(p["xg_l"], simulaciones)
 goles_v = np.random.poisson(p["xg_v"], simulaciones)
@@ -57,14 +84,31 @@ prob_x = (np.sum(goles_l == goles_v) / simulaciones) * 100
 prob_v = (np.sum(goles_l < goles_v) / simulaciones) * 100
 prob_btts = (np.sum((goles_l > 0) & (goles_v > 0)) / simulaciones) * 100
 
-st.divider()
-
-st.subheader(f"{p['local']} vs {p['visitante']}")
-st.write(f"Goles esperados (xG): {p['local']} {p['xg_l']:.2f} | {p['visitante']} {p['xg_v']:.2f}")
-st.write(f"Ambos equipos anotan (AA): {prob_btts:.1f}%")
-
 st.markdown("---")
-st.write("Probabilidad de victoria (Moneyline):")
+
+# Tarjeta Principal de Partido
+st.markdown(f"""
+<div class="card-match">
+    <div style="font-size: 20px; font-weight: bold; color: #ffffff; margin-bottom: 12px; text-align: center;">
+        {p['local']} vs {p['visitante']}
+    </div>
+    <div style="display: flex; justify-content: space-between; background: #0b0f19; padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+        <span class="metric-label">Goles Esperados (xG)</span>
+        <span style="color: #38bdf8; font-weight: bold;">{p['local']} {p['xg_l']:.2f} | {p['visitante']} {p['xg_v']:.2f}</span>
+    </div>
+    <div style="display: flex; justify-content: space-between; background: #0b0f19; padding: 10px; border-radius: 8px;">
+        <span class="metric-label">Ambos Equipos Anotan (AA)</span>
+        <span style="color: #38bdf8; font-weight: bold;">{prob_btts:.1f}%</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Tarjeta de Probabilidades Moneyline en Columnas Horizontales
+st.markdown("""
+<div class="card-match">
+    <div class="metric-label" style="text-align: center; margin-bottom: 10px;">PROBABILIDAD DE VICTORIA (MONEYLINE)</div>
+</div>
+""", unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -74,18 +118,24 @@ with col2:
 with col3:
     st.metric(label=str(p['visitante']), value=f"{prob_v:.0f}%", delta=f"Cuota {p['c_v']}")
 
+# Detección de Valor estilizada
 st.markdown("---")
-st.subheader("Deteccion de Valor")
+st.markdown("### 🎯 Detección de Valor (Caliente.mx)")
 
 ev_l = (prob_l / 100) * p["c_l"]
 ev_x = (prob_x / 100) * p["c_x"]
 ev_v = (prob_v / 100) * p["c_v"]
 
+hay_alerta = False
 if ev_l > 1.05:
-    st.success(f"Hay valor en la victoria de {p['local']} (EV: {ev_l:.2f})")
+    st.success(f"🔥 **¡Valor detectado!** Apuesta recomendada a favor de **{p['local']}** (EV: {ev_l:.2f})")
+    hay_alerta = True
 if ev_x > 1.05:
-    st.success(f"Hay valor en el Empate (EV: {ev_x:.2f})")
+    st.success(f"🔥 **¡Valor detectado!** Apuesta recomendada al **Empate** (EV: {ev_x:.2f})")
+    hay_alerta = True
 if ev_v > 1.05:
-    st.success(f"Hay valor en la victoria de {p['visitante']} (EV: {ev_v:.2f})")
-if ev_l <= 1.05 and ev_x <= 1.05 and ev_v <= 1.05:
-    st.info("Sin valor detectado frente a las cuotas actuales.")
+    st.success(f"🔥 **¡Valor detectado!** Apuesta recomendada a favor de **{p['visitante']}** (EV: {ev_v:.2f})")
+    hay_alerta = True
+
+if not hay_alerta:
+    st.info("ℹ️ Mercado estable. Sin valor claro detectado frente a las cuotas actuales.")
