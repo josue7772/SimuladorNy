@@ -1,10 +1,14 @@
+import streamlit as st
+
+st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
+
+html_code = """
 <!DOCTYPE html>
 <html lang="es" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SimuladorNy — Inteligencia Cuantitativa Deportiva</title>
-    <!-- Tailwind CSS -->
+    <title>SimuladorNy - Inteligencia Cuantitativa Deportiva</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -36,7 +40,6 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Scrollbar personalización elegante */
         ::-webkit-scrollbar {
             width: 4px;
         }
@@ -64,7 +67,6 @@
             background: rgba(26, 31, 44, 0.85);
             border-color: rgba(255, 255, 255, 0.15);
         }
-        /* Animación de pulso para recalculado */
         @keyframes pulseGlow {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.6; transform: scale(0.98); }
@@ -76,7 +78,6 @@
 </head>
 <body class="min-h-screen pb-24 selection:bg-neutral-800 selection:text-white">
 
-    <!-- Encabezado Superior Fijo con Estética Editorial -->
     <header class="sticky top-0 z-50 glass-panel border-b border-borderSubtle px-4 py-3.5">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center space-x-2.5 cursor-pointer" onclick="app.goHome()">
@@ -94,21 +95,16 @@
         </div>
     </header>
 
-    <!-- Contenido Principal -->
     <main class="max-w-md mx-auto px-4 pt-4">
-        <!-- Navegación por pestañas superiores -->
         <div class="grid grid-cols-3 gap-1 bg-neutral-950 p-1 rounded-xl border border-borderSubtle mb-5">
             <button id="tab-cartelera" onclick="app.switchTab('cartelera')" class="py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all bg-neutral-800 text-white shadow">Cartelera</button>
             <button id="tab-directo" onclick="app.switchTab('directo')" class="py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all text-neutral-400 hover:text-white">Simulador</button>
             <button id="tab-modelo" onclick="app.switchTab('modelo')" class="py-2 text-[11px] font-bold rounded-lg uppercase tracking-wider transition-all text-neutral-400 hover:text-white">Modelo IA</button>
         </div>
 
-        <div id="app-content">
-            <!-- Se inyecta dinámicamente mediante JavaScript -->
-        </div>
+        <div id="app-content"></div>
     </main>
 
-    <!-- Menú Inferior Fijo de Navegación Estilo App Móvil Nativa -->
     <nav class="fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-borderSubtle px-6 py-2.5">
         <div class="max-w-md mx-auto flex items-center justify-around">
             <button onclick="app.switchTab('cartelera')" class="flex flex-col items-center space-y-1 text-white">
@@ -126,9 +122,7 @@
         </div>
     </nav>
 
-    <!-- Lógica de la Aplicación -->
     <script>
-        // Base de datos de escudos oficiales verificados en alta definición (SVG / PNG limpios)
         const teamBadges = {
             "LA Galaxy": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/LA_Galaxy_logo_%282007%E2%80%932023%29.svg/500px-LA_Galaxy_logo_%282007%E2%80%932023%29.svg.png",
             "Inter Miami": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Inter_Miami_CF_logo.svg/500px-Inter_Miami_CF_logo.svg.png",
@@ -172,44 +166,43 @@
             "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/SE_Palmeiras_logo.svg/500px-SE_Palmeiras_logo.svg.png"
         };
 
-        // Base de datos exhaustiva de ligas globales y partidos programados
         const carteleraGlobal = {
-            "🇺🇸 MLS, Estados Unidos": {
+            "MLS, Estados Unidos": {
                 "LA Galaxy vs Inter Miami": { local: "LA Galaxy", visitante: "Inter Miami", xg_l: 1.75, xg_v: 1.90, corn_l: 6.3, corn_v: 6.7, tarjetas: 4 },
                 "LAFC vs NYCFC": { local: "LAFC", visitante: "NYCFC", xg_l: 1.80, xg_v: 1.25, corn_l: 6.5, corn_v: 4.5, tarjetas: 3 },
                 "Seattle vs Portland": { local: "Seattle", visitante: "Portland", xg_l: 1.50, xg_v: 1.20, corn_l: 5.0, corn_v: 5.0, tarjetas: 5 },
                 "Atlanta vs Cincinnati": { local: "Atlanta", visitante: "Cincinnati", xg_l: 1.60, xg_v: 1.40, corn_l: 6.0, corn_v: 4.0, tarjetas: 4 }
             },
-            "🇲🇽 Liga MX, México": {
+            "Liga MX, México": {
                 "Atlas vs Pachuca": { local: "Atlas", visitante: "Pachuca", xg_l: 1.15, xg_v: 1.40, corn_l: 5.1, corn_v: 5.5, tarjetas: 5 },
                 "Toluca vs Monterrey": { local: "Toluca", visitante: "Monterrey", xg_l: 1.55, xg_v: 1.50, corn_l: 6.0, corn_v: 5.8, tarjetas: 4 },
                 "Tigres vs Cruz Azul": { local: "Tigres", visitante: "Cruz Azul", xg_l: 1.45, xg_v: 1.35, corn_l: 5.5, corn_v: 5.2, tarjetas: 6 },
                 "Pumas vs America": { local: "Pumas", visitante: "America", xg_l: 1.20, xg_v: 1.65, corn_l: 4.8, corn_v: 6.2, tarjetas: 5 },
                 "Chivas vs Leon": { local: "Chivas", visitante: "Leon", xg_l: 1.40, xg_v: 1.20, corn_l: 5.3, corn_v: 4.7, tarjetas: 4 }
             },
-            "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League, Inglaterra": {
+            "Premier League, Inglaterra": {
                 "Arsenal vs Chelsea": { local: "Arsenal", visitante: "Chelsea", xg_l: 1.75, xg_v: 1.15, corn_l: 6.4, corn_v: 4.9, tarjetas: 4 },
                 "Man City vs Liverpool": { local: "Man City", visitante: "Liverpool", xg_l: 1.90, xg_v: 1.65, corn_l: 7.1, corn_v: 5.8, tarjetas: 5 },
                 "Man United vs Tottenham": { local: "Man United", visitante: "Tottenham", xg_l: 1.45, xg_v: 1.40, corn_l: 5.6, corn_v: 5.4, tarjetas: 5 }
             },
-            "🇪🇸 LaLiga, España": {
+            "LaLiga, España": {
                 "Real Madrid vs Barcelona": { local: "Real Madrid", visitante: "Barcelona", xg_l: 1.80, xg_v: 1.70, corn_l: 6.2, corn_v: 5.9, tarjetas: 6 },
                 "Atletico vs Sevilla": { local: "Atletico", visitante: "Sevilla", xg_l: 1.55, xg_v: 0.95, corn_l: 5.4, corn_v: 4.1, tarjetas: 5 }
             },
-            "🇮🇹 Serie A, Italia": {
+            "Serie A, Italia": {
                 "Inter Milan vs AC Milan": { local: "Inter Milan", visitante: "AC Milan", xg_l: 1.60, xg_v: 1.25, corn_l: 5.8, corn_v: 5.0, tarjetas: 5 },
                 "Juventus vs Napoli": { local: "Juventus", visitante: "Napoli", xg_l: 1.35, xg_v: 1.30, corn_l: 5.3, corn_v: 5.2, tarjetas: 4 }
             },
-            "🇩🇪 Bundesliga, Alemania": {
+            "Bundesliga, Alemania": {
                 "Bayern vs Dortmund": { local: "Bayern", visitante: "Dortmund", xg_l: 2.30, xg_v: 1.50, corn_l: 7.5, corn_v: 5.3, tarjetas: 4 }
             },
-            "🇫🇷 Ligue 1, Francia": {
+            "Ligue 1, Francia": {
                 "PSG vs Marseille": { local: "PSG", visitante: "Marseille", xg_l: 2.10, xg_v: 1.10, corn_l: 6.9, corn_v: 4.1, tarjetas: 5 }
             },
-            "🇦🇷 Liga Profesional, Argentina": {
+            "Liga Profesional, Argentina": {
                 "Boca Juniors vs River Plate": { local: "Boca Juniors", visitante: "River Plate", xg_l: 1.25, xg_v: 1.20, corn_l: 5.1, corn_v: 4.9, tarjetas: 7 }
             },
-            "🇧🇷 Brasileirão, Brasil": {
+            "Brasileirão, Brasil": {
                 "Flamengo vs Palmeiras": { local: "Flamengo", visitante: "Palmeiras", xg_l: 1.55, xg_v: 1.30, corn_l: 6.1, corn_v: 5.2, tarjetas: 5 }
             }
         };
@@ -345,7 +338,7 @@
                                     </div>
                                 </div>
                                 <div class="text-neutral-500 group-hover:text-white transition-colors text-xs font-bold">
-                                    →
+                                    &rarr;
                                 </div>
                             </button>
                         `;
@@ -369,7 +362,6 @@
                             <p class="text-[10px] text-textMuted uppercase tracking-widest font-semibold">Inteligencia Cuantitativa en Tiempo Real</p>
                         </div>
 
-                        <!-- Barra de Búsqueda -->
                         <div class="relative mb-5">
                             <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-neutral-500 text-sm">
                                 🔍
@@ -385,7 +377,7 @@
                 } else if (this.currentTab === 'detail') {
                     headerAction.innerHTML = `
                         <button onclick="app.goHome()" class="flex items-center space-x-1 text-xs px-3 py-1.5 rounded-xl bg-cardBg border border-borderSubtle text-textLight font-semibold hover:border-neutral-500 transition-colors">
-                            <span>←</span> <span>Volver</span>
+                            <span>&larr;</span> <span>Volver</span>
                         </button>
                     `;
                     const m = carteleraGlobal[this.selectedLeague][this.selectedMatch];
@@ -398,7 +390,6 @@
 
                     container.innerHTML = `
                         <div class="pt-1">
-                            <!-- Tarjeta de Enfrentamiento -->
                             <div class="glass-panel rounded-2xl p-6 text-center shadow-xl border border-borderSubtle mb-5 relative">
                                 <p class="text-[10px] text-textMuted uppercase tracking-widest font-semibold mb-4">${this.selectedLeague}</p>
                                 
@@ -425,12 +416,10 @@
                                 </div>
                             </div>
 
-                            <!-- Botón para Recalcular Simulación -->
                             <button onclick="app.recalculateSim()" class="w-full mb-5 py-3 rounded-xl bg-neutral-900 border border-neutral-700 text-white font-bold text-xs uppercase tracking-wider hover:bg-neutral-800 active:scale-95 transition-all flex items-center justify-center space-x-2">
                                 <span>⚡</span> <span>Recalcular Simulación (10,000 Iteraciones)</span>
                             </button>
 
-                            <!-- Bloques Estadísticos Proyectados -->
                             <div class="space-y-2 mb-5">
                                 <div class="glass-card rounded-xl p-3.5 flex items-center justify-between">
                                     <span class="text-xs text-textMuted">Tarjetas amarillas proyectadas</span>
@@ -450,7 +439,6 @@
                                 </div>
                             </div>
 
-                            <!-- Distribución de Probabilidades de Monte Carlo -->
                             <div id="sim-box" class="glass-panel rounded-2xl p-5 border border-borderSubtle shadow-xl">
                                 <p class="text-[10px] text-textMuted text-center uppercase tracking-widest font-semibold mb-4">Probabilidad de Victoria en Vivo</p>
                                 <div class="flex items-center justify-around text-center">
@@ -491,8 +479,8 @@
                     container.innerHTML = `
                         <div class="pt-2 space-y-4">
                             <div class="glass-panel rounded-2xl p-5 border border-borderSubtle">
-                                <h3 class="text-sm font-bold text-white mb-1 uppercase tracking-wider">Algoritmo Monte Carlo & Poisson</h3>
-                                <p class="text-xs text-textMuted leading-relaxed">El modelo ejecuta 10,000 iteraciones por evento calculando métricas de goles esperados ($xG$), distribución de tiros de esquina y propensión a tarjetas amarillas sin intervención manual.</p>
+                                <h3 class="text-sm font-bold text-white mb-1 uppercase tracking-wider">Algoritmo Monte Carlo y Poisson</h3>
+                                <p class="text-xs text-textMuted leading-relaxed">El modelo ejecuta 10,000 iteraciones por evento calculando métricas de goles esperados (xG), distribución de tiros de esquina y propensión a tarjetas amarillas sin intervención manual.</p>
                             </div>
                             <div class="glass-card rounded-xl p-4 flex justify-between items-center">
                                 <span class="text-xs text-textMuted">Precisión del Modelo</span>
@@ -516,3 +504,6 @@
     </script>
 </body>
 </html>
+"""
+
+st.components.v1.html(html_code, height=850, scrolling=True)
