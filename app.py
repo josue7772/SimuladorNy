@@ -1,72 +1,75 @@
-import numpy as np
 import streamlit as st
+import numpy as np
 
-st.set_page_config(page_title="Simulador de Partidos y Value Bets", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="SimuladorNy - Apuestas Deportivas", page_icon="⚽", layout="centered")
 
-st.title("⚽ Simulador Analítico & Value Bets")
-st.write("Calcula probabilidades de goles, córners, tarjetas y detecta valor contra Caliente.mx.")
+st.title("⚽ SimuladorNy: Modelo Poisson & Monte Carlo")
+st.markdown("Herramienta de análisis cuantitativo para detección de valor (Value Bets) frente a cuotas de mercado.")
 
-st.sidebar.header("⚙️ Configuración del Partido")
+st.sidebar.header("⚙️ Parámetros del Partido")
 
 equipo_local = st.sidebar.text_input("Equipo Local", "América")
-equipo_visitante = st.sidebar.text_input("Equipo Visitante", "Chivas")
+equipo_visitante = st.sidebar.text_input("Equipo Visitante", "Guadalajara")
 
-st.sidebar.subheader("Estadísticas Base")
-goles_base_local = st.sidebar.number_input(f"Goles esperados ({equipo_local})", value=1.6, step=0.1)
-goles_base_visitante = st.sidebar.number_input(f"Goles esperados ({equipo_visitante})", value=1.1, step=0.1)
-corners_base_local = st.sidebar.number_input(f"Córners ({equipo_local})", value=5.5, step=0.5)
-corners_base_visitante = st.sidebar.number_input(f"Córners ({equipo_visitante})", value=4.0, step=0.5)
+st.sidebar.subheader("📊 Goles Esperados (xG Base)")
+xg_local = st.sidebar.slider(f"xG {equipo_local}", 0.5, 4.0, 1.65, 0.05)
+xg_visitante = st.sidebar.slider(f"xG {equipo_visitante}", 0.2, 3.0, 1.15, 0.05)
 
-st.sidebar.subheader("Factores Contextuales")
-factor_localia = st.sidebar.slider("Ventaja por Localía (%)", 0, 30, 15) / 100.0
-baja_estrella = st.sidebar.checkbox(f"¿{equipo_local} no tiene a su delantero estrella?")
-rigor_arbitro = st.sidebar.slider("Rigor del Árbitro (Tarjetas)", 2.0, 7.0, 4.5)
+st.sidebar.subheader("💰 Cuotas de Caliente.mx")
+cuota_local = st.sidebar.number_input(f"Cuota Local ({equipo_local})", min_value=1.01, value=1.95, step=0.01)
+cuota_empate = st.sidebar.number_input("Cuota Empate (X)", min_value=1.01, value=3.40, step=0.01)
+cuota_visitante = st.sidebar.number_input(f"Cuota Visitante ({equipo_visitante})", min_value=1.01, value=4.00, step=0.01)
 
-st.sidebar.subheader("🎲 Cuotas de Caliente.mx")
-cuota_caliente_local = st.sidebar.number_input(f"Cuota Gana {equipo_local}", value=1.85, step=0.05)
-cuota_caliente_empate = st.sidebar.number_input("Cuota Empate", value=3.50, step=0.05)
-cuota_caliente_visita = st.sidebar.number_input(f"Cuota Gana {equipo_visitante}", value=4.20, step=0.05)
+simulaciones = st.sidebar.slider("Número de Simulaciones Monte Carlo", 1000, 50000, 10000, 1000)
 
-if st.button("🚀 Ejecutar Simulación de Partidos", type="primary"):
-    lambda_goles_loc = goles_base_local * (1 + factor_localia)
-    lambda_goles_vis = goles_base_visitante
-    if baja_estrella:
-        lambda_goles_loc *= 0.80
-
-    num_simulaciones = 10000
-    sim_goles_loc = np.random.poisson(lambda_goles_loc, num_simulaciones)
-    sim_goles_vis = np.random.poisson(lambda_goles_vis, num_simulaciones)
-    sim_corners = np.random.poisson(corners_base_local + corners_base_visitante, num_simulaciones)
-    sim_tarjetas = np.random.poisson(rigor_arbitro, num_simulaciones)
-
-    p_local = np.mean(sim_goles_loc > sim_goles_vis) * 100
-    p_empate = np.mean(sim_goles_loc == sim_goles_vis) * 100
-    p_visita = np.mean(sim_goles_loc < sim_goles_vis) * 100
-
-    prob_caliente_local = (1 / cuota_caliente_local) * 100
-    prob_caliente_empate = (1 / cuota_caliente_empate) * 100
-    prob_caliente_visita = (1 / cuota_caliente_visita) * 100
-
-    st.success("¡Simulación completada con éxito!")
-    st.subheader(f"📊 Resultados para: {equipo_local} vs {equipo_visitante}")
+if st.button("🚀 Ejecutar Simulación del Partido", type="primary"):
+    # Simulación de Poisson
+    goles_l = np.random.poisson(xg_local, simulaciones)
+    goles_v = np.random.poisson(xg_visitante, simulaciones)
+    
+    wins_local = np.sum(goles_l > goles_v)
+    draws = np.sum(goles_l == goles_v)
+    wins_visitante = np.sum(goles_l < goles_v)
+    
+    prob_local = (wins_local / simulaciones) * 100
+    prob_empate = (draws / simulaciones) * 100
+    prob_visitante = (wins_visitante / simulaciones) * 100
+    
+    # Cálculo de valor (Value = Prob_Modelo * Cuota > 1.0)
+    val_local = (prob_local / 100) * cuota_local
+    val_empate = (prob_empate / 100) * cuota_empate
+    val_visitante = (prob_visitante / 100) * cuota_visitante
+    
+    st.subheader(f"📈 Resultados de la Simulación ({simulaciones:,} escenarios)")
     
     col1, col2, col3 = st.columns(3)
-    col1.metric(f"Gana {equipo_local}", f"{p_local:.1f}%", f"Cuota justa: @{(100/p_local):.2f}")
-    col2.metric("Empate", f"{p_empate:.1f}%", f"Cuota justa: @{(100/p_empate):.2f}")
-    col3.metric(f"Gana {equipo_visitante}", f"{p_visita:.1f}%", f"Cuota justa: @{(100/p_visita):.2f}")
-
-    st.markdown("---")
-    st.subheader("🔥 Detector de Valor (vs Caliente.mx)")
-
-    def evaluar_valor(nombre, p_modelo, p_casa, cuota):
-        if p_modelo > p_casa:
-            st.markdown(f"✅ **{nombre} (@{cuota}):** ¡Hay VALOR! Tu modelo dice **{p_modelo:.1f}%** y la casa implica **{p_casa:.1f}%**.")
+    
+    with col1:
+        st.metric(label=f"Victoria {equipo_local}", value=f"{prob_local:.1f}%", delta=f"Cuota: {cuota_local}")
+        if val_local > 1.05:
+            st.success(f"🔥 ¡Hay valor! (EV: {val_local:.2f})")
         else:
-            st.markdown(f"❌ **{nombre} (@{cuota}):** Sin valor matemático (La casa paga menos de lo esperado).")
-
-    evaluar_valor(f"Victoria {equipo_local}", p_local, prob_caliente_local, cuota_caliente_local)
-    evaluar_valor("Empate", p_empate, prob_caliente_empate, cuota_caliente_empate)
-    evaluar_valor(f"Victoria {equipo_visitante}", p_visita, prob_caliente_visita, cuota_caliente_visita)
+            st.info(f"Sin valor (EV: {val_local:.2f})")
+            
+    with col2:
+        st.metric(label="Empate", value=f"{prob_empate:.1f}%", delta=f"Cuota: {cuota_empate}")
+        if val_empate > 1.05:
+            st.success(f"🔥 ¡Hay valor! (EV: {val_empate:.2f})")
+        else:
+            st.info(f"Sin valor (EV: {val_empate:.2f})")
+            
+    with col3:
+        st.metric(label=f"Victoria {equipo_visitante}", value=f"{prob_visitante:.1f}%", delta=f"Cuota: {cuota_visitante}")
+        if val_visitante > 1.05:
+            st.success(f"🔥 ¡Hay valor! (EV: {val_visitante:.2f})")
+        else:
+            st.info(f"Sin valor (EV: {val_visitante:.2f})")
 
     st.markdown("---")
-    st.info(f"🚩 **Promedio Córners Totales:** {np.mean(sim_corners):.1f}  |  🟨 **Promedio Tarjetas:** {np.mean(sim_tarjetas):.1f}")
+    st.write("### 📌 Análisis Detallado del Modelo")
+    promedio_goles_l = np.mean(goles_l)
+    promedio_goles_v = np.mean(goles_v)
+    st.write(- Goles promedio simulados para **{equipo_local}**: **{promedio_goles_l:.2f}**)
+    st.write(- Goles promedio simulados para **{equipo_visitante}**: **{promedio_goles_v:.2f}**)
+else:
+    st.info("👈 Configura los parámetros en el menú lateral izquierdo y presiona **'Ejecutar Simulación del Partido'** para calcular las probabilidades y detectar valor.")
