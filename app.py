@@ -3,7 +3,7 @@ import numpy as np
 
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-# Estilos CSS con efecto Glassmorphism (Cristal translúcido) y paleta Gris/Negro Premium tipo editorial de moda/deporte
+# Estilos CSS estilo editorial de lujo, minimalista, en tonos grises y negros (Cero azul)
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
@@ -22,7 +22,6 @@ st.markdown("""
         font-family: 'Plus Jakarta Sans', sans-serif;
     }
     
-    /* Cabecera minimalista editorial */
     .editorial-header {
         text-align: center;
         padding: 30px 20px 15px 20px;
@@ -43,21 +42,6 @@ st.markdown("""
         text-transform: uppercase;
     }
 
-    /* Tarjetas flotantes translúcidas estilo glassmorphism */
-    .glass-card {
-        background: rgba(25, 30, 39, 0.65);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 14px 18px;
-        margin-bottom: 10px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        transition: all 0.3s ease;
-    }
-    
     .league-section-title {
         font-size: 11px;
         font-weight: 600;
@@ -73,26 +57,26 @@ st.markdown("""
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 14px 16px;
-        background: rgba(18, 22, 29, 0.8);
-        border-radius: 10px;
-        margin-bottom: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        font-size: 13px;
+        padding: 15px 18px;
+        background: rgba(18, 22, 29, 0.85);
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 14px;
     }
     
     .prob-glass-box {
-        background: rgba(18, 22, 29, 0.85);
+        background: rgba(18, 22, 29, 0.9);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 14px;
-        padding: 20px;
-        margin-top: 20px;
+        padding: 22px;
+        margin-top: 25px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Cobertura de ligas profesionales mundiales
+# Cobertura global completa de ligas profesionales
 cartelera_global = {
     "🇺🇸 MLS, Estados Unidos": {
         "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
@@ -123,19 +107,6 @@ cartelera_global = {
         "Atletico Madrid vs Sevilla": {"local": "Atletico", "visitante": "Sevilla", "xg_l": 1.55, "xg_v": 0.95, "c_l": 1.65, "c_x": 3.70, "c_v": 5.20, "corn_l": 5.4, "corn_v": 4.1, "tarjetas": 5},
         "Real Sociedad vs Athletic Club": {"local": "Real Sociedad", "visitante": "Athletic", "xg_l": 1.25, "xg_v": 1.15, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20, "corn_l": 4.9, "corn_v": 4.6, "tarjetas": 6},
         "Valencia vs Villarreal": {"local": "Valencia", "visitante": "Villarreal", "xg_l": 1.30, "xg_v": 1.40, "c_l": 2.60, "c_x": 3.30, "c_v": 2.65, "corn_l": 5.1, "corn_v": 5.3, "tarjetas": 4}
-    },
-    "🇮🇹 Serie A, Italia": {
-        "Inter Milan vs AC Milan": {"local": "Inter Milan", "visitante": "AC Milan", "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5},
-        "Juventus vs Napoli": {"local": "Juventus", "visitante": "Napoli", "xg_l": 1.35, "xg_v": 1.30, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20, "corn_l": 5.3, "corn_v": 5.2, "tarjetas": 4},
-        "Roma vs Lazio": {"local": "Roma", "visitante": "Lazio", "xg_l": 1.40, "xg_v": 1.35, "c_l": 2.40, "c_x": 3.20, "c_v": 2.95, "corn_l": 5.5, "corn_v": 5.1, "tarjetas": 7}
-    },
-    "🇩🇪 Bundesliga, Alemania": {
-        "Bayern Munich vs Borussia Dortmund": {"local": "Bayern", "visitante": "Dortmund", "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4},
-        "Bayer Leverkusen vs Leipzig": {"local": "Leverkusen", "visitante": "Leipzig", "xg_l": 1.85, "xg_v": 1.45, "c_l": 1.95, "c_x": 3.60, "c_v": 3.50, "corn_l": 6.3, "corn_v": 4.9, "tarjetas": 4}
-    },
-    "🇫🇷 Ligue 1, Francia": {
-        "PSG vs Marseille": {"local": "PSG", "visitante": "Marseille", "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5},
-        "Monaco vs Lyon": {"local": "Monaco", "visitante": "Lyon", "xg_l": 1.65, "xg_v": 1.35, "c_l": 2.05, "c_x": 3.50, "c_v": 3.30, "corn_l": 5.8, "corn_v": 4.7, "tarjetas": 4}
     }
 }
 
@@ -144,7 +115,7 @@ if "vista" not in st.session_state:
     st.session_state["partido_sel"] = None
     st.session_state["liga_sel"] = None
 
-# VISTA 1: CARTELERA PRINCIPAL (Estilo Editorial Premium)
+# VISTA 1: CARTELERA PRINCIPAL
 if st.session_state["vista"] == "cartelera":
     st.markdown("""
         <div class="editorial-header">
@@ -170,7 +141,7 @@ if st.session_state["vista"] == "cartelera":
                 st.session_state["vista"] = "detalle"
                 st.rerun()
 
-# VISTA 2: DETALLE INTERACTIVO CON EFECTO CRISTAL (Glassmorphism)
+# VISTA 2: DETALLE AUTOMÁTICO (Sin sliders, cálculos directos del modelo)
 elif st.session_state["vista"] == "detalle":
     if st.button("← Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
@@ -179,24 +150,16 @@ elif st.session_state["vista"] == "detalle":
     p = cartelera_global[st.session_state["liga_sel"]][st.session_state["partido_sel"]]
 
     st.markdown(f"""
-        <div style="text-align: center; margin: 20px 0;">
-            <h2 style="color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">{p['local']} vs {p['visitante']}</h2>
-            <p style="color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;">Quantitative Match Simulation</p>
+        <div style="text-align: center; margin: 20px 0 25px 0;">
+            <h2 style="color: #ffffff; font-size: 21px; font-weight: 700; letter-spacing: 0.5px; margin: 0;">{p['local']} vs {p['visitante']}</h2>
+            <p style="color: #6b7280; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-top: 6px;">Análisis Cuantitativo Automatizado</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Sliders Interactivos minimalistas
-    st.markdown("<p style='color: #9ca3af; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;'>🎛️ Ajuste de Goles Esperados (xG):</p>", unsafe_allow_html=True)
-    col_s1, col_s2 = st.columns(2)
-    with col_s1:
-        xg_l_input = st.slider(f"xG {p['local']}", 0.2, 4.0, float(p['xg_l']), 0.05)
-    with col_s2:
-        xg_v_input = st.slider(f"xG {p['visitante']}", 0.2, 4.0, float(p['xg_v']), 0.05)
-
-    # Simulador Monte Carlo
+    # Cálculo automático con Monte Carlo usando los xG predeterminados del modelo
     simulaciones = 10000
-    goles_l = np.random.poisson(xg_l_input, simulaciones)
-    goles_v = np.random.poisson(xg_v_input, simulaciones)
+    goles_l = np.random.poisson(p['xg_l'], simulaciones)
+    goles_v = np.random.poisson(p['xg_v'], simulaciones)
 
     prob_l = (np.sum(goles_l > goles_v) / simulaciones) * 100
     prob_x = (np.sum(goles_l == goles_v) / simulaciones) * 100
@@ -207,9 +170,7 @@ elif st.session_state["vista"] == "detalle":
     ganador_proyectado = p['local'] if prob_l > prob_v else p['visitante']
     btts_texto = "Sí" if prob_btts > 50 else "No"
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Estadísticas con estilo translúcido
+    # Tarjetas de estadísticas limpias calculadas por la IA
     st.markdown(f"""
     <div class="stat-row-clean">
         <span style="color: #9ca3af;">Tarjetas amarillas proyectadas</span>
@@ -229,7 +190,7 @@ elif st.session_state["vista"] == "detalle":
     </div>
     """, unsafe_allow_html=True)
 
-    # Caja de probabilidades estilo cristal esmerilado
+    # Bloque de probabilidades elegante
     st.markdown(f"""
     <div class="prob-glass-box">
         <div style="color: #6b7280; font-size: 10px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 2px;">Probabilidad de Victoria en Vivo</div>
