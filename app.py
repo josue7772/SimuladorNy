@@ -4,7 +4,7 @@ import requests
 
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-# Estilos CSS de diseño ultra moderno y gamificado estilo app de élite
+# Estilos CSS totalmente renovados: Cero azul, predominan los grises carbón, metálicos y blancos puros
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -18,51 +18,58 @@ st.markdown("""
     div[data-testid="stToolbar"] {display: none !important;}
     
     .stApp {
-        background-color: #0b0f19;
-        color: #f8fafc;
+        background-color: #090a0f;
+        color: #e2e8f0;
         font-family: 'Inter', sans-serif;
     }
-    .app-header {
-        background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-        padding: 20px;
+    
+    /* Encabezado minimalista gris */
+    .app-card-header {
+        background: #12151c;
+        padding: 24px;
         border-radius: 16px;
         margin-bottom: 20px;
-        border: 1px solid #374151;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+        border: 1px solid #222733;
         text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
     }
+    
     .league-title {
-        font-size: 13px;
+        font-size: 11px;
         font-weight: 700;
-        color: #38bdf8;
-        margin-top: 15px;
+        color: #9ca3af;
+        margin-top: 20px;
         margin-bottom: 8px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.2px;
+        border-left: 2px solid #6b7280;
+        padding-left: 8px;
     }
-    .stat-row-clean {
+
+    /* Tarjetas de estadísticas estilo gris elegante */
+    .stat-card-gray {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 16px;
-        background: #111827;
-        border-radius: 10px;
-        margin-bottom: 8px;
-        border: 1px solid #1f2937;
+        padding: 14px 18px;
+        background: #12151c;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        border: 1px solid #1f2430;
         font-size: 14px;
     }
-    .prob-box {
-        background: linear-gradient(135deg, #111827 0%, #0f172a 100%);
+    
+    .prob-container {
+        background: #12151c;
         border-radius: 14px;
-        padding: 18px;
+        padding: 20px;
         margin-top: 20px;
-        border: 1px solid #374151;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        border: 1px solid #1f2430;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Cartelera robusta con respaldo y API en vivo
+# Cargar cartelera con la API o respaldo robusto
 @st.cache_data(ttl=600)
 def cargar_cartelera_api():
     ligas_api = {
@@ -100,7 +107,8 @@ def cargar_cartelera_api():
         cartelera = {
             "🇺🇸 MLS, Estados Unidos": {
                 "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
-                "LAFC vs NYCFC": {"local": "LAFC", "visitante": "NYCFC", "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3}
+                "LAFC vs NYCFC": {"local": "LAFC", "visitante": "NYCFC", "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3},
+                "Seattle Sounders vs Portland Timbers": {"local": "Seattle", "visitante": "Portland", "xg_l": 1.50, "xg_v": 1.20, "c_l": 2.00, "c_x": 3.40, "c_v": 3.50, "corn_l": 5, "corn_v": 5, "tarjetas": 5}
             },
             "🇲🇽 Liga MX, Apertura": {
                 "Atlas vs Pachuca": {"local": "Atlas", "visitante": "Pachuca", "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5},
@@ -116,58 +124,56 @@ if "vista" not in st.session_state:
     st.session_state["partido_sel"] = None
     st.session_state["liga_sel"] = None
 
-# VISTA 1: CARTELERA MODAL E INTERACTIVA
+# VISTA 1: CARTELERA PRINCIPAL
 if st.session_state["vista"] == "cartelera":
     st.markdown("""
-        <div class="app-header">
-            <h1 style="color: #ffffff; font-size: 24px; margin-bottom: 4px;">⚽ SimuladorNy</h1>
-            <p style="color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin: 0;">Quantitative Match Intelligence</p>
+        <div class="app-card-header">
+            <h1 style="color: #ffffff; font-size: 24px; font-weight: 800; margin: 0 0 6px 0;">⚽ SimuladorNy</h1>
+            <p style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin: 0;">Match Intelligence & Analytics</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Buscador interactivo para filtrar partidos al instante
-    busqueda = st.text_input("🔍 Buscar equipo o liga...", placeholder="Ej. Galaxy, Atlas, Premier...")
+    busqueda = st.text_input("🔍 Buscar partido o liga...", placeholder="Escribe un equipo...")
 
     for liga, partidos in cartelera_global.items():
-        # Filtrar partidos si el usuario escribe en el buscador
         partidos_filtrados = {k: v for k, v in partidos.items() if busqueda.lower() in k.lower() or busqueda.lower() in liga.lower()}
         if not partidos_filtrados and busqueda:
             continue
         if not partidos_filtrados:
             partidos_filtrados = partidos
 
-        st.markdown(f'<div class="league-header">{liga}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="league-title">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos_filtrados.items():
-            if st.button(f"⚡  {datos['local']}  vs  {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
+            if st.button(f"▪️  {datos['local']}   VS   {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
                 st.session_state["partido_sel"] = nombre_partido
                 st.session_state["liga_sel"] = liga
                 st.session_state["vista"] = "detalle"
                 st.rerun()
 
-# VISTA 2: DETALLE INTERACTIVO CON SIMULADOR DE xG EN TIEMPO REAL
+# VISTA 2: DETALLE INTERACTIVO CON SLIDERS (GRIS Y NEGRO)
 elif st.session_state["vista"] == "detalle":
-    if st.button("⬅️ Volver a la cartelera principal"):
+    if st.button("⬅️ Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
         st.rerun()
 
     p = cartelera_global[st.session_state["liga_sel"]][st.session_state["partido_sel"]]
 
     st.markdown(f"""
-        <div style="text-align: center; margin-top: 10px; margin-bottom: 15px;">
-            <h2 style="color: #ffffff; font-size: 22px; font-weight: 800;">{p['local']} vs {p['visitante']}</h2>
-            <p style="color: #38bdf8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Panel de Simulación Interactiva</p>
+        <div style="text-align: center; margin: 15px 0 20px 0;">
+            <h2 style="color: #ffffff; font-size: 21px; font-weight: 800; margin: 0;">{p['local']} vs {p['visitante']}</h2>
+            <p style="color: #9ca3af; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">Simulador Cuantitativo en Vivo</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Sliders interactivos para que el usuario mueva el xG y personalice el análisis
-    st.markdown("<p style='color: #94a3b8; font-size: 12px; font-weight: 600; margin-bottom: 4px;'>🎛️ Ajusta el xG (Goles Esperados) en tiempo real:</p>", unsafe_allow_html=True)
+    # Controles deslizantes interactivos
+    st.markdown("<p style='color: #9ca3af; font-size: 12px; font-weight: 600; margin-bottom: 6px;'>🎛️ Modifica el xG (Goles Esperados) para recalcular:</p>", unsafe_allow_html=True)
     col_s1, col_s2 = st.columns(2)
     with col_s1:
         xg_l_input = st.slider(f"xG {p['local']}", 0.2, 4.0, float(p['xg_l']), 0.05)
     with col_s2:
         xg_v_input = st.slider(f"xG {p['visitante']}", 0.2, 4.0, float(p['xg_v']), 0.05)
 
-    # Simulación de Monte Carlo dinámica con los valores del usuario
+    # Simulador Monte Carlo
     simulaciones = 10000
     goles_l = np.random.poisson(xg_l_input, simulaciones)
     goles_v = np.random.poisson(xg_v_input, simulaciones)
@@ -183,44 +189,44 @@ elif st.session_state["vista"] == "detalle":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Métricas limpias y modernas
+    # Bloques de estadísticas grises
     st.markdown(f"""
-    <div class="stat-row-clean">
-        <span style="color: #94a3b8;">Total de tarjetas amarillas proyectadas</span>
+    <div class="stat-card-gray">
+        <span style="color: #9ca3af;">Tarjetas amarillas proyectadas</span>
         <span style="color: #ffffff; font-weight: 700;">{p['tarjetas']}</span>
     </div>
-    <div class="stat-row-clean">
-        <span style="color: #94a3b8;">Total de tiros de esquina (Córners)</span>
-        <span style="color: #38bdf8; font-weight: 700;">{tot_corners}</span>
+    <div class="stat-card-gray">
+        <span style="color: #9ca3af;">Tiros de esquina (Córners)</span>
+        <span style="color: #e2e8f0; font-weight: 700;">{tot_corners}</span>
     </div>
-    <div class="stat-row-clean">
-        <span style="color: #94a3b8;">Ambos equipos marcarán (BTTS)</span>
+    <div class="stat-card-gray">
+        <span style="color: #9ca3af;">Ambos equipos marcarán (BTTS)</span>
         <span style="color: #ffffff; font-weight: 700;">{btts_texto} ({prob_btts:.0f}%)</span>
     </div>
-    <div class="stat-row-clean">
-        <span style="color: #94a3b8;">Ganador probable (Tiempo completo)</span>
-        <span style="color: #38bdf8; font-weight: 700;">{ganador_proyectado}</span>
+    <div class="stat-card-gray">
+        <span style="color: #9ca3af;">Ganador probable</span>
+        <span style="color: #ffffff; font-weight: 700;">{ganador_proyectado}</span>
     </div>
     """, unsafe_allow_html=True)
 
-    # Bloque de probabilidades dinámicas
+    # Tarjeta de probabilidades final
     st.markdown(f"""
-    <div class="prob-box">
-        <div style="color: #94a3b8; font-size: 12px; text-align: center; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.8px;">Probabilidad de Victoria en Vivo</div>
+    <div class="prob-container">
+        <div style="color: #9ca3af; font-size: 11px; text-align: center; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 1px;">Probabilidad de Victoria en Tiempo Real</div>
         <div style="display: flex; justify-content: space-around; align-items: center; text-align: center;">
             <div>
                 <div style="font-size: 20px; font-weight: 800; color: #ffffff;">{prob_l:.0f}%</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">{p['local']}</div>
+                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">{p['local']}</div>
             </div>
-            <div style="color: #374151; font-size: 18px;">|</div>
+            <div style="color: #2b3240; font-size: 18px;">|</div>
             <div>
                 <div style="font-size: 20px; font-weight: 800; color: #ffffff;">{prob_x:.0f}%</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">Empate</div>
+                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">Empate</div>
             </div>
-            <div style="color: #374151; font-size: 18px;">|</div>
+            <div style="color: #2b3240; font-size: 18px;">|</div>
             <div>
                 <div style="font-size: 20px; font-weight: 800; color: #ffffff;">{prob_v:.0f}%</div>
-                <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">{p['visitante']}</div>
+                <div style="font-size: 11px; color: #9ca3af; margin-top: 3px;">{p['visitante']}</div>
             </div>
         </div>
     </div>
