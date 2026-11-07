@@ -6,7 +6,7 @@ st.set_page_config(page_title="SimuladorNy", page_icon="soccer", layout="centere
 st.title("SimuladorNy")
 st.caption("Cartelera de Partidos & Analisis Cuantitativo")
 
-# Cartelera global limpia sin caracteres especiales
+# Cartelera global limpia y estandarizada
 cartelera_global = {
     "Liga MX": {
         "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20},
@@ -47,7 +47,7 @@ with col_l2:
 
 p = partidos_disponibles[partido_elegido]
 
-# Monte Carlo
+# Monte Carlo simulation
 simulaciones = 10000
 goles_l = np.random.poisson(p["xg_l"], simulaciones)
 goles_v = np.random.poisson(p["xg_v"], simulaciones)
@@ -68,18 +68,18 @@ st.write("Probabilidad de victoria (Moneyline):")
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    st.metric(label=p['local'], value=f"{prob_l:.0f}%", delta=f"Cuota {p['cuota_l']}")
+    st.metric(label=str(p['local']), value=f"{prob_l:.0f}%", delta=f"Cuota {p['c_l']}")
 with col2:
-    st.metric(label="Empate", value=f"{prob_x:.0f}%", delta=f"Cuota {p['cuota_x']}")
+    st.metric(label="Empate", value=f"{prob_x:.0f}%", delta=f"Cuota {p['c_x']}")
 with col3:
-    st.metric(label=p['visitante'], value=f"{prob_v:.0f}%", delta=f"Cuota {p['cuota_v']}")
+    st.metric(label=str(p['visitante']), value=f"{prob_v:.0f}%", delta=f"Cuota {p['c_v']}")
 
 st.markdown("---")
 st.subheader("Deteccion de Valor")
 
-ev_l = (prob_l / 100) * p["cuota_l"]
-ev_x = (prob_x / 100) * p["cuota_x"]
-ev_v = (prob_v / 100) * p["cuota_v"]
+ev_l = (prob_l / 100) * p["c_l"]
+ev_x = (prob_x / 100) * p["c_x"]
+ev_v = (prob_v / 100) * p["c_v"]
 
 if ev_l > 1.05:
     st.success(f"Hay valor en la victoria de {p['local']} (EV: {ev_l:.2f})")
