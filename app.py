@@ -69,7 +69,8 @@ if st.button("🚀 Ejecutar Simulación del Partido", type="primary"):
     st.write("### 📌 Análisis Detallado del Modelo")
     promedio_goles_l = np.mean(goles_l)
     promedio_goles_v = np.mean(goles_v)
-    st.write(- Goles promedio simulados para **{equipo_local}**: **{promedio_goles_l:.2f}**)
-    st.write(- Goles promedio simulados para **{equipo_visitante}**: **{promedio_goles_v:.2f}**)
+    st.write(f"- Goles promedio simulados para **{equipo_local}**: **{promedio_goles_l:.2f}**")
+    st.write(f"- Goles promedio simulados para **{equipo_visitante}**: **{promedio_goles_v:.2f}**")
+
 else:
     st.info("👈 Configura los parámetros en el menú lateral izquierdo y presiona **'Ejecutar Simulación del Partido'** para calcular las probabilidades y detectar valor.")
