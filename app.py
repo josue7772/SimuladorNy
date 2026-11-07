@@ -1,76 +1,124 @@
 import streamlit as st
 import numpy as np
 
-st.set_page_config(page_title="SimuladorNy - Apuestas Deportivas", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-st.title("⚽ SimuladorNy: Modelo Poisson & Monte Carlo")
-st.markdown("Herramienta de análisis cuantitativo para detección de valor (Value Bets) frente a cuotas de mercado.")
+st.markdown("""
+    <style>
+    .stApp {
+        background-color: #0f172a;
+        color: #f8fafc;
+    }
+    .match-card {
+        background-color: #1e293b;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        border: 1px solid #334155;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-st.sidebar.header("⚙️ Parámetros del Partido")
+st.title("⚽ SimuladorNy")
+st.caption("Cartelera de Partidos & Análisis Cuantitativo")
 
-equipo_local = st.sidebar.text_input("Equipo Local", "América")
-equipo_visitante = st.sidebar.text_input("Equipo Visitante", "Guadalajara")
+# Base de datos de partidos directos
+PARTIDOS = {
+    "🇲🇽 Liga MX": {
+        "Pumas vs América": {
+            "local": "Pumas", "visitante": "América",
+            "xg_l": 1.20, "xg_v": 1.65,
+            "c_l": 3.10, "c_x": 3.40, "c_v": 2.20
+        }
+    },
+    "🇪🇸 LaLiga": {
+        "Valencia vs Real Madrid": {
+            "local": "Valencia", "visitante": "Real Madrid",
+            "xg_l": 0.90, "xg_v": 2.10,
+            "c_l": 5.50, "c_x": 4.10, "c_v": 1.55
+        },
+        "Osasuna vs Athletic Club": {
+            "local": "Osasuna", "visitante": "Athletic Club",
+            "xg_l": 1.10, "xg_v": 1.25,
+            "c_l": 2.80, "c_x": 3.10, "c_v": 2.60
+        }
+    },
+    "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League": {
+        "Leeds vs Tottenham": {
+            "local": "Leeds", "visitante": "Tottenham",
+            "xg_l": 1.27, "xg_v": 1.00,
+            "c_l": 2.60, "c_x": 3.40, "c_v": 2.65
+        }
+    }
+}
 
-st.sidebar.subheader("📊 Goles Esperados (xG Base)")
-xg_local = st.sidebar.slider(f"xG {equipo_local}", 0.5, 4.0, 1.65, 0.05)
-xg_visitante = st.sidebar.slider(f"xG {equipo_visitante}", 0.2, 3.0, 1.15, 0.05)
+liga_sel = st.selectbox("🏆 Selecciona la Liga", list(PARTIDOS.keys()))
+partido_sel = st.selectbox("⚽ Selecciona el Partido", list(PARTIDOS[liga_sel].keys()))
 
-st.sidebar.subheader("💰 Cuotas de Caliente.mx")
-cuota_local = st.sidebar.number_input(f"Cuota Local ({equipo_local})", min_value=1.01, value=1.95, step=0.01)
-cuota_empate = st.sidebar.number_input("Cuota Empate (X)", min_value=1.01, value=3.40, step=0.01)
-cuota_visitante = st.sidebar.number_input(f"Cuota Visitante ({equipo_visitante})", min_value=1.01, value=4.00, step=0.01)
+data = PARTIDOS[liga_sel][partido_sel]
 
-simulaciones = st.sidebar.slider("Número de Simulaciones Monte Carlo", 1000, 50000, 10000, 1000)
+# Simulación automática
+simulaciones = 10000
+goles_l = np.random.poisson(data["xg_l"], simulaciones)
+goles_v = np.random.poisson(data["xg_v"], simulaciones)
 
-if st.button("🚀 Ejecutar Simulación del Partido", type="primary"):
-    # Simulación de Poisson
-    goles_l = np.random.poisson(xg_local, simulaciones)
-    goles_v = np.random.poisson(xg_visitante, simulaciones)
-    
-    wins_local = np.sum(goles_l > goles_v)
-    draws = np.sum(goles_l == goles_v)
-    wins_visitante = np.sum(goles_l < goles_v)
-    
-    prob_local = (wins_local / simulaciones) * 100
-    prob_empate = (draws / simulaciones) * 100
-    prob_visitante = (wins_visitante / simulaciones) * 100
-    
-    # Cálculo de valor (Value = Prob_Modelo * Cuota > 1.0)
-    val_local = (prob_local / 100) * cuota_local
-    val_empate = (prob_empate / 100) * cuota_empate
-    val_visitante = (prob_visitante / 100) * cuota_visitante
-    
-    st.subheader(f"📈 Resultados de la Simulación ({simulaciones:,} escenarios)")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric(label=f"Victoria {equipo_local}", value=f"{prob_local:.1f}%", delta=f"Cuota: {cuota_local}")
-        if val_local > 1.05:
-            st.success(f"🔥 ¡Hay valor! (EV: {val_local:.2f})")
-        else:
-            st.info(f"Sin valor (EV: {val_local:.2f})")
-            
-    with col2:
-        st.metric(label="Empate", value=f"{prob_empate:.1f}%", delta=f"Cuota: {cuota_empate}")
-        if val_empate > 1.05:
-            st.success(f"🔥 ¡Hay valor! (EV: {val_empate:.2f})")
-        else:
-            st.info(f"Sin valor (EV: {val_empate:.2f})")
-            
-    with col3:
-        st.metric(label=f"Victoria {equipo_visitante}", value=f"{prob_visitante:.1f}%", delta=f"Cuota: {cuota_visitante}")
-        if val_visitante > 1.05:
-            st.success(f"🔥 ¡Hay valor! (EV: {val_visitante:.2f})")
-        else:
-            st.info(f"Sin valor (EV: {val_visitante:.2f})")
+prob_l = (np.sum(goles_l > goles_v) / simulaciones) * 100
+prob_x = (np.sum(goles_l == goles_v) / simulaciones) * 100
+prob_v = (np.sum(goles_l < goles_v) / simulaciones) * 100
+prob_btts = (np.sum((goles_l > 0) & (goles_v > 0)) / simulaciones) * 100
 
-    st.markdown("---")
-    st.write("### 📌 Análisis Detallado del Modelo")
-    promedio_goles_l = np.mean(goles_l)
-    promedio_goles_v = np.mean(goles_v)
-    st.write(f"- Goles promedio simulados para **{equipo_local}**: **{promedio_goles_l:.2f}**")
-    st.write(f"- Goles promedio simulados para **{equipo_visitante}**: **{promedio_goles_v:.2f}**")
+ev_l = (prob_l / 100) * data["c_l"]
+ev_x = (prob_x / 100) * data["c_x"]
+ev_v = (prob_v / 100) * data["c_v"]
 
-else:
-    st.info("👈 Configura los parámetros en el menú lateral izquierdo y presiona **'Ejecutar Simulación del Partido'** para calcular probabilidades y detectar valor.")
+st.markdown("---")
+st.markdown(f"### 📊 {data['local']} vs {data['visitante']}")
+
+st.markdown(f"""
+<div class="match-card">
+    <div style="color: #94a3b8; font-size: 13px;">Goles esperados (xG)</div>
+    <div style="font-size: 18px; font-weight: bold; margin-top: 6px;">
+        🔵 {data['local']} <b>{data['xg_l']:.2f}</b> &nbsp;|&nbsp; 🟡 {data['visitante']} <b>{data['xg_v']:.2f}</b>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="match-card">
+    <div style="color: #94a3b8; font-size: 13px;">Ambos equipos anotan (AA)</div>
+    <div style="font-size: 24px; font-weight: bold; color: #38bdf8; margin-top: 4px;">{prob_btts:.1f}%</div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown(f"""
+<div class="match-card">
+    <div style="color: #94a3b8; font-size: 13px; text-align: center; margin-bottom: 12px;">Probabilidad de victoria (Moneyline)</div>
+    <div style="display: flex; justify-content: space-around; text-align: center;">
+        <div>
+            <div style="color: #94a3b8; font-size: 12px;">1 · {data['local']}</div>
+            <div style="font-size: 22px; font-weight: bold; margin-top: 4px;">{prob_l:.0f}%</div>
+            <div style="color: #64748b; font-size: 11px;">Cuota {data['c_l']}</div>
+        </div>
+        <div>
+            <div style="color: #94a3b8; font-size: 12px;">X · Empate</div>
+            <div style="font-size: 22px; font-weight: bold; margin-top: 4px;">{prob_x:.0f}%</div>
+            <div style="color: #64748b; font-size: 11px;">Cuota {data['c_x']}</div>
+        </div>
+        <div>
+            <div style="color: #94a3b8; font-size: 12px;">2 · {data['visitante']}</div>
+            <div style="font-size: 22px; font-weight: bold; margin-top: 4px;">{prob_v:.0f}%</div>
+            <div style="color: #64748b; font-size: 11px;">Cuota {data['c_v']}</div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("### 🎯 Value Bets (Caliente.mx)")
+if ev_l > 1.05:
+    st.success(f"🔥 **Valor en {data['local']}** — EV: {ev_l:.2f} (Cuota: {data['c_l']})")
+if ev_x > 1.05:
+    st.success(f"🔥 **Valor en Empate (X)** — EV: {ev_x:.2f} (Cuota: {data['c_x']})")
+if ev_v > 1.05:
+    st.success(f"🔥 **Valor en {data['visitante']}** — EV: {ev_v:.2f} (Cuota: {data['c_v']})")
+if ev_l <= 1.05 and ev_x <= 1.05 and ev_v <= 1.05:
+    st.info("ℹ️ Sin valor claro detectado en este partido según las cuotas actuales.")
