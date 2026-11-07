@@ -3,7 +3,7 @@ import numpy as np
 
 st.set_page_config(page_title="SimuladorNy", page_icon="⚽", layout="centered")
 
-# Estilos CSS idénticos al formato limpio tipo Sofascore
+# Estilos CSS modernos con soporte de imágenes/logos limpios
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
@@ -88,53 +88,63 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cartelera global con logos/iconos asignados a cada equipo
+# Cartelera global con enlaces oficiales de los logos de los equipos
 cartelera_global = {
     "🇲🇽 Liga MX, Apertura": {
         "Atlas vs Pachuca": {
-            "local": "Atlas", "logo_l": "🦊", "visitante": "Pachuca", "logo_v": "🦫",
+            "local": "Atlas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png", 
+            "visitante": "Pachuca", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2347.png",
             "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5, "corn_v": 4, "tarjetas": 5
         },
         "Toluca vs Monterrey": {
-            "local": "Toluca", "logo_l": "👹", "visitante": "Monterrey", "logo_v": "🤠",
+            "local": "Toluca", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2037.png", 
+            "visitante": "Monterrey", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2338.png",
             "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80, "corn_l": 6, "corn_v": 6, "tarjetas": 4
         },
         "Tigres vs Cruz Azul": {
-            "local": "Tigres", "logo_l": "🐅", "visitante": "Cruz Azul", "logo_v": "🚂",
+            "local": "Tigres", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2343.png", 
+            "visitante": "Cruz Azul", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2324.png",
             "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00, "corn_l": 5, "corn_v": 5, "tarjetas": 6
         },
         "Pumas vs America": {
-            "local": "Pumas", "logo_l": "🐾", "visitante": "America", "logo_v": "🦅",
+            "local": "Pumas", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/2336.png", 
+            "visitante": "America", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/2157.png",
             "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4, "corn_v": 6, "tarjetas": 5
         }
     },
     "🇺🇸 MLS, Estados Unidos": {
         "LA Galaxy vs Inter Miami": {
-            "local": "LA Galaxy", "logo_l": "⭐", "visitante": "Inter Miami", "logo_v": "⚡",
+            "local": "LA Galaxy", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png", 
+            "visitante": "Inter Miami", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/18226.png",
             "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6, "corn_v": 7, "tarjetas": 4
         },
         "LAFC vs New York City": {
-            "local": "LAFC", "logo_l": "🦅", "visitante": "NYCFC", "logo_v": "🏙️",
+            "local": "LAFC", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/15707.png", 
+            "visitante": "NYCFC", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/17592.png",
             "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 7, "corn_v": 4, "tarjetas": 3
         }
     },
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 FA Cup, Inglaterra": {
         "Manchester United vs Liverpool": {
-            "local": "Man United", "logo_l": "🔴", "visitante": "Liverpool", "logo_v": "⚓",
+            "local": "Man United", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png", 
+            "visitante": "Liverpool", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
             "xg_l": 1.50, "xg_v": 1.85, "c_l": 3.20, "c_x": 3.50, "c_v": 2.15, "corn_l": 5, "corn_v": 7, "tarjetas": 5
         }
     },
     "🇪🇸 LaLiga, España": {
         "Espanyol vs Real Valladolid": {
-            "local": "Espanyol", "logo_l": "🦜", "visitante": "Valladolid", "logo_v": "🛡️",
+            "local": "Espanyol", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/98.png", 
+            "visitante": "Valladolid", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/375.png",
             "xg_l": 1.40, "xg_v": 1.10, "c_l": 2.20, "c_x": 3.10, "c_v": 3.40, "corn_l": 5, "corn_v": 4, "tarjetas": 5
         },
         "Valencia vs Real Madrid": {
-            "local": "Valencia", "logo_l": "🦇", "visitante": "Real Madrid", "logo_v": "👑",
+            "local": "Valencia", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/94.png", 
+            "visitante": "Real Madrid", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
             "xg_l": 0.90, "xg_v": 2.10, "c_l": 5.50, "c_x": 4.10, "c_v": 1.55, "corn_l": 4, "corn_v": 6, "tarjetas": 4
         },
         "Barcelona vs Atletico Madrid": {
-            "local": "Barcelona", "logo_l": "🔵", "visitante": "Atletico Madrid", "logo_v": "🔴",
+            "local": "Barcelona", "logo_l": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png", 
+            "visitante": "Atletico Madrid", "logo_v": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png",
             "xg_l": 1.85, "xg_v": 1.20, "c_l": 1.80, "c_x": 3.60, "c_v": 4.20, "corn_l": 6, "corn_v": 5, "tarjetas": 6
         }
     }
@@ -153,13 +163,20 @@ if st.session_state["vista"] == "cartelera":
     for liga, partidos in cartelera_global.items():
         st.markdown(f'<div class="league-header">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos.items():
-            if st.button(f"{datos['logo_l']}  {datos['local']}  vs  {datos['logo_v']}  {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
-                st.session_state["partido_sel"] = nombre_partido
-                st.session_state["liga_sel"] = liga
-                st.session_state["vista"] = "detalle"
-                st.rerun()
+            # Renderizar botones con columnas para alinear los logos reales de forma limpia
+            col_img1, col_btn, col_img2 = st.columns([0.1, 0.8, 0.1])
+            with col_img1:
+                st.image(datos["logo_l"], width=24)
+            with col_img2:
+                st.image(datos["logo_v"], width=24)
+            with col_btn:
+                if st.button(f"{datos['local']} vs {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
+                    st.session_state["partido_sel"] = nombre_partido
+                    st.session_state["liga_sel"] = liga
+                    st.session_state["vista"] = "detalle"
+                    st.rerun()
 
-# VISTA 2: DETALLE DEL PARTIDO
+# VISTA 2: DETALLE DEL PARTIDO CON LOGOS REALES
 elif st.session_state["vista"] == "detalle":
     if st.button("⬅️ Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
@@ -178,10 +195,19 @@ elif st.session_state["vista"] == "detalle":
     prob_btts = (np.sum((goles_l > 0) & (goles_v > 0)) / simulaciones) * 100
 
     tot_corners = p["corn_l"] + p["corn_v"]
-    ganador_proyectado = f"{p['logo_l']} {p['local']}" if prob_l > prob_v else f"{p['logo_v']} {p['visitante']}"
+    ganador_proyectado = p['local'] if prob_l > prob_v else p['visitante']
     btts_texto = "Sí" if prob_btts > 50 else "No"
 
-    st.markdown(f'<div class="match-header-title">{p["logo_l"]} {p["local"]} vs {p["logo_v"]} {p["visitante"]}</div>', unsafe_allow_html=True)
+    # Cabecera con logos reales centrados
+    col_h1, col_h2, col_h3 = st.columns([2, 1, 2])
+    with col_h1:
+        st.markdown(f"<div style='text-align: right; font-weight: 700; font-size: 18px;'>{p['local']}</div>", unsafe_allow_html=True)
+    with col_h2:
+        st.markdown("<div style='text-align: center; color: #38bdf8; font-weight: bold; font-size: 16px;'>VS</div>", unsafe_allow_html=True)
+    with col_h3:
+        st.markdown(f"<div style='text-align: left; font-weight: 700; font-size: 18px;'>{p['visitante']}</div>", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     # Filas de estadísticas limpias
     st.markdown(f"""
@@ -203,24 +229,24 @@ elif st.session_state["vista"] == "detalle":
     </div>
     """, unsafe_allow_html=True)
 
-    # Bloque de probabilidades con logos incorporados
+    # Bloque de probabilidades con los logos reales integrados
     st.markdown(f"""
     <div class="prob-box">
         <div class="prob-title">Probabilidad de victoria al finalizar el encuentro</div>
         <div class="prob-row">
             <div>
                 <div class="prob-num">{prob_l:.0f}%</div>
-                <div class="prob-team">{p['logo_l']} {p['local']}</div>
+                <div class="prob-team">{p['local']}</div>
             </div>
             <div style="color: #30363d; font-size: 18px;">|</div>
             <div>
                 <div class="prob-num">{prob_x:.0f}%</div>
-                <div class="prob-team">🤝 Empate</div>
+                <div class="prob-team">Empate</div>
             </div>
             <div style="color: #30363d; font-size: 18px;">|</div>
             <div>
                 <div class="prob-num">{prob_v:.0f}%</div>
-                <div class="prob-team">{p['logo_v']} {p['visitante']}</div>
+                <div class="prob-team">{p['visitante']}</div>
             </div>
         </div>
     </div>
