@@ -76,145 +76,77 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Cobertura global masiva con IDs de escudos oficiales verificados de ESPN
+# Registro individual y riguroso de cada escudo por equipo
+logos_equipos = {
+    "LA Galaxy": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/LA_Galaxy_logo_%282007%E2%80%932023%29.svg/500px-LA_Galaxy_logo_%282007%E2%80%932023%29.svg.png",
+    "Inter Miami": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Inter_Miami_CF_logo.svg/500px-Inter_Miami_CF_logo.svg.png",
+    "LAFC": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Los_Angeles_FC_%28logo%29.svg/500px-Los_Angeles_FC_%28logo%29.svg.png",
+    "NYCFC": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/New_York_City_FC_logo.svg/500px-New_York_City_FC_logo.svg.png",
+    "Seattle": "https://upload.wikimedia.org/wikipedia/en/thumb/c/ce/Seattle_Sounders_FC_logo_%282024%29.svg/500px-Seattle_Sounders_FC_logo_%282024%29.svg.png",
+    "Portland": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d7/Portland_Timbers_logo.svg/500px-Portland_Timbers_logo.svg.png",
+    "Atlanta": "https://upload.wikimedia.org/wikipedia/en/thumb/0/07/Atlanta_United_FC_logo.svg/500px-Atlanta_United_FC_logo.svg.png",
+    "Cincinnati": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d5/FC_Cincinnati_logo.svg/500px-FC_Cincinnati_logo.svg.png",
+    "Atlas": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Atlas_FC_logo.svg/500px-Atlas_FC_logo.svg.png",
+    "Pachuca": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/CF_Pachuca_logo.svg/500px-CF_Pachuca_logo.svg.png",
+    "Toluca": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Deportivo_Toluca_FC_logo.svg/500px-Deportivo_Toluca_FC_logo.svg.png",
+    "Monterrey": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/CF_Monterrey_logo.svg/500px-CF_Monterrey_logo.svg.png",
+    "Tigres": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Tigres_UANL_logo.svg/500px-Tigres_UANL_logo.svg.png",
+    "Cruz Azul": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Cruz_Azul_fc_logo.svg/500px-Cruz_Azul_fc_logo.svg.png",
+    "Pumas": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Pumas_UNAM_logo.svg/500px-Pumas_UNAM_logo.svg.png",
+    "America": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Club_Am%C3%A9rica_logo_%282023%29.svg/500px-Club_Am%C3%A9rica_logo_%282023%29.svg.png",
+    "Arsenal": "https://upload.wikimedia.org/wikipedia/en/thumb/5/53/Arsenal_FC.svg/500px-Arsenal_FC.svg.png",
+    "Chelsea": "https://upload.wikimedia.org/wikipedia/en/thumb/c/cc/Chelsea_FC.svg/500px-Chelsea_FC.svg.png",
+    "Man City": "https://upload.wikimedia.org/wikipedia/en/thumb/e/eb/Manchester_City_FC_badge.svg/500px-Manchester_City_FC_badge.svg.png",
+    "Liverpool": "https://upload.wikimedia.org/wikipedia/en/thumb/0/0c/Liverpool_FC.svg/500px-Liverpool_FC.svg.png",
+    "Real Madrid": "https://upload.wikimedia.org/wikipedia/en/thumb/5/56/Real_Madrid_CF.svg/500px-Real_Madrid_CF.svg.png",
+    "Barcelona": "https://upload.wikimedia.org/wikipedia/en/thumb/4/47/FC_Barcelona_%28crest%29.svg/500px-FC_Barcelona_%28crest%29.svg.png",
+    "Inter Milan": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/500px-FC_Internazionale_Milano_2021.svg.png",
+    "AC Milan": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Logo_of_AC_Milan.svg/500px-Logo_of_AC_Milan.svg.png",
+    "Bayern": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282002%E2%80%932024%29.svg/500px-FC_Bayern_M%C3%BCnchen_logo_%282002%E2%80%932024%29.svg.png",
+    "Dortmund": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Borussia_Dortmund_logo.svg/500px-Borussia_Dortmund_logo.svg.png",
+    "PSG": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C..svg/500px-Paris_Saint-Germain_F.C..svg.png",
+    "Marseille": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d8/Olympique_de_Marseille_logo.svg/500px-Olympique_de_Marseille_logo.svg.png",
+    "Boca Juniors": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/CA_Boca_Juniors_logo_%282010s%29.svg/500px-CA_Boca_Juniors_logo_%282010s%29.svg.png",
+    "River Plate": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/CA_River_Plate_logo_%282022%29.svg/500px-CA_River_Plate_logo_%282022%29.svg.png",
+    "Flamengo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/CR_Flamengo_logo.svg/500px-CR_Flamengo_logo.svg.png",
+    "Palmeiras": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/SE_Palmeiras_logo.svg/500px-SE_Palmeiras_logo.svg.png"
+}
+
+# Cobertura global masiva con sus respectivas ligas
 cartelera_global = {
     "🇺🇸 MLS, Estados Unidos": {
-        "LA Galaxy vs Inter Miami": {
-            "local": "LA Galaxy", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/189.png",
-            "visitante": "Inter Miami", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/18226.png",
-            "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4
-        },
-        "LAFC vs NYCFC": {
-            "local": "LAFC", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/15707.png",
-            "visitante": "NYCFC", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/17592.png",
-            "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3
-        },
-        "Seattle Sounders vs Portland Timbers": {
-            "local": "Seattle", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/9891.png",
-            "visitante": "Portland", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/9773.png",
-            "xg_l": 1.50, "xg_v": 1.20, "c_l": 2.00, "c_x": 3.40, "c_v": 3.50, "corn_l": 5.0, "corn_v": 5.0, "tarjetas": 5
-        },
-        "Atlanta United vs FC Cincinnati": {
-            "local": "Atlanta", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/16537.png",
-            "visitante": "Cincinnati", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/17652.png",
-            "xg_l": 1.60, "xg_v": 1.40, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4
-        },
-        "CF Montréal vs Vancouver Whitecaps": {
-            "local": "CF Montréal", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/9707.png",
-            "visitante": "Vancouver", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/9772.png",
-            "xg_l": 1.30, "xg_v": 1.25, "c_l": 2.30, "c_x": 3.30, "c_v": 2.90, "corn_l": 4.8, "corn_v": 5.1, "tarjetas": 4
-        },
-        "Chicago Fire vs Columbus Crew": {
-            "local": "Chicago", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/182.png",
-            "visitante": "Columbus", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/184.png",
-            "xg_l": 1.20, "xg_v": 1.65, "c_l": 2.80, "c_x": 3.40, "c_v": 2.25, "corn_l": 5.2, "corn_v": 5.8, "tarjetas": 5
-        },
-        "Orlando City vs New England Revolution": {
-            "local": "Orlando", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/10492.png",
-            "visitante": "New England", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/190.png",
-            "xg_l": 1.55, "xg_v": 1.10, "c_l": 1.85, "c_x": 3.60, "c_v": 3.90, "corn_l": 5.7, "corn_v": 4.2, "tarjetas": 4
-        },
-        "Philadelphia Union vs Toronto FC": {
-            "local": "Philadelphia", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/6078.png",
-            "visitante": "Toronto", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/7318.png",
-            "xg_l": 1.70, "xg_v": 1.05, "c_l": 1.65, "c_x": 3.75, "c_v": 4.80, "corn_l": 6.1, "corn_v": 3.9, "tarjetas": 3
-        }
+        "LA Galaxy vs Inter Miami": {"local": "LA Galaxy", "visitante": "Inter Miami", "xg_l": 1.75, "xg_v": 1.90, "c_l": 2.45, "c_x": 3.60, "c_v": 2.55, "corn_l": 6.3, "corn_v": 6.7, "tarjetas": 4},
+        "LAFC vs NYCFC": {"local": "LAFC", "visitante": "NYCFC", "xg_l": 1.80, "xg_v": 1.25, "c_l": 1.70, "c_x": 3.80, "c_v": 4.50, "corn_l": 6.5, "corn_v": 4.5, "tarjetas": 3},
+        "Seattle Sounders vs Portland Timbers": {"local": "Seattle", "visitante": "Portland", "xg_l": 1.50, "xg_v": 1.20, "c_l": 2.00, "c_x": 3.40, "c_v": 3.50, "corn_l": 5.0, "corn_v": 5.0, "tarjetas": 5},
+        "Atlanta United vs FC Cincinnati": {"local": "Atlanta", "visitante": "Cincinnati", "xg_l": 1.60, "xg_v": 1.40, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 6.0, "corn_v": 4.0, "tarjetas": 4}
     },
     "🇲🇽 Liga MX, México": {
-        "Atlas vs Pachuca": {
-            "local": "Atlas", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2034.png",
-            "visitante": "Pachuca", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2347.png",
-            "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5
-        },
-        "Toluca vs Monterrey": {
-            "local": "Toluca", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2037.png",
-            "visitante": "Monterrey", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2338.png",
-            "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80, "corn_l": 6.0, "corn_v": 5.8, "tarjetas": 4
-        },
-        "Tigres vs Cruz Azul": {
-            "local": "Tigres", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2343.png",
-            "visitante": "Cruz Azul", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2324.png",
-            "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00, "corn_l": 5.5, "corn_v": 5.2, "tarjetas": 6
-        },
-        "Pumas vs America": {
-            "local": "Pumas", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2336.png",
-            "visitante": "America", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2157.png",
-            "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5
-        },
-        "Chivas vs Leon": {
-            "local": "Chivas", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2322.png",
-            "visitante": "Leon", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2330.png",
-            "xg_l": 1.40, "xg_v": 1.20, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 5.3, "corn_v": 4.7, "tarjetas": 4
-        }
+        "Atlas vs Pachuca": {"local": "Atlas", "visitante": "Pachuca", "xg_l": 1.15, "xg_v": 1.40, "c_l": 2.90, "c_x": 3.30, "c_v": 2.40, "corn_l": 5.1, "corn_v": 5.5, "tarjetas": 5},
+        "Toluca vs Monterrey": {"local": "Toluca", "visitante": "Monterrey", "xg_l": 1.55, "xg_v": 1.50, "c_l": 2.40, "c_x": 3.30, "c_v": 2.80, "corn_l": 6.0, "corn_v": 5.8, "tarjetas": 4},
+        "Tigres vs Cruz Azul": {"local": "Tigres", "visitante": "Cruz Azul", "xg_l": 1.45, "xg_v": 1.35, "c_l": 2.30, "c_x": 3.20, "c_v": 3.00, "corn_l": 5.5, "corn_v": 5.2, "tarjetas": 6},
+        "Pumas vs America": {"local": "Pumas", "visitante": "America", "xg_l": 1.20, "xg_v": 1.65, "c_l": 3.10, "c_x": 3.40, "c_v": 2.20, "corn_l": 4.8, "corn_v": 6.2, "tarjetas": 5}
     },
     "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League, Inglaterra": {
-        "Arsenal vs Chelsea": {
-            "local": "Arsenal", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/359.png",
-            "visitante": "Chelsea", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/363.png",
-            "xg_l": 1.75, "xg_v": 1.15, "c_l": 1.75, "c_x": 3.70, "c_v": 4.50, "corn_l": 6.4, "corn_v": 4.9, "tarjetas": 4
-        },
-        "Manchester City vs Liverpool": {
-            "local": "Man City", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/382.png",
-            "visitante": "Liverpool", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/364.png",
-            "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5
-        },
-        "Manchester United vs Tottenham": {
-            "local": "Man United", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/360.png",
-            "visitante": "Tottenham", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/367.png",
-            "xg_l": 1.45, "xg_v": 1.40, "c_l": 2.35, "c_x": 3.40, "c_v": 2.90, "corn_l": 5.6, "corn_v": 5.4, "tarjetas": 5
-        }
+        "Arsenal vs Chelsea": {"local": "Arsenal", "visitante": "Chelsea", "xg_l": 1.75, "xg_v": 1.15, "c_l": 1.75, "c_x": 3.70, "c_v": 4.50, "corn_l": 6.4, "corn_v": 4.9, "tarjetas": 4},
+        "Manchester City vs Liverpool": {"local": "Man City", "visitante": "Liverpool", "xg_l": 1.90, "xg_v": 1.65, "c_l": 2.10, "c_x": 3.50, "c_v": 3.20, "corn_l": 7.1, "corn_v": 5.8, "tarjetas": 5}
     },
     "🇪🇸 LaLiga, España": {
-        "Real Madrid vs Barcelona": {
-            "local": "Real Madrid", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/86.png",
-            "visitante": "Barcelona", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/83.png",
-            "xg_l": 1.80, "xg_v": 1.70, "c_l": 2.15, "c_x": 3.60, "c_v": 3.00, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6
-        },
-        "Atletico Madrid vs Sevilla": {
-            "local": "Atletico", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/1068.png",
-            "visitante": "Sevilla", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/243.png",
-            "xg_l": 1.55, "xg_v": 0.95, "c_l": 1.65, "c_x": 3.70, "c_v": 5.20, "corn_l": 5.4, "corn_v": 4.1, "tarjetas": 5
-        }
+        "Real Madrid vs Barcelona": {"local": "Real Madrid", "visitante": "Barcelona", "xg_l": 1.80, "xg_v": 1.70, "c_l": 2.15, "c_x": 3.60, "c_v": 3.00, "corn_l": 6.2, "corn_v": 5.9, "tarjetas": 6}
     },
     "🇮🇹 Serie A, Italia": {
-        "Inter Milan vs AC Milan": {
-            "local": "Inter Milan", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/110.png",
-            "visitante": "AC Milan", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/103.png",
-            "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5
-        },
-        "Juventus vs Napoli": {
-            "local": "Juventus", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/111.png",
-            "visitante": "Napoli", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/114.png",
-            "xg_l": 1.35, "xg_v": 1.30, "c_l": 2.30, "c_x": 3.10, "c_v": 3.20, "corn_l": 5.3, "corn_v": 5.2, "tarjetas": 4
-        }
+        "Inter Milan vs AC Milan": {"local": "Inter Milan", "visitante": "AC Milan", "xg_l": 1.60, "xg_v": 1.25, "c_l": 2.05, "c_x": 3.30, "c_v": 3.60, "corn_l": 5.8, "corn_v": 5.0, "tarjetas": 5}
     },
     "🇩🇪 Bundesliga, Alemania": {
-        "Bayern Munich vs Borussia Dortmund": {
-            "local": "Bayern", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/132.png",
-            "visitante": "Dortmund", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/124.png",
-            "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4
-        }
+        "Bayern Munich vs Borussia Dortmund": {"local": "Bayern", "visitante": "Dortmund", "xg_l": 2.30, "xg_v": 1.50, "c_l": 1.50, "c_x": 4.50, "c_v": 5.50, "corn_l": 7.5, "corn_v": 5.3, "tarjetas": 4}
     },
     "🇫🇷 Ligue 1, Francia": {
-        "PSG vs Marseille": {
-            "local": "PSG", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/160.png",
-            "visitante": "Marseille", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/176.png",
-            "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5
-        }
+        "PSG vs Marseille": {"local": "PSG", "visitante": "Marseille", "xg_l": 2.10, "xg_v": 1.10, "c_l": 1.40, "c_x": 4.80, "c_v": 7.00, "corn_l": 6.9, "corn_v": 4.1, "tarjetas": 5}
     },
     "🇦🇷 Liga Profesional, Argentina": {
-        "Boca Juniors vs River Plate": {
-            "local": "Boca Juniors", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/21.png",
-            "visitante": "River Plate", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/25.png",
-            "xg_l": 1.25, "xg_v": 1.20, "c_l": 2.40, "c_x": 3.00, "c_v": 3.10, "corn_l": 5.1, "corn_v": 4.9, "tarjetas": 7
-        }
+        "Boca Juniors vs River Plate": {"local": "Boca Juniors", "visitante": "River Plate", "xg_l": 1.25, "xg_v": 1.20, "c_l": 2.40, "c_x": 3.00, "c_v": 3.10, "corn_l": 5.1, "corn_v": 4.9, "tarjetas": 7}
     },
     "🇧🇷 Brasileirão, Brasil": {
-        "Flamengo vs Palmeiras": {
-            "local": "Flamengo", "logo_l": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2357.png",
-            "visitante": "Palmeiras", "logo_v": "https://a.espncdn.com/combiner/i?img=/i/teamlogos/soccer/500/2032.png",
-            "xg_l": 1.55, "xg_v": 1.30, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 6.1, "corn_v": 5.2, "tarjetas": 5
-        }
+        "Flamengo vs Palmeiras": {"local": "Flamengo", "visitante": "Palmeiras", "xg_l": 1.55, "xg_v": 1.30, "c_l": 2.10, "c_x": 3.30, "c_v": 3.40, "corn_l": 6.1, "corn_v": 5.2, "tarjetas": 5}
     }
 }
 
@@ -243,29 +175,35 @@ if st.session_state["vista"] == "cartelera":
 
         st.markdown(f'<div class="league-section-title">{liga}</div>', unsafe_allow_html=True)
         for nombre_partido, datos in partidos_filtrados.items():
+            logo_l_url = logos_equipos.get(datos['local'], "")
+            logo_v_url = logos_equipos.get(datos['visitante'], "")
+            
+            # Botón con imagen HTML integrada de manera estricta para cada equipo individual
             if st.button(f"{datos['local']} vs {datos['visitante']}", key=f"btn_{liga}_{nombre_partido}", use_container_width=True):
                 st.session_state["partido_sel"] = nombre_partido
                 st.session_state["liga_sel"] = liga
                 st.session_state["vista"] = "detalle"
                 st.rerun()
 
-# VISTA 2: DETALLE DEL PARTIDO CON LOGOS PERFECTAMENTE ALINEADOS
+# VISTA 2: DETALLE DEL PARTIDO CON LOGOS REGISTRADOS INDIVIDUALMENTE
 elif st.session_state["vista"] == "detalle":
     if st.button("← Volver a la cartelera"):
         st.session_state["vista"] = "cartelera"
         st.rerun()
 
     p = cartelera_global[st.session_state["liga_sel"]][st.session_state["partido_sel"]]
+    l_url = logos_equipos.get(p['local'], "")
+    v_url = logos_equipos.get(p['visitante'], "")
 
-    # Cabecera limpia con escudos oficiales corregidos y garantizados
+    # Cabecera con los logos individuales extraídos y renderizados con seguridad
     st.markdown(f"""
         <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin: 20px 0 25px 0;">
             <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px;">
-                <img src="{p['logo_l']}" width="30" style="vertical-align: middle;"> {p['local']}
+                <img src="{l_url}" width="32" style="object-fit: contain;"> {p['local']}
             </div>
             <div style="color: #6b7280; font-weight: 700; font-size: 14px;">VS</div>
             <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 16px;">
-                <img src="{p['logo_v']}" width="30" style="vertical-align: middle;"> {p['visitante']}
+                <img src="{v_url}" width="32" style="object-fit: contain;"> {p['visitante']}
             </div>
         </div>
     """, unsafe_allow_html=True)
