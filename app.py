@@ -1114,6 +1114,82 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
   [data-testid="stPills"] [role="group"]{flex-wrap:nowrap!important}
   .sn-fixture-card{margin-top:9px!important}
 }
+
+/* SIMULADORNY SIGNATURE — rounded, monochrome, breathable controls */
+.sn-header{padding:13px 0 24px!important}
+.sn-logo{border-radius:50%!important;width:39px!important;height:39px!important}
+.sn-list-heading{margin:9px 0 16px!important}
+[data-testid="stPills"]{width:100%!important;min-width:0!important;overflow:hidden!important}
+[data-testid="stPills"] div[data-baseweb="button-group"],
+[data-testid="stPills"] div[role="group"],
+[data-testid="stPills"] div[role="radiogroup"],
+[data-testid="stPills"] div:has(> button){
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  align-items:center!important;justify-content:flex-start!important;
+  gap:8px!important;min-width:0!important;max-width:100%!important;
+  overflow-x:auto!important;overflow-y:hidden!important;
+  scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;
+}
+[data-testid="stPills"] div:has(> button)::-webkit-scrollbar{display:none!important}
+[data-testid="stPills"] button{
+  flex:0 0 auto!important;white-space:nowrap!important;
+  border-radius:999px!important;background:#1b1c1f!important;
+  border:1px solid #44464a!important;color:#dedfe1!important;
+  min-height:38px!important;padding:9px 15px!important;
+  box-shadow:none!important;
+}
+[data-testid="stPills"] button[aria-pressed="true"],
+[data-testid="stPills"] button[aria-selected="true"],
+[data-testid="stPills"] button[data-selected="true"],
+[data-testid="stPills"] button[kind="primary"]{
+  background:#f2f2f2!important;border-color:#f2f2f2!important;
+  color:#111214!important;box-shadow:none!important;
+}
+[data-testid="stPills"] button:focus:not(:focus-visible){outline:none!important;box-shadow:none!important}
+[data-testid="stPills"] button:hover{border-color:#8c8e92!important}
+[data-testid="stPopover"] button,
+[data-testid="stExpander"],[data-testid="stTextInput"] input{
+  border-radius:22px!important;
+}
+[data-testid="stExpander"] summary{border-radius:22px!important}
+.sn-fixture-card{
+  border-radius:25px!important;background:#151618!important;
+  border:1px solid #3a3b3f!important;padding:14px 16px 7px!important;
+  margin:14px 0 0!important;
+}
+.sn-fixture-card .sn-teams{padding:8px 0 11px!important;min-height:76px!important}
+[data-testid="stExpander"]{margin-top:5px!important;margin-bottom:17px!important}
+[data-testid="stVerticalBlock"]{gap:.55rem!important}
+@media(max-width:600px){
+  .block-container{padding:15px 16px 85px!important}
+  .sn-header{padding:10px 0 23px!important}
+  [data-testid="stPills"] button{padding:8px 13px!important}
+}
+
+/* Definitive one-row calendar: ordinary HTML links, not Streamlit pills. */
+.sn-date-caption{font-size:10px;letter-spacing:2px;color:#aeb0b4;font-weight:750;margin:15px 0 9px}
+.sn-date-rail{display:flex!important;flex-flow:row nowrap!important;gap:9px!important;
+  width:100%!important;max-width:100%!important;overflow-x:auto!important;
+  overflow-y:hidden!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;
+  padding:5px 0 14px!important;overscroll-behavior-x:contain}
+.sn-date-rail::-webkit-scrollbar{display:none}
+.sn-date-rail .sn-day{display:flex!important;flex:0 0 65px!important;min-width:65px!important;
+  flex-direction:column!important;justify-content:center!important;align-items:center!important;
+  gap:3px!important;padding:10px 4px!important;border-radius:21px!important;
+  border:1px solid #3b3d40!important;background:#1c1d20!important;color:#b8bbc0!important;
+  text-decoration:none!important;box-sizing:border-box!important}
+.sn-date-rail .sn-day strong{font-size:20px;line-height:1.2;color:#f3f3f3}
+.sn-date-rail .sn-day span{font-size:11px;line-height:1.2}
+.sn-date-rail .sn-day.selected{background:#f2f2f2!important;border-color:#f2f2f2!important;color:#141414!important}
+.sn-date-rail .sn-day.selected strong{color:#141414!important}
+.sn-date-rail .sn-day:focus-visible{outline:2px solid #fff;outline-offset:2px}
+[data-testid="stPills"] button[aria-checked="true"],
+[data-testid="stPills"] button[aria-pressed="true"],
+[data-testid="stPills"] button[aria-selected="true"],
+[data-testid="stPills"] button[data-state="active"]{
+ background:#f2f2f2!important;color:#111!important;border-color:#f2f2f2!important;
+}
+[data-testid="stPills"] button{border-radius:999px!important}
 </style>
 
 """,unsafe_allow_html=True)
@@ -1131,42 +1207,43 @@ status_filter = st.pills(
     selection_mode="single", default="Todos",
     label_visibility="collapsed", key="status_tabs",
 ) or "Todos"
-# Calendario semanal: un único control horizontal (sin columnas que se apilen en móvil).
+# Navegación real por enlaces: una sola fila desplazable incluso en iPhone.
+# Los enlaces actualizan la fecha mediante query params, sin depender de st.pills.
 if "sn_selected_date" not in st.session_state:
     st.session_state.sn_selected_date = local_today()
+incoming = st.query_params.get("sn_date")
+if incoming:
+    try:
+        requested = date.fromisoformat(str(incoming))
+        if abs((requested - local_today()).days) <= 3650:
+            st.session_state.sn_selected_date = requested
+    except (TypeError, ValueError):
+        pass
 selected_date = st.session_state.sn_selected_date
 short_days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 week_days = [selected_date + timedelta(days=i) for i in range(-3, 4)]
-labels_by_date = {
-    day.isoformat(): ("Hoy" if day == local_today() else short_days[day.weekday()]) + f"  {day.day}"
-    for day in week_days
-}
-# El calendario puede saltar a cualquier fecha. El selector se sincroniza ANTES de dibujar el widget.
-if st.session_state.get("sn_week_choice") not in labels_by_date:
-    st.session_state.sn_week_choice = selected_date.isoformat()
-
-def _sn_change_day():
-    st.session_state.sn_selected_date = date.fromisoformat(st.session_state.sn_week_choice)
-
-
+st.markdown('<div class="sn-date-caption">SELECCIONA UNA FECHA</div>', unsafe_allow_html=True)
 with st.popover("▦  Elegir fecha", use_container_width=False):
-    # Sin key persistente: se inicializa siempre desde el día elegido en la franja.
     chosen = st.date_input("Ir a fecha", value=selected_date)
     if chosen != selected_date:
         st.session_state.sn_selected_date = chosen
-        st.session_state.sn_week_choice = chosen.isoformat()
+        st.query_params["sn_date"] = chosen.isoformat()
         st.rerun()
-st.pills(
-    "Calendario semanal",
-    options=list(labels_by_date),
-    format_func=lambda iso: labels_by_date[iso],
-    selection_mode="single",
-    label_visibility="collapsed",
-    key="sn_week_choice",
-    on_change=_sn_change_day,
-)
-selected_date = st.session_state.sn_selected_date
 
+# HTML anchors ensure the browser keeps all seven days on one scrollable row.
+# The selected date is an actual URL parameter, so clicking it refreshes fixtures.
+date_links = []
+for day in week_days:
+    selected = day == selected_date
+    label = "Hoy" if day == local_today() else short_days[day.weekday()]
+    css_class = " selected" if selected else ""
+    date_links.append(
+        f'<a class="sn-day{css_class}" href="?sn_date={day.isoformat()}" '
+        f'aria-label="Ver partidos del {day.isoformat()}">'
+        f'<span>{html.escape(label)}</span><strong>{day.day}</strong></a>'
+    )
+st.markdown('<nav class="sn-date-rail" aria-label="Seleccionar día">'
+            + "".join(date_links) + '</nav>', unsafe_allow_html=True)
 
 sport_label = st.pills(
     "Deporte", list(SPORTS.keys()), selection_mode="single",
