@@ -994,6 +994,38 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 /* En la franja de fechas, el día activo debe tener texto oscuro sobre blanco. */
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) *{color:#141619!important}
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked){background:#f0f1f3!important;border-color:#f0f1f3!important}
+
+/* SIMULADORNY MINIMAL / MOBILE-FIRST */
+.stApp{background:#0b0c0e!important}
+.block-container{max-width:960px!important;padding-top:10px!important}
+[data-testid="stVerticalBlock"]{gap:.43rem!important}
+.sn-header{padding:3px 0 6px!important;margin:0!important}
+.sn-logo{width:36px!important;height:36px!important;border-radius:11px!important;font-size:22px!important}
+.sn-wordmark{font-size:clamp(19px,5vw,25px)!important;letter-spacing:-.9px!important}
+.sn-brand-sub{font-size:8px!important;letter-spacing:2px!important}
+.sn-header-tag{display:none!important}
+.sn-list-heading{font-size:clamp(23px,6vw,29px)!important;margin:5px 0 7px!important;letter-spacing:-.9px!important}
+.sn-list-heading span{display:none!important}
+.sn-date-title,.sn-section-label{font-size:10px!important;letter-spacing:1.3px!important;margin:8px 0 3px!important;color:#a5a9ae!important}
+[data-testid="stRadio"]>div[role="radiogroup"]{gap:5px!important;padding:1px 0 5px!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label{padding:8px 11px!important;border-radius:11px!important;min-height:38px!important;background:#1b1d20!important;border:1px solid #30343a!important;box-shadow:none!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked){background:#f0f0f0!important;border-color:#f0f0f0!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked) *{color:#101113!important}
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p{font-size:12px!important;font-weight:650!important}
+/* Radio dots are unnecessary in segmented controls. */
+[data-testid="stRadio"] label [data-testid="stWidgetLabel"]{display:none!important}
+[data-testid="stRadio"] label>div:first-child:has(input[type="radio"]){position:absolute!important;opacity:0!important;width:0!important;height:0!important;overflow:hidden!important}
+[data-testid="stRadio"] label{position:relative!important}
+/* Date strip is horizontal, scrollable, and touch-friendly. */
+[data-testid="stRadio"] [role="radiogroup"]{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+[data-testid="stRadio"] [role="radiogroup"]>label{flex:0 0 auto!important;min-width:max-content!important}
+[data-testid="stTextInput"] input{min-height:42px!important;border-radius:12px!important}
+[data-testid="stPopover"] button{min-height:35px!important;border-radius:10px!important;background:#1b1d20!important;border-color:#373a40!important;font-size:12px!important}
+[data-testid="stExpander"]{border-radius:12px!important}
+.sn-section-title{margin:8px 0!important;font-size:17px!important}
+.sn-competition{margin:4px 0!important}
+[data-testid="stCaptionContainer"]{margin:0!important}
+@media(max-width:500px){.block-container{padding:9px 13px 65px!important}.sn-header{margin-bottom:2px!important}.sn-list-heading{margin-top:3px!important}}
 </style>
 
 """,unsafe_allow_html=True)
@@ -1005,7 +1037,7 @@ st.markdown("""
 """,unsafe_allow_html=True)
 
 search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
-st.markdown("<div class='sn-list-heading'>Centro de partidos <span>Encuentra un encuentro y descubre lo que proyecta el modelo</span></div>", unsafe_allow_html=True)
+st.markdown("<div class='sn-list-heading'>Partidos</div>", unsafe_allow_html=True)
 status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
                          horizontal=True, label_visibility="collapsed", key="status_tabs")
 # Calendario semanal: un único control horizontal (sin columnas que se apilen en móvil).
@@ -1078,10 +1110,9 @@ try:
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
 
-    st.caption(f"{len(matches)} encuentros  ·  {live} en vivo  ·  {finished} finalizados")
+    st.caption(f"{len(matches)} partidos  ·  {live} en vivo  ·  {finished} finalizados")
 
-    st.markdown(f"<div class='sn-section-title'>{html.escape(sport_label)} · Encuentros</div>", unsafe_allow_html=True)
-    st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} encuentros")
+    st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {html.escape(league_name)}")
 
     if not matches:
         st.info(
