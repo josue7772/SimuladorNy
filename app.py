@@ -26,6 +26,26 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+st.markdown("""<style>
+.ny-confidence{border:1px solid #38393e;border-radius:18px;background:#202125;
+padding:17px 18px;margin:12px 0 18px;display:flex;flex-direction:column;gap:7px}
+.ny-confidence strong{font-size:19px;color:#f7f7f8;font-weight:700}
+.ny-confidence span{font-size:13px;color:#a9abb2;line-height:1.5}
+.ny-intel-label{font-size:11px;font-weight:700;letter-spacing:1.7px;color:#a3a4aa;margin-top:16px}
+.ny-live-pill{font-size:12px;font-weight:700;letter-spacing:1.2px;color:#f0f0f0;
+padding:8px 0}
+.ny-compare-row{display:flex;align-items:center;gap:12px;margin:10px 0 18px;
+font-size:16px;font-weight:650}
+.ny-compare-row span{min-width:48px;text-align:center}
+.ny-compare-track{height:9px;border-radius:20px;background:#414248;flex:1;overflow:hidden}
+.ny-compare-track i{display:block;height:100%;background:#e9e9e9;border-radius:20px}
+@media(max-width:600px){
+h1,h2{letter-spacing:-.035em}
+[data-testid="stExpander"] summary{min-height:55px}
+[data-testid="stExpander"] summary p{font-size:16px!important}
+}
+</style>""", unsafe_allow_html=True)
+
 # Fecha local de la interfaz. Streamlit Cloud suele ejecutarse en UTC.
 # America/Mexico_City evita que aparezca "mañana" cuando aún es hoy en México.
 APP_TIMEZONE = ZoneInfo("America/Mexico_City")
@@ -1511,6 +1531,80 @@ def trend_score(match):
             score += 18
     return score
 
+def nyuz_confidence(games_home, games_away, source=""):
+    """Data coverage grade, not probability that a forecast is correct."""
+    n = min(len(games_home), len(games_away))
+    if n >= 10:
+        return "Alta cobertura", "≥10 partidos históricos por equipo"
+    if n >= 5:
+        return "Cobertura media", f"{n} partidos históricos por equipo como mínimo"
+    if n >= 3:
+        return "Cobertura limitada", f"Solo {n} partidos históricos por equipo como mínimo"
+    return "Datos insuficientes", f"Solo {n} partidos históricos por equipo como mínimo"
+
+
+def nyuz_comparison(match, historical_data, sport_path, league_code, cutoff):
+    try:
+        if sport_path == "basketball":
+            hg, ag, h2h = nba_history_for_match(match, historical_data, cutoff)
+        else:
+            hg, ag, h2h = history_for_match(match, historical_data, sport_path, league_code, cutoff)
+        label, reason = nyuz_confidence(hg, ag)
+        st.markdown('<div class="ny-intel-label">NYUZ CONFIDENCE · CALIDAD DE DATOS</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="ny-confidence"><strong>{html.escape(label)}</strong>'
+                    f'<span>{html.escape(reason)} · No representa una probabilidad de acierto.</span></div>',
+                    unsafe_allow_html=True)
+        with st.expander("Comparador de equipos", expanded=False):
+            hname, aname = team_name(match["home"]), team_name(match["away"])
+            c1,c2=st.columns(2)
+            with c1:
+                st.markdown(f"**{hname}**")
+                st.caption(f"{len(hg)} partidos históricos")
+            with c2:
+                st.markdown(f"**{aname}**")
+                st.caption(f"{len(ag)} partidos históricos")
+            if hg and ag:
+                def avg(rows, key):
+                    values=[float(x[key]) for x in rows if isinstance(x.get(key),(int,float))]
+                    return sum(values)/len(values) if values else None
+                for title,key in [("Anotados por partido","gf"),("Recibidos por partido","ga")]:
+                    hv,av=avg(hg,key),avg(ag,key)
+                    if hv is not None and av is not None:
+                        st.markdown(f"**{title}**")
+                        st.markdown(f'<div class="ny-compare-row"><span>{hv:.1f}</span>'
+                                    f'<div class="ny-compare-track"><i style="width:{100*hv/max(hv+av,.01):.1f}%"></i></div>'
+                                    f'<span>{av:.1f}</span></div>',unsafe_allow_html=True)
+            else:
+                st.caption("No hay suficientes resultados anteriores para comparar.")
+            st.caption(f"Enfrentamientos directos recuperados: {len(h2h)}. "
+                       "Se usan únicamente partidos anteriores al encuentro.")
+    except (KeyError, ValueError, TypeError, requests.RequestException):
+        st.caption("Comparación no disponible: faltan datos históricos verificables.")
+
+
+def nyuz_live_details(match, sport_path, league_code):
+    if match["state"] != "in":
+        return
+    st.markdown('<div class="ny-live-pill">● EN VIVO · Actualización bajo demanda</div>',unsafe_allow_html=True)
+    st.caption(f'Estado del proveedor: {match["status"]}. '
+               'Los datos pueden tener retraso.')
+    if st.button("↻ Actualizar marcador", key=f'live_refresh_{match["id"]}'):
+        fetch_json.clear()
+        st.rerun()
+    try:
+        data=fetch_json(league_url(sport_path,league_code,
+                                  f'summary?event={match["id"]}'))
+        plays=data.get("plays") or []
+        if isinstance(plays,list) and plays:
+            st.markdown("**Últimos eventos**")
+            for play in plays[-5:][::-1]:
+                desc=play.get("text") or play.get("description") or ""
+                if desc:
+                    st.caption(str(desc)[:180])
+    except (requests.RequestException,ValueError,TypeError):
+        st.caption("No hay eventos detallados disponibles en esta fuente.")
+
+
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
@@ -1526,6 +1620,8 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
         + '</div>', unsafe_allow_html=True
     )
     with st.expander("Ver análisis y predicciones", expanded=False):
+        nyuz_live_details(match, sport_path, league_code)
+        nyuz_comparison(match, historical_data, sport_path, league_code, selected_date)
         if sport_label == "⚽ Fútbol":
             render_monte_carlo_panel(
                 match, historical_data, sport_path, league_code, selected_date)
@@ -2048,44 +2144,41 @@ st.markdown("""
 sport_label = st.pills("Deporte", list(SPORTS.keys()), selection_mode="single", default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs") or "⚽ Fútbol"
 sport = SPORTS[sport_label]
 
-st.markdown('<div class="ny-lab-heading" id="ny-lab">♧ &nbsp; <b>Model Lab</b><small>Backtesting y evaluación de modelos</small></div>',unsafe_allow_html=True)
-with st.expander("🧪 Nyuz Model Lab · Backtesting NBA", expanded=(st.query_params.get("sn_view") == "lab")):
-    st.caption("Prueba retrospectiva: solo utiliza partidos anteriores a cada encuentro. "
-               "Compara un promedio simple contra un modelo que pondera la forma reciente. "
-               "Este laboratorio no modifica automáticamente el motor en producción.")
-    if st.button("Evaluar últimos 60 partidos NBA", key="nyuz_backtest"):
-        with st.spinner("Recuperando historial y evaluando partidos NBA..."):
-            historical = nba_recent_scoreboards(selected_date + timedelta(days=1))
-            rows = backtest_nba_history(historical, 60)
-        if len(rows) < 15:
-            st.warning(f"Solo se pudieron evaluar {len(rows)} partidos con al menos cinco "
-                       "antecedentes por equipo. Se necesitan más datos para comparar modelos.")
-        else:
-            split = max(1, int(len(rows)*.8))
-            validation, test = rows[:split], rows[split:]
-            def mae(items, prefix):
-                return sum(abs(r[f"{prefix}_home"]-r["actual_home"])+
-                           abs(r[f"{prefix}_away"]-r["actual_away"]) for r in items)/(2*len(items))
-            st.metric("Partidos evaluados", len(rows))
-            st.caption(f"Validación: {len(validation)} partidos anteriores · "
-                       f"Prueba final: {len(test)} partidos posteriores.")
-            st.markdown("**Error absoluto medio por equipo (puntos; menor es mejor)**")
-            st.table([
-                {"Modelo":"Promedio simple", "Validación":round(mae(validation,"base"),2),
-                 "Prueba final":round(mae(test,"base"),2)},
-                {"Modelo":"Forma reciente ponderada", "Validación":round(mae(validation,"candidate"),2),
-                 "Prueba final":round(mae(test,"candidate"),2)}
-            ])
-            st.caption("Evaluación preliminar de proyección de puntos, no de rebotes, "
-                       "asistencias o triples. El backtesting utiliza medias analíticas "
-                       "equivalentes a la expectativa de una simulación Monte Carlo, "
-                       "sin ejecutar 10,000 muestras por partido. "
-                       "No se ha optimizado ni calibrado el modelo con estos resultados.")
-            st.dataframe([{"Fecha":r["date"],"Partido":r["match"],
-                           "Real":f'{r["actual_home"]:.0f} - {r["actual_away"]:.0f}',
-                           "Base":f'{r["base_home"]:.1f} - {r["base_away"]:.1f}',
-                           "Ponderado":f'{r["candidate_home"]:.1f} - {r["candidate_away"]:.1f}'}
-                          for r in reversed(test)], hide_index=True, use_container_width=True)
+def backtest_nba_history(events, max_games=60):
+    """Walk-forward score evaluation. No game sees its own or later scores."""
+    ordered = sorted(
+        (m for m in (parse_event(e) for e in events) if m and m["completed"]),
+        key=lambda m: str(m.get("date") or ""))
+    by_team = {}
+    evaluated = []
+    for match in ordered:
+        hid = str(match["home"].get("team", {}).get("id") or "")
+        aid = str(match["away"].get("team", {}).get("id") or "")
+        hs, aws = numeric_score(match["home"]), numeric_score(match["away"])
+        if not hid or not aid or hs is None or aws is None:
+            continue
+        hg = by_team.get(hid, [])[-10:]
+        ag = by_team.get(aid, [])[-10:]
+        if len(hg) >= 5 and len(ag) >= 5:
+            def wavg(rows, key, decay):
+                values = list(reversed(rows))
+                weights = [1 / (1 + i * decay) for i in range(len(values))]
+                return sum(float(r[key])*w for r,w in zip(values,weights))/sum(weights)
+            def projection(decay):
+                return (
+                    .55*wavg(hg,"gf",decay)+.45*wavg(ag,"ga",decay),
+                    .55*wavg(ag,"gf",decay)+.45*wavg(hg,"ga",decay))
+            base = projection(0)
+            candidate = projection(.17)
+            evaluated.append({"date":str(match["date"])[:10],
+                "match":f'{team_name(match["home"])} vs {team_name(match["away"])}',
+                "actual_home":hs,"actual_away":aws,
+                "base_home":base[0],"base_away":base[1],
+                "candidate_home":candidate[0],"candidate_away":candidate[1]})
+        by_team.setdefault(hid, []).append({"gf":hs,"ga":aws})
+        by_team.setdefault(aid, []).append({"gf":aws,"ga":hs})
+    return evaluated[-max_games:]
+
 
 st.markdown('<div class="ny-section-heading" id="ny-partidos">Partidos de hoy</div>',unsafe_allow_html=True)
 status_filter = st.pills(
@@ -2131,40 +2224,63 @@ for day in week_days:
 st.markdown('<nav class="sn-date-rail" aria-label="Seleccionar día">'
             + "".join(date_links) + '</nav>', unsafe_allow_html=True)
 
-def backtest_nba_history(events, max_games=60):
-    """Walk-forward score evaluation. No game sees its own or later scores."""
-    ordered = sorted(
-        (m for m in (parse_event(e) for e in events) if m and m["completed"]),
-        key=lambda m: str(m.get("date") or ""))
-    by_team = {}
-    evaluated = []
-    for match in ordered:
-        hid = str(match["home"].get("team", {}).get("id") or "")
-        aid = str(match["away"].get("team", {}).get("id") or "")
-        hs, aws = numeric_score(match["home"]), numeric_score(match["away"])
-        if not hid or not aid or hs is None or aws is None:
-            continue
-        hg = by_team.get(hid, [])[-10:]
-        ag = by_team.get(aid, [])[-10:]
-        if len(hg) >= 5 and len(ag) >= 5:
-            def wavg(rows, key, decay):
-                values = list(reversed(rows))
-                weights = [1 / (1 + i * decay) for i in range(len(values))]
-                return sum(float(r[key])*w for r,w in zip(values,weights))/sum(weights)
-            def projection(decay):
-                return (
-                    .55*wavg(hg,"gf",decay)+.45*wavg(ag,"ga",decay),
-                    .55*wavg(ag,"gf",decay)+.45*wavg(hg,"ga",decay))
-            base = projection(0)
-            candidate = projection(.17)
-            evaluated.append({"date":str(match["date"])[:10],
-                "match":f'{team_name(match["home"])} vs {team_name(match["away"])}',
-                "actual_home":hs,"actual_away":aws,
-                "base_home":base[0],"base_away":base[1],
-                "candidate_home":candidate[0],"candidate_away":candidate[1]})
-        by_team.setdefault(hid, []).append({"gf":hs,"ga":aws})
-        by_team.setdefault(aid, []).append({"gf":aws,"ga":hs})
-    return evaluated[-max_games:]
+
+
+st.markdown('<div class="ny-lab-heading" id="ny-lab">♧ &nbsp; <b>Model Lab</b><small>Backtesting y evaluación de modelos</small></div>',unsafe_allow_html=True)
+with st.expander("🧪 Nyuz Model Lab · Backtesting NBA", expanded=(st.query_params.get("sn_view") == "lab")):
+    st.caption("Prueba retrospectiva: solo utiliza partidos anteriores a cada encuentro. "
+               "Compara un promedio simple contra un modelo que pondera la forma reciente. "
+               "Este laboratorio no modifica automáticamente el motor en producción.")
+    if st.button("Evaluar últimos 60 partidos NBA", key="nyuz_backtest"):
+        with st.spinner("Recuperando historial y evaluando partidos NBA..."):
+            historical = nba_recent_scoreboards(selected_date + timedelta(days=1))
+            rows = backtest_nba_history(historical, 60)
+        if len(rows) < 15:
+            st.warning(f"Solo se pudieron evaluar {len(rows)} partidos con al menos cinco "
+                       "antecedentes por equipo. Se necesitan más datos para comparar modelos.")
+        else:
+            split = max(1, int(len(rows)*.8))
+            validation, test = rows[:split], rows[split:]
+            def mae(items, prefix):
+                return sum(abs(r[f"{prefix}_home"]-r["actual_home"])+
+                           abs(r[f"{prefix}_away"]-r["actual_away"]) for r in items)/(2*len(items))
+            st.metric("Partidos evaluados", len(rows))
+            st.caption(f"Validación: {len(validation)} partidos anteriores · "
+                       f"Prueba final: {len(test)} partidos posteriores.")
+            st.markdown("**Error absoluto medio por equipo (puntos; menor es mejor)**")
+            st.table([
+                {"Modelo":"Promedio simple", "Validación":round(mae(validation,"base"),2),
+                 "Prueba final":round(mae(test,"base"),2)},
+                {"Modelo":"Forma reciente ponderada", "Validación":round(mae(validation,"candidate"),2),
+                 "Prueba final":round(mae(test,"candidate"),2)}
+            ])
+            st.markdown("**Diagnóstico de errores en prueba final**")
+            for prefix,name in [("base","Promedio simple"),("candidate","Forma reciente ponderada")]:
+                errors=[(r[f"{prefix}_home"]-r["actual_home"]+
+                         r[f"{prefix}_away"]-r["actual_away"])/2 for r in test]
+                bias=sum(errors)/len(errors)
+                st.caption(f"{name}: sesgo medio {bias:+.2f} puntos por equipo "
+                           "(positivo = sobreestima).")
+            import csv
+            import io
+            buffer=io.StringIO()
+            writer=csv.DictWriter(buffer,fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
+            st.download_button("Descargar auditoría histórica CSV",
+                               data=buffer.getvalue().encode("utf-8-sig"),
+                               file_name="nyuz_model_lab_nba.csv",
+                               mime="text/csv",key="nyuz_lab_export")
+            st.caption("Evaluación preliminar de proyección de puntos, no de rebotes, "
+                       "asistencias o triples. El backtesting utiliza medias analíticas "
+                       "equivalentes a la expectativa de una simulación Monte Carlo, "
+                       "sin ejecutar 10,000 muestras por partido. "
+                       "No se ha optimizado ni calibrado el modelo con estos resultados.")
+            st.dataframe([{"Fecha":r["date"],"Partido":r["match"],
+                           "Real":f'{r["actual_home"]:.0f} - {r["actual_away"]:.0f}',
+                           "Base":f'{r["base_home"]:.1f} - {r["base_away"]:.1f}',
+                           "Ponderado":f'{r["candidate_home"]:.1f} - {r["candidate_away"]:.1f}'}
+                          for r in reversed(test)], hide_index=True, use_container_width=True)
 
 
 if sport_label == "⚾ KBO":
@@ -2214,6 +2330,14 @@ try:
     upcoming = len(matches) - live - finished
 
     st.caption(f"{league_name} · {len(matches)} partidos · {live} en vivo")
+    if live:
+        st.caption("● Partidos en vivo · Fuente ESPN · actualización manual")
+        if st.button("↻ Actualizar partidos en vivo", key="nyuz_refresh_all"):
+            fetch_json.clear()
+            st.rerun()
+    else:
+        st.caption("Datos consultados desde ESPN · caché de hasta 2 minutos")
+
     if st.session_state.get("sn_trending", True):
         st.caption("✦ Destacados primero · orden orientativo, no popularidad en tiempo real")
 
