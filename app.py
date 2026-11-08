@@ -327,6 +327,43 @@ def history_for_match(match, league_events, sport_path, league_code, cutoff):
             sorted(away_games, key=key, reverse=True)[:5],
             sorted(h2h, key=key, reverse=True)[:5])
 
+@st.cache_data(ttl=900, show_spinner=False)
+def nba_recent_scoreboards(cutoff):
+    """NBA: retrieve individual calendar days, avoiding unsupported date ranges."""
+    events = {}
+    for days_back in range(1, 31):
+        day = cutoff - timedelta(days=days_back)
+        try:
+            for event in get_events("basketball", "nba", day):
+                if event.get("id"):
+                    events[str(event["id"])] = event
+        except (requests.RequestException, ValueError, KeyError):
+            continue
+    return list(events.values())
+
+
+def nba_history_for_match(match, events, cutoff):
+    """Combine league/team schedules with individual-day scoreboard fallback."""
+    league_events = list(events) + nba_recent_scoreboards(cutoff)
+    return history_for_match(match, league_events, "basketball", "nba", cutoff)
+
+
+def show_nba_lineups(lineup, ids, names, source):
+    st.markdown("<div class='sn-section-title'>Rotaciones y disponibilidad</div>", unsafe_allow_html=True)
+    st.caption(source)
+    cols = st.columns(2)
+    for col, tid, name in zip(cols, ids, names):
+        with col:
+            st.markdown(f"**{name}**")
+            players = lineup.get(tid, {})
+            for label, key in (("Titulares", "starters"), ("Suplentes", "bench"),
+                               ("No participaron", "out")):
+                group = players.get(key) or []
+                st.caption(f"{label}: {', '.join(group[:12]) if group else 'No confirmado'}")
+    st.caption("Un boxscore de un partido en vivo no confirma necesariamente "
+               "la alineación previa al inicio. 'No participó' tampoco confirma lesión.")
+
+
 def historical_parameters(home_games, away_games, h2h):
     """Ataque/defensa de últimos cinco, localía y H2H con regularización.
     La estimación de goles NO es xG oficial basado en calidad de disparos.
@@ -602,15 +639,22 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
                 unsafe_allow_html=True)
     st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
                 unsafe_allow_html=True)
-    home_games, away_games, _ = history_for_match(match, events, sport_path, league_code, cutoff)
+    if sport_path == "basketball":
+        home_games, away_games, _ = nba_history_for_match(match, events, cutoff)
+    else:
+        home_games, away_games, _ = history_for_match(match, events, sport_path, league_code, cutoff)
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
     ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
     lineup, lineup_source = nba_lineup_information(match["id"]) if sport_path == "basketball" else ({}, "")
+    if sport_path == "basketball":
+        show_nba_lineups(lineup, ids, names, lineup_source)
     prediction = (nba_simulation_with_lineup(home_games, away_games, seed, lineup, ids)
                   if sport_path == "basketball" else
                   simulate_other_sport(home_games, away_games, sport_path, seed))
     if prediction is None:
-        st.warning(f"No hay suficientes partidos previos con resultados: {names[0]} ({len(home_games)}), {names[1]} ({len(away_games)}). Se requieren al menos 3 por equipo para evitar predicciones inventadas.")
+        st.warning(f"Historial insuficiente: {names[0]} ({len(home_games)}), {names[1]} ({len(away_games)}). "
+                   "Se intentaron calendarios de equipos y 30 días de marcadores NBA. "
+                   "No se mostrarán cifras inventadas.")
         return
     st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
     for label, value in ((f"Victoria {names[0]}", prediction["win_h"]),
@@ -660,6 +704,10 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
     for label, value in stats:
         st.markdown(f"<div class='stat-row'><span>{html.escape(label)}</span>"
                     f"<strong>{html.escape(value)}</strong></div>", unsafe_allow_html=True)
+    if sport_path == "basketball":
+        st.caption("Las alineaciones visibles son informativas: la versión actual NO ajusta "
+                   "todavía los 10,000 escenarios por minutos y estadísticas individuales. "
+                   "Se requieren datos de jugadores verificados para hacerlo.")
     st.caption("Puntos/goles/carreras y probabilidades: modelo Monte Carlo experimental basado en resultados recientes. "
                "Asistencias, rebotes y demás métricas: promedios históricos de boxscores disponibles, "
                "NO simulaciones de esas métricas. Sin suficientes datos se indica 'No disponible'. "
