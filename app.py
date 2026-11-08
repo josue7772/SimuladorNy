@@ -2479,8 +2479,8 @@ modelo se actualiza automáticamente al terminar la evaluación.
 from nyuz_lab3 import render_history
 _cloud_url, _cloud_key = cloud_config()
 render_history(DB_PATH, _cloud_url, _cloud_key, get_events, parse_event, numeric_score)
-from nyuz_lab3 import render_auto_evaluation
-render_auto_evaluation(_cloud_url, _cloud_key)
+# La evaluación y su historial ya se muestran dentro de render_history().
+# No importar render_auto_evaluation: no existe en nyuz_lab3.py.
 
 st.toggle("Destacados primero ✦", value=True, key="sn_trending",
           help="Orden editorial: partidos en vivo, transmisiones y equipos reconocidos. No son tendencias medidas por audiencia.")
