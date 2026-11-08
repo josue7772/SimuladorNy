@@ -425,6 +425,39 @@ def render_fair_odds(probabilities):
     st.caption("Cuotas decimales justas del modelo, sin margen comercial. No son cuotas de casas de apuestas.")
 
 
+def render_probability_comparison(home_label, away_label, home_pct, away_pct, draw_pct=None):
+    """Visual comparison; displays model outputs without altering probabilities."""
+    h = max(0.0, min(100.0, float(home_pct)))
+    a = max(0.0, min(100.0, float(away_pct)))
+    d = max(0.0, min(100.0, float(draw_pct))) if draw_pct is not None else None
+    segments = [(h, '#4385f5'), (a, '#9dc4ff')] if d is None else [(h, '#4385f5'), (d, '#657caa'), (a, '#9dc4ff')]
+    bar = ''.join(f'<div style="width:{v:.5f}%;background:{color};height:100%"></div>' for v,color in segments)
+    middle = f'<span>Empate {d:.1f}%</span>' if d is not None else '<span>Probabilidad de victoria</span>'
+    st.markdown(
+        '<div class="sn-compare">'
+        f'<div class="sn-compare-head"><span>{html.escape(home_label)} · {h:.1f}%</span>{middle}'
+        f'<span>{html.escape(away_label)} · {a:.1f}%</span></div>'
+        f'<div class="sn-compare-track" style="gap:0">{bar}</div></div>',
+        unsafe_allow_html=True)
+
+
+def render_metric_comparison(title, home, away, total=None):
+    """Display existing simulated metrics as a two-team comparison, not new predictions."""
+    try:
+        h, a = float(home), float(away)
+    except (ValueError, TypeError):
+        return
+    denom = max(0.0, h) + max(0.0, a)
+    left = (max(0.0, h) / denom * 100.0) if denom else 50.0
+    t = h + a if total is None else float(total)
+    st.markdown(
+        '<div class="sn-compare">'
+        f'<div class="sn-compare-head"><strong>{h:.1f}</strong><span>{html.escape(title)}</span><strong>{a:.1f}</strong></div>'
+        f'<div class="sn-compare-track"><div style="width:{left:.3f}%"></div><div></div></div>'
+        f'<div class="sn-compare-total">Total proyectado: <strong>{t:.1f}</strong></div></div>',
+        unsafe_allow_html=True)
+
+
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel único: resultados Monte Carlo sin secciones de análisis técnico."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
@@ -466,6 +499,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 "ajustes por jugadores sin datos individuales fiables de impacto y minutos. "
                 "Antes del inicio las alineaciones pueden no estar confirmadas.")
     st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
+    render_probability_comparison(home_name, away_name, result["home_win"], result["away_win"], result["draw"])
     for label, value in (
         (f"Victoria {home_name}", result["home_win"]),
         ("Empate", result["draw"]),
@@ -495,6 +529,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         ("Ambos equipos anotan", f"{result['both_score']:.1f}%"),
         ("Más de 2.5 goles", f"{result['over_25']:.1f}%"),
     ]
+    render_metric_comparison("Goles proyectados", params['lambda_home'], params['lambda_away'])
     stats.insert(3, ("xG oficial · calidad de disparos", "No disponible"))
     for label, value in stats:
         st.markdown(
@@ -714,6 +749,7 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
                    "No se mostrarán cifras inventadas.")
         return
     st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
+    render_probability_comparison(names[0], names[1], prediction["win_h"], prediction["win_a"])
     for label, value in ((f"Victoria {names[0]}", prediction["win_h"]),
                          (f"Victoria {names[1]}", prediction["win_a"])):
         st.markdown(f"<div class='sn-prob'><div class='sn-prob-top'><span>{html.escape(label)}</span>"
@@ -782,9 +818,16 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
             (f"{titles[key]} · total", f"{left+right:.1f}"),
         ])
 
-    for label, value in stats:
-        st.markdown(f"<div class='stat-row'><span>{html.escape(label)}</span>"
-                    f"<strong>{html.escape(value)}</strong></div>", unsafe_allow_html=True)
+    render_metric_comparison(unit + " proyectados", prediction['home'], prediction['away'])
+    for metric_key in definitions:
+        left, right = simulated.get((0, metric_key)), simulated.get((1, metric_key))
+        if left is not None and right is not None:
+            render_metric_comparison(titles[metric_key], left, right)
+    with st.expander("Ver desglose numérico", expanded=False):
+        for label, value in stats:
+            st.markdown(f"<div class='stat-row'><span>{html.escape(label)}</span>"
+                        f"<strong>{html.escape(value)}</strong></div>", unsafe_allow_html=True)
+    # Compact comparison cards above replace the long list of repeated rows.
     st.caption("Proyecciones experimentales; las estadísticas adicionales se remuestrean "
                "a partir de boxscores verificados. Las alineaciones aún no ajustan el modelo.")
 
@@ -824,7 +867,7 @@ h1,h2,h3,p,label{color:#f2f7f8}
 .sn-brand-sub{font-size:9px;letter-spacing:2.4px;font-weight:800;color:#8ca6ad;margin-top:4px}
 .sn-header-tag{font-size:10px;color:#9ab2b9;border:1px solid #34454b;border-radius:30px;padding:7px 10px;white-space:nowrap}
 .sn-hero{background:linear-gradient(130deg,#142442,#101a2b 70%);border:1px solid #304e78;border-radius:23px;padding:19px 19px 18px;margin:4px 0 18px;box-shadow:0 14px 30px #0003}
-.sn-eyebrow{color:#85baff;font-size:10px;letter-spacing:2px;font-weight:800}.sn-hero-title{font-size:clamp(22px,6vw,32px);font-weight:800;letter-spacing:-1.1px;line-height:1.15;margin:9px 0}.sn-hero-desc{font-size:13px;color:#9fb2b7;line-height:1.5;max-width:500px}
+.sn-eyebrow{color:#85baff;font-size:10px;letter-spacing:2px;font-weight:800}.sn-hero-title{font-size:clamp(21px,5.2vw,30px);font-weight:800;letter-spacing:-1.1px;line-height:1.15;margin:9px 0}.sn-hero-desc{font-size:13px;color:#9fb2b7;line-height:1.5;max-width:500px}
 .sn-pills{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}.sn-pill{font-size:11px;font-weight:700;background:#1b3154;border:1px solid #345581;border-radius:99px;padding:7px 10px;color:#c0d9ff}.sn-pill-live{color:#f1b7bd;background:#3b252c;border-color:#62404b}
 .sn-list-heading{font-size:clamp(24px,6vw,32px);font-weight:800;letter-spacing:-1px;margin:17px 0 6px;color:#f5fafb}.sn-list-heading span{font-size:12px;letter-spacing:0;font-weight:500;color:#9aabb2;margin-left:7px}
 .sn-section-label{font-size:11px;color:#94aab2;letter-spacing:1.5px;font-weight:800;margin:13px 0 9px}
@@ -859,12 +902,23 @@ h1,h2,h3,p,label{color:#f2f7f8}
 .stButton button{border-radius:12px!important}
 [data-testid="stAlert"]{border-radius:14px!important}
 @media(max-width:500px){.block-container{padding:16px 12px 70px!important}.sn-hero{padding:17px}.sn-header-tag{display:none}.sn-side img{width:48px;height:48px}.sn-large .sn-side img{width:63px;height:63px}.sn-teams{gap:3px}.stat-row{font-size:12px}}
-</style>
 .sn-odds-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:8px 0 12px}
 .sn-odds-card{background:linear-gradient(145deg,#192b4a,#121f35);border:1px solid #35517b;border-radius:15px;text-align:center;padding:15px 7px}
 .sn-odds-label{color:#b0c6e7;font-size:11px;font-weight:700}
 .sn-odds-value{color:#90bcff;font-size:clamp(20px,5vw,29px);font-weight:850;margin:6px 0;font-variant-numeric:tabular-nums}
 .sn-odds-prob{color:#c7d8f0;font-size:11px}
+/* Comparison widgets */
+.sn-compare{background:linear-gradient(150deg,#16243b,#101a2b);border:1px solid #30496d;border-radius:16px;padding:13px 14px;margin:10px 0}
+.sn-compare-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:11px;color:#e8f1ff;font-size:12px;font-weight:750}
+.sn-compare-head span:nth-child(2){color:#9fb4d1;font-size:11px;font-weight:600;text-align:center}
+.sn-compare-track{display:flex;width:100%;height:8px;overflow:hidden;border-radius:12px;background:#26354d;gap:3px}
+.sn-compare-track div:first-child{background:linear-gradient(90deg,#2563eb,#5d9cff)}
+.sn-compare-track div:last-child{background:linear-gradient(90deg,#8bb8ff,#b3d3ff);flex:1}
+.sn-compare-total{text-align:center;color:#9fb4d1;font-size:11px;margin-top:9px}
+.sn-odds-grid:has(.sn-odds-card:nth-child(2):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}
+.sn-odds-card{box-shadow:0 8px 20px #0002}
+@media(max-width:500px){.sn-compare{padding:12px 10px}.sn-odds-value{font-size:23px}}
+</style>
 
 """,unsafe_allow_html=True)
 
