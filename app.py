@@ -563,7 +563,52 @@ def snapshot_connection():
     )""")
     return connection
 
+def cloud_config():
+    def secret(name):
+        try:
+            return str(st.secrets.get(name, "")).strip() or os.getenv(name, "").strip()
+        except (FileNotFoundError, KeyError, AttributeError):
+            return os.getenv(name, "").strip()
+    return secret("SUPABASE_URL").rstrip("/"), secret("SUPABASE_SERVICE_ROLE_KEY")
+
+def cloud_headers(key):
+    return {"apikey": key, "Authorization": "Bearer " + key,
+            "Content-Type": "application/json"}
+
+def cloud_snapshot(sport, league, event_id):
+    url, key = cloud_config()
+    if not url or not key:
+        return None
+    try:
+        response = requests.get(url + "/rest/v1/predictions", headers=cloud_headers(key),
+            params={"select":"payload", "sport":"eq."+sport, "league":"eq."+league,
+                    "event_id":"eq."+str(event_id), "limit":"1"}, timeout=8)
+        response.raise_for_status()
+        rows = response.json()
+        return rows[0]["payload"] if rows else None
+    except (requests.RequestException, ValueError, KeyError, IndexError):
+        return None
+
+def cloud_save(sport, league, event_id, now, kickoff, record):
+    url, key = cloud_config()
+    if not url or not key:
+        return None
+    try:
+        response = requests.post(url + "/rest/v1/predictions",
+            headers={**cloud_headers(key), "Prefer":"resolution=ignore-duplicates,return=minimal"},
+            params={"on_conflict":"sport,league,event_id"},
+            json={"sport":sport,"league":league,"event_id":str(event_id),
+                  "created_utc":now,"kickoff_utc":kickoff,
+                  "model_version":MODEL_VERSION,"payload":record}, timeout=10)
+        response.raise_for_status()
+        return True
+    except requests.RequestException:
+        return False
+
 def get_snapshot(sport, league, event_id):
+    url, key = cloud_config()
+    if url and key:
+        return cloud_snapshot(sport, league, event_id)
     try:
         with snapshot_connection() as db:
             row = db.execute(
@@ -585,6 +630,10 @@ def save_prematch_snapshot(match, sport, league, projections, probabilities):
             "metrics": projections, "probabilities": probabilities,
             "kickoff": kickoff.isoformat(), "model_version": MODEL_VERSION
         }
+        url, key = cloud_config()
+        if url and key:
+            return cloud_save(sport, league, match["id"], now.isoformat(),
+                              kickoff.isoformat(), record)
         with snapshot_connection() as db:
             db.execute("""INSERT OR IGNORE INTO predictions
                 (sport,league,event_id,created_utc,model_version,kickoff_utc,payload)
@@ -700,24 +749,21 @@ def choose_recommended_pick(match, home_games, away_games, params):
 
 
 def render_recommended_pick(match, home_games, away_games, params):
-    pick, reason = choose_recommended_pick(match,home_games,away_games,params)
-    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
-                'Pick recomendado · análisis del modelo</div>', unsafe_allow_html=True)
+    pick, reason = choose_recommended_pick(match, home_games, away_games, params)
     if pick:
         label, probability = pick
-        st.markdown('<div class="sn-detail-winner">'+html.escape(label)
-                    +'</div>',unsafe_allow_html=True)
-        st.caption(f"Probabilidad estimada por el modelo: {probability*100:.1f}%. "
-                   "No equivale a una tasa de acierto comprobada.")
+        st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                    'Señal del modelo</div><div class="sn-detail-winner">'
+                    + html.escape(label) + '</div><div class="sn-detail-foot">'
+                    + f'Probabilidad estimada: {probability*100:.1f}% · No validada históricamente'
+                    + '</div></div>', unsafe_allow_html=True)
     else:
-        st.info(reason)
-    st.caption("Se evalúan goles y doble oportunidad (1X/X2). "
-               "No se recomiendan córners, tarjetas ni tiros todavía: "
-               "sus estimaciones actuales dependen de supuestos generales, "
-               "no de un modelo validado para esos mercados. "
-               "Sin validación histórica no podemos afirmar que exista "
-               "una apuesta con valor, aunque se muestren cuotas reales. "
-               "Ningún pick garantiza ganancias.")
+        # A discreet, readable status rather than a large blue warning panel.
+        st.markdown('<div class="sn-pick-muted"><strong>Sin pick recomendado</strong>'
+                    '<span>' + html.escape(reason.replace('Sin pick: ', ''))
+                    + '</span></div>', unsafe_allow_html=True)
+    st.caption('No se recomiendan mercados de córners, tarjetas o tiros sin un modelo '
+               'específico validado. Ninguna estimación garantiza ganancias.')
 
 
 # The Odds API v4: keys are configured server-side, never in source code.
@@ -785,15 +831,15 @@ def match_odds_event(match, events):
     return candidates[0][1]
 
 def render_real_bookmaker_odds(match, league_code, params):
-    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
-                'Cuotas reales · casas de apuestas</div>',unsafe_allow_html=True)
     if match.get("state") != "pre":
         st.caption("Las cuotas actuales solo se consultan para partidos pendientes; "
                    "no se muestran como si fueran cuotas históricas.")
         return
     key=odds_api_key()
     if not key:
-        st.info("Configura ODDS_API_KEY en los Secrets de Streamlit para activar cuotas reales.")
+        st.markdown('<div class="sn-pick-muted"><strong>Cuotas reales no activadas</strong>'
+                    '<span>Configura ODDS_API_KEY en Streamlit → Settings → Secrets '
+                    'y reinicia la aplicación.</span></div>', unsafe_allow_html=True)
         return
     sport_key=ODDS_LEAGUES.get(league_code.strip())
     if not sport_key:
@@ -810,6 +856,8 @@ def render_real_bookmaker_odds(match, league_code, params):
         st.caption("No hay cuotas verificadas para este encuentro. "
                    "Se exige coincidencia exacta de equipos y horario cercano.")
         return
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Cuotas reales · casas de apuestas</div>',unsafe_allow_html=True)
     home=ev["home_team"]; away=ev["away_team"]
     rows=[]
     for book in ev.get("bookmakers",[]):
@@ -1306,6 +1354,21 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
     st.caption("Proyecciones experimentales; las estadísticas adicionales se remuestrean "
                "a partir de boxscores verificados. Las alineaciones aún no ajustan el modelo.")
 
+def trend_score(match):
+    """Editorial visibility heuristic, not actual audience or betting volume."""
+    score = 100 if match["state"] == "in" else (30 if match["state"] == "pre" else 0)
+    score += 15 if match.get("broadcast") else 0
+    # Recognizable teams are a transparent heuristic, not measured popularity.
+    famous = ("real madrid", "barcelona", "atletico", "atlético", "manchester",
+              "liverpool", "arsenal", "chelsea", "bayern", "dortmund", "psg",
+              "paris saint", "inter", "juventus", "milan", "américa", "america",
+              "chivas", "guadalajara", "cruz azul", "tigres", "monterrey",
+              "pumas", "boca juniors", "river plate")
+    for team in (match["home"], match["away"]):
+        if any(name in team_name(team).lower() for name in famous):
+            score += 18
+    return score
+
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
@@ -1326,6 +1389,33 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
                 match, historical_data, sport_path, league_code, selected_date)
         else:
             render_other_sport_panel(match, historical_data, sport_path, league_code, selected_date)
+
+def run_scheduled_capture():
+    """Call via python app.py --capture; suitable for GitHub Actions cron."""
+    successes = 0
+    today = local_today()
+    # Scan major leagues; keep requests bounded and report failures.
+    leagues = ["mex.1","eng.1","esp.1","ita.1","ger.1","fra.1",
+               "usa.1","uefa.champions","por.1","bra.1","arg.1"]
+    for league in leagues:
+        for day in (today, today + timedelta(days=1)):
+            try:
+                fixtures = get_events("soccer", league, day)
+                upcoming = [m for m in (parse_event(e) for e in fixtures)
+                            if m and m["state"] == "pre"]
+                if not upcoming:
+                    continue
+                historical = historical_events("soccer", league, day)
+                for match in upcoming:
+                    if record_upcoming_match(match, historical, "soccer", league, day):
+                        successes += 1
+            except (requests.RequestException, ValueError, KeyError) as exc:
+                print(f"Capture warning {league} {day}: {exc}")
+    print(f"Snapshots registered or already present: {successes}")
+
+if __name__ == "__main__" and "--capture" in __import__("sys").argv:
+    run_scheduled_capture()
+    raise SystemExit(0)
 
 # --------------------------- INTERFAZ PREMIUM (SOLO PRESENTACIÓN) ---------------------------
 st.markdown("""
@@ -1717,6 +1807,9 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .sn-audit-table th,.sn-audit-table td{padding:11px 8px;border-bottom:1px solid #34363a;text-align:right;white-space:nowrap}
 .sn-audit-table th:first-child,.sn-audit-table td:first-child{text-align:left}
 .sn-audit-table th{background:#242528;color:#bfc0c3;font-weight:600}
+.sn-pick-muted{background:#1e2024;border:1px solid #3a3d43;border-radius:18px;padding:15px 17px;display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.sn-pick-muted strong{color:#f2f3f5;font-size:14px}
+.sn-pick-muted span{color:#b6bac1;font-size:12px;line-height:1.5}
 </style>
 
 """,unsafe_allow_html=True)
@@ -1781,6 +1874,8 @@ if sport_label == "⚾ KBO":
     st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
             "Se ha desactivado esa consulta para evitar el error HTTP 400. "
             "Los partidos y las predicciones KBO requieren integrar otra fuente verificable.")
+st.toggle("Destacados primero ✦", value=True, key="sn_trending",
+          help="Orden editorial: partidos en vivo, transmisiones y equipos reconocidos. No son tendencias medidas por audiencia.")
 search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
 with st.expander("Liga o competición", expanded=False):
     league_name = st.selectbox("Selecciona una liga", list(sport["leagues"].keys()))
@@ -1804,11 +1899,17 @@ try:
         matches = [m for m in matches if m["state"] == "pre"]
     elif status_filter == "Finalizados":
         matches = [m for m in matches if m["completed"]]
+    if st.session_state.get("sn_trending", True):
+        matches.sort(key=lambda m: (-trend_score(m), str(m.get("date") or "")))
+    else:
+        matches.sort(key=lambda m: str(m.get("date") or ""))
     live = sum(1 for m in matches if m["state"] == "in")
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
 
-    st.caption(f"{league_name}  ·  {len(matches)} partidos  ·  {live} en vivo")
+    st.caption(f"{league_name} · {len(matches)} partidos · {live} en vivo")
+    if st.session_state.get("sn_trending", True):
+        st.caption("✦ Destacados primero · orden orientativo, no popularidad en tiempo real")
 
 
 
