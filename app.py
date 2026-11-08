@@ -1,3 +1,4 @@
+import html
 import streamlit as st
 import requests
 import math
@@ -375,37 +376,25 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
     hlogo, alogo = safe_logo(home), safe_logo(away)
-    st.markdown('<div class="match-card">', unsafe_allow_html=True)
-    top1, top2 = st.columns([3, 1])
-    with top1:
-        st.caption(f"{league_name}  ·  {match['status']}")
-    with top2:
-        if match["state"] == "in":
-            st.markdown("🔴 **EN VIVO**")
-        elif match["completed"]:
-            st.caption("FINALIZADO")
-        else:
-            st.caption("PROGRAMADO")
-
-    c1, cm, c2 = st.columns([4, 2, 4], vertical_alignment="center")
-    with c1:
-        if hlogo:
-            st.image(hlogo, width=54)
-        st.markdown(f"**{hname}**")
-        st.caption("LOCAL")
-    with cm:
-        st.markdown(
-            f"<div class='score'>{score_of(home)} : {score_of(away)}</div>",
-            unsafe_allow_html=True,
-        )
-        st.caption("MARCADOR")
-    with c2:
-        if alogo:
-            st.image(alogo, width=54)
-        st.markdown(f"**{aname}**")
-        st.caption("VISITANTE")
-
-    st.caption(f"🏟️ {match['venue']}")
+    # Tarjeta compacta: tres columnas horizontales incluso en móvil.
+    with st.container(border=True):
+        st.caption(f"{league_name} · {match['status']}")
+        left, middle, right = st.columns([4, 2, 4], gap="small", vertical_alignment="center")
+        with left:
+            if hlogo:
+                st.image(hlogo, width=42)
+            st.markdown(f"<div class='compact-team'>{html.escape(hname)}</div>", unsafe_allow_html=True)
+        with middle:
+            if match["state"] == "pre":
+                shown = "VS"
+            else:
+                shown = f"{score_of(home)} : {score_of(away)}"
+            st.markdown(f"<div class='compact-score'>{html.escape(shown)}</div>", unsafe_allow_html=True)
+        with right:
+            if alogo:
+                st.image(alogo, width=42)
+            st.markdown(f"<div class='compact-team'>{html.escape(aname)}</div>", unsafe_allow_html=True)
+        st.caption(f"🏟️ {match['venue']}")
     with st.expander("Ver análisis y estadísticas", expanded=False):
         if sport_label == "⚽ Fútbol":
             render_monte_carlo_panel(match, historical_data, sport_path, league_code, selected_date)
@@ -445,7 +434,6 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
             )
 
         st.caption("Las proyecciones son probabilísticas y se distinguen de los datos reales del proveedor.")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------- ESTILO ---------------------------
 st.markdown("""
@@ -467,6 +455,16 @@ div[data-testid="stExpander"] { border: 1px solid #252a36; border-radius: 12px; 
 .stApp {background:#080b0c;}
 .match-card {background:#101516;border:1px solid #2c3435;border-radius:20px;}
 @media (max-width: 650px) { .block-container {padding-left:.7rem;padding-right:.7rem;} .predicted-score {font-size:33px;} }
+ 
+/* Tarjetas de encuentro compactas y adaptadas al teléfono */
+.compact-team {font-size:clamp(11px,2.4vw,15px);font-weight:750;line-height:1.2;overflow-wrap:anywhere;}
+.compact-score {font-size:clamp(17px,4vw,26px);font-weight:850;text-align:center;white-space:nowrap;}
+div[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"] {border-radius:16px;}
+@media(max-width:650px) {
+ div[data-testid="stHorizontalBlock"] {flex-wrap:nowrap !important;}
+ div[data-testid="column"] {min-width:0 !important;}
+ .block-container {padding-left:.7rem;padding-right:.7rem;}
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -518,10 +516,7 @@ try:
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
 
-    a, b, c = st.columns(3)
-    a.metric("Partidos", len(matches))
-    b.metric("En vivo", live)
-    c.metric("Finalizados", finished)
+    st.caption(f"📅 {len(matches)} partidos   ·   🔴 {live} en vivo   ·   ✓ {finished} finalizados")
 
     st.markdown(f"### 🏟️ Partidos · {sport_label} · {league_name}")
     st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} partido(s) encontrados")
