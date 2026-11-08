@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 import math
 import random
+import bisect
 from collections import Counter
 from datetime import date, timedelta, datetime
 from zoneinfo import ZoneInfo
@@ -193,16 +194,90 @@ def sample_binomial(rng, n, probability):
     probability = min(1.0, max(0.0, probability))
     return sum(1 for _ in range(max(0, int(n))) if rng.random() < probability)
 
+def estimate_dixon_coles_rho(events, cutoff):
+    """Fit a conservative low-score correction on PRE-match league history.
+
+    A pooled Poisson baseline is used for league-level rho estimation; with
+    sparse samples the correction is disabled rather than guessed.
+    """
+    matches = []
+    for event in events:
+        if event_day(event) is None or event_day(event) >= cutoff:
+            continue
+        parsed = parse_event(event)
+        if not parsed or not parsed["completed"]:
+            continue
+        hg, ag = numeric_score(parsed["home"]), numeric_score(parsed["away"])
+        if hg is None or ag is None or hg < 0 or ag < 0:
+            continue
+        days = (cutoff - event_day(event)).days
+        if days > 365:
+            continue
+        matches.append((int(hg), int(ag), math.exp(-days / 150)))
+    if len(matches) < 35:
+        return 0.0, len(matches)
+    total_weight = sum(row[2] for row in matches)
+    lam = max(.3, min(3.5, sum(h*w for h,a,w in matches)/total_weight))
+    mu = max(.3, min(3.5, sum(a*w for h,a,w in matches)/total_weight))
+    # Ensure all four Dixon-Coles factors are strictly positive.
+    low = max(-.18, -0.95/lam, -0.95/mu)
+    high = min(.18, .95, .95/(lam*mu))
+    best_rho, best_ll = 0.0, float('-inf')
+    for i in range(101):
+        rho = low + (high-low)*i/100
+        ll = 0.0
+        for h,a,w in matches:
+            tau = dixon_coles_tau(h,a,lam,mu,rho)
+            ll += w * math.log(max(tau, 1e-12))
+        # Gaussian regularization prevents unstable fits from small samples.
+        ll -= 15.0*rho*rho
+        if ll > best_ll:
+            best_ll, best_rho = ll, rho
+    return best_rho, len(matches)
+
+
+def dixon_coles_tau(h, a, lam, mu, rho):
+    if h == 0 and a == 0:
+        return 1 - lam*mu*rho
+    if h == 0 and a == 1:
+        return 1 + lam*rho
+    if h == 1 and a == 0:
+        return 1 + mu*rho
+    if h == 1 and a == 1:
+        return 1 - rho
+    return 1.0
+
+
+def exact_score_distribution(lam, mu, rho, maximum=15):
+    """Normalized Dixon-Coles matrix; no sampling noise in score ranking."""
+    lam, mu = max(.01,float(lam)), max(.01,float(mu))
+    # Clip rho to ensure positive tau for this particular matchup.
+    rho = max(-.95/lam, -.95/mu, min(rho, .95, .95/(lam*mu)))
+    entries = []
+    for h in range(maximum+1):
+        for a in range(maximum+1):
+            probability = poisson(lam,h)*poisson(mu,a)*dixon_coles_tau(h,a,lam,mu,rho)
+            entries.append(((h,a), max(0.0,probability)))
+    total = sum(p for _,p in entries)
+    return [(score, p/total) for score,p in entries]
+
+
 def run_monte_carlo(params, iterations=10000, seed=None):
     """Simulación Monte Carlo con parámetros calculados internamente."""
     rng = random.Random(seed)
     scores = Counter()
+    score_probs = exact_score_distribution(params["lambda_home"],
+                                           params["lambda_away"], params.get("dc_rho", 0.0))
+    cumulative, score_keys, acc = [], [], 0.0
+    for score, prob in score_probs:
+        acc += prob
+        cumulative.append(acc)
+        score_keys.append(score)
     home_wins = draws = away_wins = both_score = over_25 = 0
     totals = Counter()
 
     for _ in range(iterations):
-        hg = sample_poisson(rng, params["lambda_home"])
-        ag = sample_poisson(rng, params["lambda_away"])
+        hg, ag = score_keys[min(bisect.bisect_left(cumulative, rng.random()), len(score_keys)-1)]
         hs = sample_poisson(rng, params["shots_home"])
         aws = sample_poisson(rng, params["shots_away"])
         hc = sample_poisson(rng, params["corners_home"])
@@ -235,7 +310,10 @@ def run_monte_carlo(params, iterations=10000, seed=None):
         totals["fouls_home"] += hf
         totals["fouls_away"] += af
 
-    best_score, best_count = scores.most_common(1)[0]
+    # Exact-score selection uses the full probability distribution, not
+    # a noisy 10,000-sample mode. Monte Carlo remains for other projections.
+    ranked_scores = sorted(score_probs, key=lambda item: item[1], reverse=True)
+    best_score, best_probability = ranked_scores[0]
     averages = {key: value / iterations for key, value in totals.items()}
     return {
         "iterations": iterations,
@@ -245,8 +323,10 @@ def run_monte_carlo(params, iterations=10000, seed=None):
         "both_score": both_score / iterations * 100,
         "over_25": over_25 / iterations * 100,
         "score": best_score,
-        "score_frequency": best_count / iterations * 100,
-        "top_scores": scores.most_common(5),
+        "score_frequency": best_probability * 100,
+        "top_scores": [(score, round(prob*iterations)) for score, prob in ranked_scores[:5]],
+        "score_probabilities": ranked_scores[:5],
+        "dc_rho": params.get("dc_rho", 0.0),
         "averages": averages,
     }
 
@@ -481,6 +561,8 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         params["shots_away"] = 7.5 + 3.5*params["lambda_away"]
         params["corners_home"] = 3 + 1.35*params["lambda_home"]
         params["corners_away"] = 3 + 1.35*params["lambda_away"]
+    rho, fitted_matches = estimate_dixon_coles_rho(events, cutoff)
+    params["dc_rho"] = rho
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
     result = run_monte_carlo(params, 10000, seed=seed)
     av = result["averages"]
@@ -492,9 +574,6 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     st.markdown('<div class="sn-detail-match">'
                 + team_pair_html(match["home"], match["away"], "VS", large=True)
                 + '</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sn-detail-tabs"><span class="active">Resumen</span>'
-                '<span>Probabilidades</span><span>Cuotas</span><span>Estadísticas</span></div>',
-                unsafe_allow_html=True)
     probs = [
         (home_name, float(result["home_win"])),
         ("Empate", float(result["draw"])),
@@ -515,7 +594,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     st.markdown('<div class="sn-detail-two">'
                 '<div class="sn-detail-tile"><span>Marcador más frecuente</span>'
                 f'<strong>{int(score[0])} – {int(score[1])}</strong>'
-                f'<small>Ocurrió en {freq:.1f}% de las simulaciones</small></div>'
+                f'<small>Probabilidad estimada: {freq:.1f}%</small></div>'
                 '<div class="sn-detail-tile"><span>Equipo con mayor probabilidad</span>'
                 '<strong class="sn-detail-winner">'
                 + html.escape(probs[max(range(3), key=lambda i: probs[i][1])][0])
@@ -558,6 +637,9 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 'Estadísticas proyectadas</div><div class="sn-detail-statnames">'
                 + html.escape(home_name) + '<span>vs</span>' + html.escape(away_name)
                 + '</div>' + ''.join(rows) + '</div>', unsafe_allow_html=True)
+    st.caption("Marcador exacto: distribución Dixon–Coles con ajuste histórico "
+               + (f"de {fitted_matches} partidos." if fitted_matches >= 35
+                  else "desactivado por falta de historial suficiente (Poisson base)."))
     st.caption("Modelo experimental. Goles y probabilidades se simulan; "
                "otras estadísticas utilizan supuestos generales y pueden no reflejar "
                "datos específicos de cada equipo. El xG oficial no está disponible.")
