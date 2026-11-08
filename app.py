@@ -783,122 +783,77 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
         else:
             render_other_sport_panel(match, historical_data, sport_path, league_code, selected_date)
 
-# --------------------------- ESTILO ---------------------------
+# --------------------------- INTERFAZ PREMIUM (SOLO PRESENTACIÓN) ---------------------------
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
-.stApp { background: #090b0d; color: #f3f4f6; }
-section[data-testid="stSidebar"] { background: #10131a; border-right: 1px solid #252a36; }
-h1, h2, h3, p, label { color: #f3f4f6; }
-div[data-testid="stMetric"] { background: #141923; border: 1px solid #252a36; padding: 14px; border-radius: 14px; }
-.match-card { background: linear-gradient(135deg,#171c20,#101417); border: 1px solid #252a36; border-radius: 20px; padding: 18px; margin: 0 0 16px 0; }
-.score { text-align: center; font-size: 27px; font-weight: 800; padding-top: 8px; }
-.predicted-score { text-align:center; font-size:44px; font-weight:800; letter-spacing:2px; padding:8px 0; color:#f4f6f7; }
-.prob-label { display:flex; justify-content:space-between; margin:8px 0 2px; color:#e5e7eb; font-size:14px; }
-div[data-testid="stExpander"] { border: 1px solid #252a36; border-radius: 12px; }
-.stButton button { border-radius: 10px; }
-.small-muted { color: #9ca3af; font-size: 12px; }
-.analysis-panel {background:#101616;border:1px solid #2b3838;border-radius:22px;padding:12px;margin-top:12px;}
-.stApp {background:#080b0c;}
-.match-card {background:#101516;border:1px solid #2c3435;border-radius:20px;}
-@media (max-width: 650px) { .block-container {padding-left:.7rem;padding-right:.7rem;} .predicted-score {font-size:33px;} }
- 
-/* Tarjetas de encuentro compactas y adaptadas al teléfono */
-.compact-team {font-size:clamp(11px,2.4vw,15px);font-weight:750;line-height:1.2;overflow-wrap:anywhere;}
-.compact-score {font-size:clamp(17px,4vw,26px);font-weight:850;text-align:center;white-space:nowrap;}
-div[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"] {border-radius:16px;}
-@media(max-width:650px) {
- div[data-testid="stHorizontalBlock"] {flex-wrap:nowrap !important;}
- div[data-testid="column"] {min-width:0 !important;}
- .block-container {padding-left:.7rem;padding-right:.7rem;}
-}
-.stat-row {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid #2a3032;font-size:15px;}
-.stat-row span {color:#f0f1f2;}
-.stat-row strong {color:#f7f7f7;white-space:nowrap;text-align:right;}
-.stProgress > div > div > div > div {background-color:#18a653 !important;}
-@media(max-width:650px){.stat-row{font-size:13px}.predicted-score{color:#18bb64!important;}}
-
-/* Equipo local y visitante siempre alineados en la misma fila */
-.sn-teams {display:flex;flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:6px;padding:12px 0;box-sizing:border-box;}
-.sn-side {width:40%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;font-weight:750;font-size:clamp(12px,3.3vw,16px);overflow-wrap:anywhere;line-height:1.25;}
-.sn-side img {display:block;width:56px;height:56px;max-width:100%;object-fit:contain;}
-.sn-center {width:20%;min-width:0;text-align:center;font-size:clamp(17px,4.5vw,25px);font-weight:800;white-space:nowrap;}
-.sn-large .sn-side img {width:82px;height:82px;}
-.sn-large .sn-side {font-size:clamp(13px,3.5vw,19px);}
-.sn-logo-fallback {font-size:36px;line-height:1.5;}
-@media(max-width:420px){.sn-side img{width:48px;height:48px}.sn-large .sn-side img{width:68px;height:68px}.sn-teams{gap:3px;}}
-
-/* SIMULADORNY PREMIUM MOBILE UI */
-:root{color-scheme:dark}
-.stApp{background:radial-gradient(ellipse 90% 35% at 50% -12%,#15342d 0%,#080b0d 72%);color:#f6f8f7}
-.block-container{max-width:920px;padding-top:1.3rem}
-section[data-testid="stSidebar"]{background:#0c1114;border-right:1px solid #26312f}
-[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"]{border:1px solid #263531!important;background:linear-gradient(140deg,#141d1d,#0c1113)!important;border-radius:22px!important;box-shadow:0 10px 30px rgba(0,0,0,.15)}
-[data-testid="stExpander"]{border:1px solid #263531!important;background:#0e1415!important;border-radius:17px!important;overflow:hidden}
-[data-testid="stExpander"] summary{font-weight:700;color:#eaf4ef;padding:8px 4px}
-.sn-panel-head{padding:10px 0 18px;border-bottom:1px solid #25312d;margin-bottom:18px}
-.sn-kicker{color:#7de1b5;font-size:10px;letter-spacing:2.3px;font-weight:800;margin-bottom:8px}
-.sn-panel-title{font-size:clamp(22px,5vw,30px);font-weight:800;letter-spacing:-.8px;color:#f8faf9;line-height:1.2}
-.sn-chip{display:inline-block;background:#113426;color:#5de2a2;border:1px solid #235e42;padding:7px 11px;border-radius:100px;font-size:11px;font-weight:750;margin-top:14px}
-.sn-section-title{font-size:19px;font-weight:800;letter-spacing:-.4px;margin:20px 0 18px;color:#f3f8f6}
-.sn-prob{margin:0 0 18px}
-.sn-prob-top{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:650;margin-bottom:9px;color:#e3ece8}
-.sn-prob-top strong{font-variant-numeric:tabular-nums;color:#f8faf9}
-.sn-track{height:8px;border-radius:100px;background:#293331;overflow:hidden}
-.sn-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,#149e71,#59e6a6)}
-.sn-teams{padding:15px 5px 19px!important}
-.sn-side{font-size:clamp(12px,3.1vw,16px)!important;color:#f2f7f4}
-.sn-side img{width:54px;height:54px;filter:drop-shadow(0 5px 12px rgba(0,0,0,.35))}
-.sn-large .sn-side img{width:72px;height:72px}
-.sn-center{color:#9caea6!important;font-size:clamp(16px,4vw,22px)!important}
-.stat-row{padding:14px 1px!important;border-bottom:1px solid #26312e!important;font-size:13px!important}
-.stat-row span{color:#bacac3!important;max-width:70%}
-.stat-row strong{color:#f4faf6!important;font-variant-numeric:tabular-nums}
-@media(max-width:500px){.block-container{padding-left:13px!important;padding-right:13px!important}.sn-large .sn-side img{width:62px;height:62px}.sn-panel-title{font-size:22px}}
-
-/* Mobile-first premium dashboard */
-[data-testid="stSidebar"]{display:none!important}
-[data-testid="collapsedControl"]{display:none!important}
-.block-container{max-width:940px!important;padding-top:22px!important}
-.sn-topbar{padding:7px 2px 21px;border-bottom:1px solid #22292d}
-.sn-wordmark{font-weight:900;font-size:23px;letter-spacing:1.1px;color:#f8fafb}
-.sn-wordmark span{color:#89949a}
-.sn-brand-sub{font-size:9px;letter-spacing:3px;font-weight:800;color:#88949b;margin-top:2px}
-.sn-trending{display:flex;align-items:center;gap:14px;overflow:hidden;white-space:nowrap;padding:22px 0 18px;border-bottom:1px solid #22292d;font-size:13px}
-.sn-fire{background:#f3f5f6;color:#141718;border-radius:28px;padding:9px 12px;font-weight:800}
-.sn-live{color:#f05d70;border:1px solid #b63b50;padding:8px 12px;border-radius:14px;font-weight:800}
-.sn-trend-desc{color:#9fa9ad;font-size:12px}
-.sn-list-heading{font-size:29px;font-weight:850;margin:13px 0 14px;letter-spacing:-.8px}
-.sn-list-heading span{font-size:12px;font-weight:500;color:#9ca7aa;letter-spacing:0}
-.sn-sport-label{color:#98a4a8;font-size:10px;font-weight:800;letter-spacing:2px;margin:15px 0 8px}
-.sn-competition{color:#9aa8a9;font-size:12px;margin:4px 0 16px}
-[data-testid="stRadio"]>div[role="radiogroup"]{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:7px!important;padding:2px 0 10px!important;scrollbar-width:none}
-[data-testid="stRadio"]>div[role="radiogroup"] label{border:1px solid #333d42!important;border-radius:12px!important;background:#1a2125!important;padding:9px 12px!important;white-space:nowrap!important;flex-shrink:0!important;margin:0!important}
-[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked){background:#f3f5f5!important;border-color:#f3f5f5!important}
-[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked) p{color:#111619!important;font-weight:800!important}
-[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p{font-size:13px!important}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+:root{color-scheme:dark;--bg:#080d12;--surface:#111b23;--border:#283740;--muted:#93a5b0;--accent:#64e5b5}
+html,body,[class*="css"]{font-family:'DM Sans',sans-serif!important}
+.stApp{background:radial-gradient(ellipse 110% 380px at 50% -120px,#19383b 0%,#080d12 72%);color:#f5f8fa}
+.block-container{max-width:920px!important;padding:20px 17px 90px!important}
+[data-testid="stSidebar"],[data-testid="collapsedControl"]{display:none!important}
+header[data-testid="stHeader"]{background:transparent!important}
+h1,h2,h3,p,label{color:#f2f7f8}
+.sn-header{display:flex;align-items:center;justify-content:space-between;padding:8px 0 18px;gap:12px}
+.sn-mark{display:flex;align-items:center;gap:10px}.sn-logo{width:39px;height:39px;border-radius:13px;background:linear-gradient(140deg,#72f1bf,#159976);color:#062019;display:grid;place-items:center;font-size:23px;font-weight:900;box-shadow:0 5px 22px #1acb8750}
+.sn-wordmark{font-weight:800;font-size:clamp(19px,5vw,25px);letter-spacing:-.8px;color:#f8fbfc;line-height:1.1}.sn-wordmark span{color:#79dfb7}
+.sn-brand-sub{font-size:9px;letter-spacing:2.4px;font-weight:800;color:#8ca6ad;margin-top:4px}
+.sn-header-tag{font-size:10px;color:#9ab2b9;border:1px solid #34454b;border-radius:30px;padding:7px 10px;white-space:nowrap}
+.sn-hero{background:linear-gradient(130deg,#152b2d,#101921 70%);border:1px solid #2c4644;border-radius:23px;padding:19px 19px 18px;margin:4px 0 18px;box-shadow:0 14px 30px #0003}
+.sn-eyebrow{color:#74e5b4;font-size:10px;letter-spacing:2px;font-weight:800}.sn-hero-title{font-size:clamp(22px,6vw,32px);font-weight:800;letter-spacing:-1.1px;line-height:1.15;margin:9px 0}.sn-hero-desc{font-size:13px;color:#9fb2b7;line-height:1.5;max-width:500px}
+.sn-pills{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}.sn-pill{font-size:11px;font-weight:700;background:#233637;border:1px solid #35524b;border-radius:99px;padding:7px 10px;color:#b9e8d3}.sn-pill-live{color:#f1b7bd;background:#3b252c;border-color:#62404b}
+.sn-list-heading{font-size:clamp(24px,6vw,32px);font-weight:800;letter-spacing:-1px;margin:17px 0 6px;color:#f5fafb}.sn-list-heading span{font-size:12px;letter-spacing:0;font-weight:500;color:#9aabb2;margin-left:7px}
+.sn-section-label{font-size:11px;color:#94aab2;letter-spacing:1.5px;font-weight:800;margin:13px 0 9px}
+.sn-competition{color:#95aab1;font-size:12px;margin:0 0 13px}
+[data-testid="stTextInput"] input,[data-testid="stDateInput"] input,[data-testid="stSelectbox"]>div>div{background:#152027!important;color:#f4f8fa!important;border:1px solid #34474e!important;border-radius:13px!important;min-height:45px}
+[data-testid="stTextInput"] input:focus{border-color:#62d9ae!important}
+[data-testid="stRadio"]>div[role="radiogroup"]{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:7px!important;padding:3px 0 10px!important;scrollbar-width:none}
+[data-testid="stRadio"]>div[role="radiogroup"] label{border:1px solid #34464e!important;border-radius:12px!important;background:#17232a!important;padding:10px 13px!important;white-space:nowrap!important;flex-shrink:0!important;margin:0!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked){background:#eaf9f2!important;border-color:#eaf9f2!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked) p{color:#10241d!important;font-weight:800!important}
 [data-testid="stRadio"] [data-baseweb="radio"]>div:first-child{display:none!important}
-[data-testid="stDateInput"]{max-width:260px}
-[data-testid="stTextInput"] input{background:#141a1d!important;border:1px solid #344046!important;border-radius:13px!important;padding:14px!important}
-@media(max-width:550px){.block-container{padding-left:15px!important;padding-right:15px!important}.sn-trending{gap:9px}.sn-wordmark{font-size:21px}.sn-list-heading{font-size:27px}}
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p{font-size:13px!important}
+[data-testid="stDateInput"]{max-width:230px}
+[data-testid="stExpander"]{background:#111c22!important;border:1px solid #2c3e44!important;border-radius:16px!important;overflow:hidden;margin:5px 0 15px}
+[data-testid="stExpander"] summary{color:#d8f6e8!important;font-weight:750!important;font-size:13px!important}
+[data-testid="stVerticalBlockBorderWrapper"]>div[style*="border"]{background:linear-gradient(145deg,#152027,#10191f)!important;border:1px solid #2c3e45!important;border-radius:19px!important;box-shadow:0 8px 25px #0003}
+.sn-teams{display:flex;flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:6px;padding:13px 0;box-sizing:border-box}
+.sn-side{width:40%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:750;font-size:clamp(12px,3.2vw,16px);overflow-wrap:anywhere;line-height:1.25;color:#f6f9fa}
+.sn-side img{display:block;width:56px;height:56px;max-width:100%;object-fit:contain;filter:drop-shadow(0 6px 10px #0007)}
+.sn-center{width:20%;min-width:0;text-align:center;font-size:clamp(17px,4.5vw,25px);font-weight:800;white-space:nowrap;color:#dcebe9}
+.sn-large .sn-side img{width:73px;height:73px}.sn-large .sn-side{font-size:clamp(13px,3.5vw,18px)}
+.sn-logo-fallback{font-size:32px}
+.sn-panel-head{padding:7px 0 14px;border-bottom:1px solid #2a3a3d;margin-bottom:16px}
+.sn-kicker{color:#74dfb0;font-size:10px;letter-spacing:1.8px;font-weight:800;margin-bottom:9px}
+.sn-panel-title{font-size:clamp(21px,5vw,27px);font-weight:800;letter-spacing:-.6px;color:#f5fafa}
+.sn-chip{display:inline-block;background:#173b2e;color:#7df0bc;border:1px solid #2d6650;padding:7px 11px;border-radius:99px;font-size:11px;font-weight:750;margin-top:12px}
+.sn-section-title{font-size:19px;font-weight:800;letter-spacing:-.4px;margin:20px 0 17px;color:#f6fafb}
+.sn-prob{margin:0 0 18px}.sn-prob-top{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:650;margin-bottom:9px;color:#dce8e8}.sn-prob-top strong{font-variant-numeric:tabular-nums}
+.sn-track{height:8px;border-radius:99px;background:#2a393e;overflow:hidden}.sn-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#1ab889,#79edb5)}
+.stat-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 1px;border-bottom:1px solid #2a3a3e;font-size:13px}.stat-row span{color:#b4c5cb;max-width:70%}.stat-row strong{color:#f4f9fa;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.sn-teams{padding:15px 3px 19px!important}
+.stButton button{border-radius:12px!important}
+[data-testid="stAlert"]{border-radius:14px!important}
+@media(max-width:500px){.block-container{padding:16px 12px 70px!important}.sn-hero{padding:17px}.sn-header-tag{display:none}.sn-side img{width:48px;height:48px}.sn-large .sn-side img{width:63px;height:63px}.sn-teams{gap:3px}.stat-row{font-size:12px}}
 </style>
-""", unsafe_allow_html=True)
+""",unsafe_allow_html=True)
 
-# --------------------------- INTERFAZ PRINCIPAL ---------------------------
 st.markdown("""
-<div class="sn-topbar"><div class="sn-wordmark">SIMULADOR<span>NY</span></div>
-<div class="sn-brand-sub">SPORTS ANALYSIS</div></div>
-<div class="sn-trending"><span class="sn-fire">♨ Tendencias</span><span>Hoy</span>
-<span class="sn-live">● EN VIVO</span><span class="sn-trend-desc">Predicciones deportivas</span></div>
-""", unsafe_allow_html=True)
+<div class="sn-header"><div class="sn-mark"><div class="sn-logo">✦</div><div>
+<div class="sn-wordmark">SIMULADOR<span>NY</span></div><div class="sn-brand-sub">SPORTS INTELLIGENCE</div>
+</div></div><div class="sn-header-tag">● LIVE SPORTS</div></div>
+<div class="sn-hero"><div class="sn-eyebrow">TU CENTRO DE PREDICCIONES</div>
+<div class="sn-hero-title">Cada partido.<br>Una perspectiva más clara.</div>
+<div class="sn-hero-desc">Explora encuentros y consulta probabilidades y estadísticas proyectadas de forma sencilla.</div>
+<div class="sn-pills"><span class="sn-pill">✦ Predicciones</span><span class="sn-pill">◉ 4 deportes</span><span class="sn-pill sn-pill-live">● En vivo</span></div></div>
+""",unsafe_allow_html=True)
 
 search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
-st.markdown("<div class='sn-list-heading'>Partidos <span>· Explorar encuentros</span></div>", unsafe_allow_html=True)
+st.markdown("<div class='sn-list-heading'>Partidos <span>Explora y compara</span></div>", unsafe_allow_html=True)
 status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
                          horizontal=True, label_visibility="collapsed", key="status_tabs")
 selected_date = st.date_input("Fecha", value=date.today(), label_visibility="collapsed")
-st.markdown("<div class='sn-sport-label'>DEPORTES</div>", unsafe_allow_html=True)
+st.markdown("<div class='sn-section-label'>ELIGE TU DEPORTE</div>", unsafe_allow_html=True)
 sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True,
                        label_visibility="collapsed", key="sport_tabs")
 sport = SPORTS[sport_label]
@@ -906,7 +861,7 @@ if sport_label == "⚾ KBO":
     st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
             "Se ha desactivado esa consulta para evitar el error HTTP 400. "
             "Los partidos y las predicciones KBO requieren integrar otra fuente verificable.")
-with st.expander("⚙ Liga / competición", expanded=False):
+with st.expander("Liga o competición", expanded=False):
     league_name = st.selectbox("Selecciona una liga", list(sport["leagues"].keys()))
 st.markdown("<div class='sn-competition'>" + html.escape(league_name) + "</div>", unsafe_allow_html=True)
 
@@ -932,9 +887,9 @@ try:
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
 
-    st.caption(f"{len(matches)} partidos  ·  {live} en vivo  ·  {finished} finalizados")
+    st.caption(f"{len(matches)} encuentros  ·  {live} en vivo  ·  {finished} finalizados")
 
-    st.markdown(f"#### {sport_label} · Partidos")
+    st.markdown(f"#### {sport_label} · Encuentros")
     st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} encuentros")
 
     if not matches:
