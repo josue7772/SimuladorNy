@@ -670,6 +670,55 @@ def render_prediction_audit(match, league, snapshot):
     st.caption("Predicción original guardada antes del inicio · "
                +str(snapshot.get("model_version","")))
 
+def choose_recommended_pick(match, home_games, away_games, params):
+    """Conservative research signal, not a guarantee or bookmaker value bet.
+
+    Use only goal-related markets supported by the fitted goal distribution.
+    Corners, cards and shots currently use generic assumptions, not fitted
+    team-specific historical distributions, so they are excluded.
+    """
+    if match.get("state") != "pre":
+        return None, "El partido ya comenzó o terminó; no se emiten picks retroactivos."
+    if len(home_games) < 5 or len(away_games) < 5:
+        return None, ("Sin pick: faltan al menos cinco partidos históricos "
+                      "por equipo para evaluar la señal con prudencia.")
+    distribution = exact_score_distribution(
+        params["lambda_home"], params["lambda_away"], params.get("dc_rho", 0.0))
+    markets = [
+        ("Más de 1.5 goles", sum(p for (h,a),p in distribution if h+a>=2)),
+        ("Menos de 3.5 goles", sum(p for (h,a),p in distribution if h+a<=3)),
+        ("1X · Local o empate", sum(p for (h,a),p in distribution if h>=a)),
+        ("X2 · Visitante o empate", sum(p for (h,a),p in distribution if a>=h)),
+    ]
+    best = max(markets,key=lambda item:item[1])
+    # Threshold deliberately conservative, not a measured win-rate.
+    if best[1] < 0.78:
+        return None, ("Sin pick: ninguna de las opciones evaluadas supera "
+                      "el umbral interno de probabilidad del 78%.")
+    return best, None
+
+
+def render_recommended_pick(match, home_games, away_games, params):
+    pick, reason = choose_recommended_pick(match,home_games,away_games,params)
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Pick recomendado · análisis del modelo</div>', unsafe_allow_html=True)
+    if pick:
+        label, probability = pick
+        st.markdown('<div class="sn-detail-winner">'+html.escape(label)
+                    +'</div>',unsafe_allow_html=True)
+        st.caption(f"Probabilidad estimada por el modelo: {probability*100:.1f}%. "
+                   "No equivale a una tasa de acierto comprobada.")
+    else:
+        st.info(reason)
+    st.caption("Se evalúan goles y doble oportunidad (1X/X2). "
+               "No se recomiendan córners, tarjetas ni tiros todavía: "
+               "sus estimaciones actuales dependen de supuestos generales, "
+               "no de un modelo validado para esos mercados. "
+               "Sin cuotas reales ni validación histórica, no podemos "
+               "afirmar que exista una apuesta con valor. "
+               "Ningún pick garantiza ganancias.")
+
+
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel premium: presentation only; preserves the original Monte Carlo model."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
@@ -734,6 +783,8 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 'Resultado más probable (1X2)</div><div class="sn-detail-winner">'
                 + html.escape(probs[max(range(3), key=lambda i: probs[i][1])][0])
                 + '</div></div>', unsafe_allow_html=True)
+
+    render_recommended_pick(match, home_games, away_games, params)
 
     # Fair odds, never fictional bookmaker prices.
     odds = []
