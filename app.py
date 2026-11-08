@@ -290,8 +290,8 @@ def run_monte_carlo(params, iterations=10000, seed=None):
         ay = sample_poisson(rng, params["yellow_away"])
         hf = sample_poisson(rng, params["fouls_home"])
         af = sample_poisson(rng, params["fouls_away"])
-        hst = sample_binomial(rng, hs, 0.36)
-        ast = sample_binomial(rng, aws, 0.36)
+        hst = sample_binomial(rng, hs, params.get("sot_ratio_home",0.36))
+        ast = sample_binomial(rng, aws, params.get("sot_ratio_away",0.36))
 
         scores[(hg, ag)] += 1
         if hg > ag:
@@ -456,8 +456,8 @@ def history_for_match(match, league_events, sport_path, league_code, cutoff):
         if {hid, aid} == {eh, ea}:
             h2h.append(row)
     key = lambda r:r["date"]
-    return (sorted(home_games, key=key, reverse=True)[:5],
-            sorted(away_games, key=key, reverse=True)[:5],
+    return (sorted(home_games, key=key, reverse=True)[:10],
+            sorted(away_games, key=key, reverse=True)[:10],
             sorted(h2h, key=key, reverse=True)[:5])
 
 @st.cache_data(ttl=900, show_spinner=False)
@@ -496,6 +496,86 @@ def show_nba_lineups(lineup, ids, names, source):
     st.caption("Un boxscore de un partido en vivo no confirma necesariamente "
                "la alineación previa al inicio. 'No participó' tampoco confirma lesión.")
 
+
+SOCCER_STAT_NAMES = {
+    "totalshots":"shots", "shots":"shots", "totalshotsattempts":"shots",
+    "shotsontarget":"sot", "shotsongoal":"sot", "shotson target":"sot",
+    "cornerkicks":"corners", "corners":"corners",
+    "yellowcards":"yellow", "fouls":"fouls", "foulscommitted":"fouls",
+}
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def historical_soccer_boxscore(league_code, event_id):
+    """Cache one ESPN summary per completed fixture; never use future games."""
+    try:
+        payload = sport_boxscore("soccer", league_code, event_id)
+        result = {}
+        for entry in (payload.get("boxscore") or {}).get("teams") or []:
+            tid = str((entry.get("team") or {}).get("id") or "")
+            if not tid:
+                continue
+            stats = {}
+            for item in entry.get("statistics") or []:
+                if not isinstance(item,dict):
+                    continue
+                for field in ("name","abbreviation","label"):
+                    normalized = ''.join(c for c in str(item.get(field) or '').lower() if c.isalnum())
+                    key = SOCCER_STAT_NAMES.get(normalized)
+                    if key:
+                        value = _num_stat(item.get("value",item.get("displayValue")))
+                        if value is not None and 0 <= value <= 100:
+                            stats[key] = value
+                        break
+            result[tid] = stats
+        return result
+    except (requests.RequestException, ValueError, KeyError, TypeError):
+        return {}
+
+
+def enrich_soccer_history(games, league_code, team_id):
+    """Add observed metrics to history, keeping absent fields truly absent."""
+    enriched=[]
+    for game in games[:10]:
+        item=dict(game)
+        if game.get("id"):
+            item["observed"] = historical_soccer_boxscore(league_code,game["id"]).get(str(team_id),{})
+        enriched.append(item)
+    return enriched
+
+
+def fit_observed_metrics(params, home_games, away_games):
+    """Shrink recent, venue-aware team boxscore averages toward baseline.
+
+    Returns which metrics were genuinely fitted; do not label missing data as fitted.
+    """
+    evidence={}
+    for metric, lower, upper in (("shots",1,35),("sot",0,20),
+                                 ("corners",0,18),("yellow",0,10),("fouls",0,35)):
+        evidence[metric]={}
+        for side,games,at_home in (("home",home_games,True),("away",away_games,False)):
+            values=[]
+            for rank,game in enumerate(games[:10]):
+                value=(game.get("observed") or {}).get(metric)
+                if value is None:
+                    continue
+                # Time-decay and venue matching: same venue gets more weight.
+                weight=(0.88**rank)*(1.35 if game.get("at_home")==at_home else 1.0)
+                values.append((float(value),weight))
+            evidence[metric][side]=len(values)
+            if len(values)<3:
+                continue
+            total=sum(w for _,w in values)
+            mean=sum(v*w for v,w in values)/total
+            prior=params[f"{metric}_{side}"]
+            # Empirical shrinkage reduces volatility in small samples.
+            strength=total/(total+5.0)
+            params[f"{metric}_{side}"]=max(lower,min(upper,strength*mean+(1-strength)*prior))
+    params["stat_evidence"]=evidence
+    # Historical shots on target as share of shots, where supported.
+    for side in ("home","away"):
+        if evidence["sot"][side]>=3 and evidence["shots"][side]>=3:
+            params[f"sot_ratio_{side}"]=max(.08,min(.85,params[f"sot_{side}"]/max(1,params[f"shots_{side}"])))
+    return params
 
 def historical_parameters(home_games, away_games, h2h):
     """Ataque/defensa de últimos cinco, localía y H2H con regularización.
@@ -780,6 +860,10 @@ def record_upcoming_match(match, events, sport_path, league_code, cutoff):
             params["shots_away"] = 7.5 + 3.5*params["lambda_away"]
             params["corners_home"] = 3 + 1.35*params["lambda_home"]
             params["corners_away"] = 3 + 1.35*params["lambda_away"]
+        if sport_path == "soccer":
+            home_games = enrich_soccer_history(home_games, league_code, str(match["home"].get("team",{}).get("id") or ""))
+            away_games = enrich_soccer_history(away_games, league_code, str(match["away"].get("team",{}).get("id") or ""))
+            fit_observed_metrics(params, home_games, away_games)
         rho, fitted_matches = estimate_dixon_coles_rho(events, cutoff)
         params["dc_rho"] = rho
         seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
@@ -820,6 +904,9 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         params["shots_away"] = 7.5 + 3.5*params["lambda_away"]
         params["corners_home"] = 3 + 1.35*params["lambda_home"]
         params["corners_away"] = 3 + 1.35*params["lambda_away"]
+    home_games = enrich_soccer_history(home_games, league_code, str(match["home"].get("team",{}).get("id") or ""))
+    away_games = enrich_soccer_history(away_games, league_code, str(match["away"].get("team",{}).get("id") or ""))
+    fit_observed_metrics(params, home_games, away_games)
     rho, fitted_matches = estimate_dixon_coles_rho(events, cutoff)
     params["dc_rho"] = rho
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
@@ -882,6 +969,20 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                    "dependen parcialmente de promedios generales. No deben "
                    "interpretarse como estimaciones personalizadas fiables.", icon="⚠️")
 
+    evidence=params.get("stat_evidence",{})
+    fitted=[]; limited=[]
+    for label,key in (("Tiros","shots"),("Tiros a puerta","sot"),
+                      ("Córners","corners"),("Tarjetas","yellow"),("Faltas","fouls")):
+        count=evidence.get(key,{})
+        if min(count.get("home",0),count.get("away",0))>=3:
+            fitted.append(label)
+        else:
+            limited.append(label)
+    if fitted:
+        st.caption("Basadas parcialmente en estadísticas históricas verificadas: " + ", ".join(fitted) + ".")
+    if limited:
+        st.caption("Estimaciones con datos históricos insuficientes (utilizan valores base): " + ", ".join(limited) + ".")
+
     metrics=[
         ("Goles esperados",params["lambda_home"],params["lambda_away"]),
         ("Tiros",av["shots_home"],av["shots_away"]),
@@ -913,8 +1014,8 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     if match["state"]=="pre" and not saved_snapshot:
         st.caption("No se pudo guardar la predicción previa; revisa la configuración de almacenamiento.")
     st.caption("Modelo experimental · 10,000 simulaciones Monte Carlo. "
-               "Los goles y probabilidades se modelan; otras estadísticas utilizan "
-               "supuestos generales, no datos específicos validados para cada equipo.")
+               "Los datos históricos observados se combinan con valores base cuando existen. "
+               "Aún se requiere validación retrospectiva para demostrar mayor precisión.")
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
