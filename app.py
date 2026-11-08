@@ -318,7 +318,10 @@ def run_monte_carlo(params, iterations=10000, seed=None):
     # a noisy 10,000-sample mode. Monte Carlo remains for other projections.
     ranked_scores = sorted(score_probs, key=lambda item: item[1], reverse=True)
     best_score, best_probability = ranked_scores[0]
-    averages = {key: value / iterations for key, value in totals.items()}
+    metric_keys = ("shots_home", "shots_away", "sot_home", "sot_away",
+                   "corners_home", "corners_away", "yellow_home", "yellow_away",
+                   "fouls_home", "fouls_away")
+    averages = {key: totals[key] / iterations for key in metric_keys}
     return {
         "iterations": iterations,
         "home_win": home_wins / iterations * 100,
@@ -597,6 +600,8 @@ def historical_parameters(home_games, away_games, h2h):
         "lambda_home":lamh,"lambda_away":lama,
         "shots_home": 7.5 + 3.5*lamh,"shots_away":7.5 + 3.5*lama,
         "corners_home":3.0 + 1.35*lamh,"corners_away":3.0 + 1.35*lama,
+        "sot_home":(7.5 + 3.5*lamh)*0.36,
+        "sot_away":(7.5 + 3.5*lama)*0.36,
         "yellow_home":1.8,"yellow_away":2.0,
         "fouls_home":12.0,"fouls_away":12.5,
     }
