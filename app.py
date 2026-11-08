@@ -190,8 +190,8 @@ def run_monte_carlo(params, iterations=10000, seed=None):
     totals = Counter()
 
     for _ in range(iterations):
-        hg = sample_poisson(rng, params["xg_home"])
-        ag = sample_poisson(rng, params["xg_away"])
+        hg = sample_poisson(rng, params["lambda_home"])
+        ag = sample_poisson(rng, params["lambda_away"])
         hs = sample_poisson(rng, params["shots_home"])
         aws = sample_poisson(rng, params["shots_away"])
         hc = sample_poisson(rng, params["corners_home"])
@@ -339,14 +339,14 @@ def historical_parameters(home_games, away_games, h2h):
     aa = weighted(away_games,"gf",1.30)
     ad = weighted(away_games,"ga",1.35)
     # Acentúa la forma propia y el rival, sin asignar una intensidad fija universal.
-    xgh = (.58*ha + .42*ad)*1.08
-    xga = (.58*aa + .42*hd)*.94
-    xgh = max(.15,min(4.5,xgh))
-    xga = max(.15,min(4.5,xga))
+    lamh = (.58*ha + .42*ad)*1.08
+    lama = (.58*aa + .42*hd)*.94
+    lamh = max(.15,min(4.5,lamh))
+    lama = max(.15,min(4.5,lama))
     return {
-        "xg_home":xgh,"xg_away":xga,
-        "shots_home": 7.5 + 3.5*xgh,"shots_away":7.5 + 3.5*xga,
-        "corners_home":3.0 + 1.35*xgh,"corners_away":3.0 + 1.35*xga,
+        "lambda_home":lamh,"lambda_away":lama,
+        "shots_home": 7.5 + 3.5*lamh,"shots_away":7.5 + 3.5*lama,
+        "corners_home":3.0 + 1.35*lamh,"corners_away":3.0 + 1.35*lama,
         "yellow_home":1.8,"yellow_away":2.0,
         "fouls_home":12.0,"fouls_away":12.5,
     }
@@ -375,42 +375,48 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     if h2h:
         hh = sum(g["hs"] if g["home_id"] == hid else g["aws"] for g in h2h) / len(h2h)
         ah = sum(g["aws"] if g["home_id"] == hid else g["hs"] for g in h2h) / len(h2h)
-        params["xg_home"] = max(.15, min(4.5, .88*params["xg_home"] + .12*hh))
-        params["xg_away"] = max(.15, min(4.5, .88*params["xg_away"] + .12*ah))
-        params["shots_home"] = 7.5 + 3.5*params["xg_home"]
-        params["shots_away"] = 7.5 + 3.5*params["xg_away"]
-        params["corners_home"] = 3 + 1.35*params["xg_home"]
-        params["corners_away"] = 3 + 1.35*params["xg_away"]
+        params["lambda_home"] = max(.15, min(4.5, .88*params["lambda_home"] + .12*hh))
+        params["lambda_away"] = max(.15, min(4.5, .88*params["lambda_away"] + .12*ah))
+        params["shots_home"] = 7.5 + 3.5*params["lambda_home"]
+        params["shots_away"] = 7.5 + 3.5*params["lambda_away"]
+        params["corners_home"] = 3 + 1.35*params["lambda_home"]
+        params["corners_away"] = 3 + 1.35*params["lambda_away"]
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
     result = run_monte_carlo(params, 10000, seed=seed)
     av = result["averages"]
-    st.markdown("### SIMULADORNY · ANALYSIS AI")
-    st.success("Motor Monte Carlo · 10,000 simulaciones")
+    st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>" 
+                "<div class='sn-panel-title'>Predicciones del partido</div>"
+                "<div class='sn-chip'>✦ 10,000 simulaciones Monte Carlo</div></div>", unsafe_allow_html=True)
     st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
                 unsafe_allow_html=True)
     st.divider()
-    st.markdown("#### Probabilidades")
+    st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
     for label, value in (
         (f"Victoria {home_name}", result["home_win"]),
         ("Empate", result["draw"]),
         (f"Victoria {away_name}", result["away_win"]),
     ):
+        pct = max(0.0, min(100.0, float(value)))
         st.markdown(
-            f"<div class='prob-label'><b>{html.escape(label)}</b><b>{value:.1f}%</b></div>",
+            f"<div class='sn-prob'><div class='sn-prob-top'><span>{html.escape(label)}</span>"
+            f"<strong>{pct:.1f}%</strong></div><div class='sn-track'>"
+            f"<div class='sn-fill' style='width:{pct:.1f}%'></div></div></div>",
             unsafe_allow_html=True)
-        st.progress(value / 100)
     st.divider()
-    st.markdown("#### Estadísticas proyectadas")
+    st.markdown("<div class='sn-section-title'>Estadísticas proyectadas</div>", unsafe_allow_html=True)
     stats = [
-        ("Goles esperados (proxy xG)", f"{params['xg_home']:.2f} – {params['xg_away']:.2f}"),
-        ("Tiros totales", f"{av['shots_home'] + av['shots_away']:.1f}"),
-        ("Tiros a puerta", f"{av['sot_home'] + av['sot_away']:.1f}"),
-        ("Tiros de esquina", f"{av['corners_home'] + av['corners_away']:.1f}"),
-        ("Tarjetas amarillas", f"{av['yellow_home'] + av['yellow_away']:.1f}"),
-        ("Faltas", f"{av['fouls_home'] + av['fouls_away']:.1f}"),
+        ("Goles proyectados · local", f"{params['lambda_home']:.2f}"),
+        ("Goles proyectados · visitante", f"{params['lambda_away']:.2f}"),
+        ("Total de goles esperados · modelo", f"{params['lambda_home'] + params['lambda_away']:.2f}"),
+        ("Tiros totales · estimación", f"{av['shots_home'] + av['shots_away']:.1f}"),
+        ("Tiros a puerta · estimación", f"{av['sot_home'] + av['sot_away']:.1f}"),
+        ("Córners · estimación", f"{av['corners_home'] + av['corners_away']:.1f}"),
+        ("Tarjetas · estimación", f"{av['yellow_home'] + av['yellow_away']:.1f}"),
+        ("Faltas · estimación", f"{av['fouls_home'] + av['fouls_away']:.1f}"),
         ("Ambos equipos anotan", f"{result['both_score']:.1f}%"),
         ("Más de 2.5 goles", f"{result['over_25']:.1f}%"),
     ]
+    stats.insert(3, ("xG oficial · calidad de disparos", "No disponible"))
     for label, value in stats:
         st.markdown(
             f"<div class='stat-row'><span>{html.escape(label)}</span>"
@@ -420,7 +426,8 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         "Proyecciones de un modelo experimental. Si faltan resultados históricos, "
         "se usan promedios generales; tiros, córners, faltas y tarjetas usan "
         "supuestos generales, no datos históricos específicos. "
-        "El xG mostrado es una aproximación basada en goles, no xG oficial."
+        "El xG auténtico requiere datos de calidad de disparos y no está disponible en esta fuente. "
+        "El total proyectado es la suma de las tasas de gol de ambos equipos, no xG oficial."
     )
 
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
@@ -487,6 +494,34 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"] {border-r
 .sn-large .sn-side {font-size:clamp(13px,3.5vw,19px);}
 .sn-logo-fallback {font-size:36px;line-height:1.5;}
 @media(max-width:420px){.sn-side img{width:48px;height:48px}.sn-large .sn-side img{width:68px;height:68px}.sn-teams{gap:3px;}}
+
+/* SIMULADORNY PREMIUM MOBILE UI */
+:root{color-scheme:dark}
+.stApp{background:radial-gradient(ellipse 90% 35% at 50% -12%,#15342d 0%,#080b0d 72%);color:#f6f8f7}
+.block-container{max-width:920px;padding-top:1.3rem}
+section[data-testid="stSidebar"]{background:#0c1114;border-right:1px solid #26312f}
+[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"]{border:1px solid #263531!important;background:linear-gradient(140deg,#141d1d,#0c1113)!important;border-radius:22px!important;box-shadow:0 10px 30px rgba(0,0,0,.15)}
+[data-testid="stExpander"]{border:1px solid #263531!important;background:#0e1415!important;border-radius:17px!important;overflow:hidden}
+[data-testid="stExpander"] summary{font-weight:700;color:#eaf4ef;padding:8px 4px}
+.sn-panel-head{padding:10px 0 18px;border-bottom:1px solid #25312d;margin-bottom:18px}
+.sn-kicker{color:#7de1b5;font-size:10px;letter-spacing:2.3px;font-weight:800;margin-bottom:8px}
+.sn-panel-title{font-size:clamp(22px,5vw,30px);font-weight:800;letter-spacing:-.8px;color:#f8faf9;line-height:1.2}
+.sn-chip{display:inline-block;background:#113426;color:#5de2a2;border:1px solid #235e42;padding:7px 11px;border-radius:100px;font-size:11px;font-weight:750;margin-top:14px}
+.sn-section-title{font-size:19px;font-weight:800;letter-spacing:-.4px;margin:20px 0 18px;color:#f3f8f6}
+.sn-prob{margin:0 0 18px}
+.sn-prob-top{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:650;margin-bottom:9px;color:#e3ece8}
+.sn-prob-top strong{font-variant-numeric:tabular-nums;color:#f8faf9}
+.sn-track{height:8px;border-radius:100px;background:#293331;overflow:hidden}
+.sn-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,#149e71,#59e6a6)}
+.sn-teams{padding:15px 5px 19px!important}
+.sn-side{font-size:clamp(12px,3.1vw,16px)!important;color:#f2f7f4}
+.sn-side img{width:54px;height:54px;filter:drop-shadow(0 5px 12px rgba(0,0,0,.35))}
+.sn-large .sn-side img{width:72px;height:72px}
+.sn-center{color:#9caea6!important;font-size:clamp(16px,4vw,22px)!important}
+.stat-row{padding:14px 1px!important;border-bottom:1px solid #26312e!important;font-size:13px!important}
+.stat-row span{color:#bacac3!important;max-width:70%}
+.stat-row strong{color:#f4faf6!important;font-variant-numeric:tabular-nums}
+@media(max-width:500px){.block-container{padding-left:13px!important;padding-right:13px!important}.sn-large .sn-side img{width:62px;height:62px}.sn-panel-title{font-size:22px}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -500,7 +535,7 @@ st.markdown("""
   </div>
 </div>
 """, unsafe_allow_html=True)
-st.caption("SPORTS PREDICTION LAB · 10,000 SIMULACIONES MONTE CARLO")
+st.caption("PREDICCIONES DEPORTIVAS · MOTOR MONTE CARLO")
 
 # --------------------------- CONTROLES ---------------------------
 with st.sidebar:
@@ -538,9 +573,10 @@ try:
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
 
-    st.caption(f"📅 {len(matches)} partidos   ·   🔴 {live} en vivo   ·   ✓ {finished} finalizados")
+    st.caption(f"{len(matches)} partidos  ·  {live} en vivo  ·  {finished} finalizados")
 
-    st.markdown(f"### 🏟️ Partidos · {sport_label} · {league_name}")
+    st.markdown(f"### Partidos · {sport_label}")
+    st.caption(league_name)
     st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} partido(s) encontrados")
 
     if not matches:
