@@ -3,6 +3,9 @@ import streamlit as st
 import requests
 import math
 import random
+import sqlite3
+import json
+import os
 import bisect
 from collections import Counter
 from datetime import date, timedelta, datetime
@@ -545,6 +548,128 @@ def render_metric_comparison(title, home, away, total=None):
         unsafe_allow_html=True)
 
 
+# Snapshots pre-partido: never overwrite a prediction with post-match information.
+MODEL_VERSION = "simuladorny-dixon-coles-2026-11"
+DB_PATH = os.environ.get("SIMULADORNY_DB_PATH", "simuladorny_predictions.sqlite3")
+
+def snapshot_connection():
+    connection = sqlite3.connect(DB_PATH, timeout=10)
+    connection.execute("""CREATE TABLE IF NOT EXISTS predictions (
+        sport TEXT NOT NULL, league TEXT NOT NULL, event_id TEXT NOT NULL,
+        created_utc TEXT NOT NULL, model_version TEXT NOT NULL,
+        kickoff_utc TEXT NOT NULL, payload TEXT NOT NULL,
+        PRIMARY KEY (sport, league, event_id)
+    )""")
+    return connection
+
+def get_snapshot(sport, league, event_id):
+    try:
+        with snapshot_connection() as db:
+            row = db.execute(
+                "SELECT payload FROM predictions WHERE sport=? AND league=? AND event_id=?",
+                (sport, league, str(event_id))).fetchone()
+        return json.loads(row[0]) if row else None
+    except (sqlite3.Error, ValueError, OSError):
+        return None
+
+def save_prematch_snapshot(match, sport, league, projections, probabilities):
+    """Save once, only before actual kickoff; completed games cannot backfill."""
+    try:
+        kickoff = datetime.fromisoformat(str(match["date"]).replace("Z", "+00:00"))
+        now = datetime.now(ZoneInfo("UTC"))
+        if match["state"] != "pre" or kickoff <= now:
+            return False
+        record = {
+            "home": team_name(match["home"]), "away": team_name(match["away"]),
+            "metrics": projections, "probabilities": probabilities,
+            "kickoff": kickoff.isoformat(), "model_version": MODEL_VERSION
+        }
+        with snapshot_connection() as db:
+            db.execute("""INSERT OR IGNORE INTO predictions
+                (sport,league,event_id,created_utc,model_version,kickoff_utc,payload)
+                VALUES (?,?,?,?,?,?,?)""",
+                (sport,league,str(match["id"]),now.isoformat(),MODEL_VERSION,
+                 kickoff.isoformat(),json.dumps(record,ensure_ascii=False)))
+        return True
+    except (ValueError, TypeError, sqlite3.Error, OSError):
+        return False
+
+def real_soccer_statistics(match, league):
+    """Read real ESPN summary; unavailable metrics are left blank."""
+    actual = {}
+    home_id = str((match["home"].get("team") or {}).get("id") or "")
+    away_id = str((match["away"].get("team") or {}).get("id") or "")
+    actual["goals"] = [
+        _num_stat(score_of(match["home"])), _num_stat(score_of(match["away"]))
+    ]
+    try:
+        payload = sport_boxscore("soccer", league, match["id"])
+        box = payload.get("boxscore") or {}
+        for team in box.get("teams") or []:
+            tid = str((team.get("team") or {}).get("id") or "")
+            idx = 0 if tid == home_id else (1 if tid == away_id else None)
+            if idx is None:
+                continue
+            for stat in team.get("statistics") or []:
+                name = str(stat.get("name") or stat.get("abbreviation") or stat.get("label") or "").lower()
+                name = "".join(c for c in name if c.isalnum())
+                mapping = {
+                    "totalshots":"shots", "shots":"shots", "totalshotsattempts":"shots",
+                    "shotsontarget":"sot", "shotsongoal":"sot",
+                    "cornerkicks":"corners", "corners":"corners",
+                    "yellowcards":"yellow", "fouls":"fouls", "foulscommitted":"fouls"
+                }
+                key = mapping.get(name)
+                if key:
+                    val = _num_stat(stat.get("value", stat.get("displayValue")))
+                    if val is not None:
+                        actual.setdefault(key,[None,None])[idx] = val
+    except (requests.RequestException, ValueError, TypeError, KeyError):
+        pass
+    return actual
+
+def render_prediction_audit(match, league, snapshot):
+    """Comparison in the SAME match, with no retroactive predictions."""
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Predicción vs. Realidad</div>',unsafe_allow_html=True)
+    if not snapshot:
+        st.info("No hay una predicción guardada antes del inicio. "
+                "No se puede evaluar este partido retroactivamente.")
+        return
+    actual = real_soccer_statistics(match, league)
+    names = {"goals":"Goles", "shots":"Tiros", "sot":"Tiros a puerta",
+             "corners":"Córners", "yellow":"Tarjetas amarillas", "fouls":"Faltas"}
+    rows = []
+    errors = []
+    for key, title in names.items():
+        predicted = snapshot.get("metrics",{}).get(key)
+        observed = actual.get(key)
+        if not isinstance(predicted,list) or len(predicted)!=2:
+            continue
+        for i, side in enumerate(("Local", "Visitante")):
+            p = _num_stat(predicted[i])
+            r = _num_stat(observed[i]) if observed and len(observed)>i else None
+            if p is None:
+                continue
+            err = abs(p-r) if r is not None else None
+            if err is not None:
+                errors.append((title,side,err))
+            rows.append('<tr><td>'+html.escape(title+' · '+side)+'</td><td>'
+                        +f'{p:.1f}</td><td>'+('—' if r is None else f'{r:.1f}')
+                        +'</td><td>'+('—' if err is None else f'{err:.1f}')+'</td></tr>')
+    st.markdown('<div class="sn-audit-table"><table><thead><tr>'
+                '<th>Estadística</th><th>Pred.</th><th>Real</th><th>Error</th>'
+                '</tr></thead><tbody>'+''.join(rows)+'</tbody></table></div>',
+                unsafe_allow_html=True)
+    if errors:
+        worst = max(errors,key=lambda x:x[2])
+        st.caption(f"Mayor diferencia absoluta: {worst[0]} · {worst[1]} ({worst[2]:.1f}). "
+                   "Los errores de distintas estadísticas no son directamente comparables.")
+    else:
+        st.caption("Esperando estadísticas reales verificables del proveedor.")
+    st.caption("Predicción original guardada antes del inicio · "
+               +str(snapshot.get("model_version","")))
+
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel premium: presentation only; preserves the original Monte Carlo model."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
@@ -566,6 +691,22 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
     result = run_monte_carlo(params, 10000, seed=seed)
     av = result["averages"]
+
+    snapshot_metrics = {
+        "goals": [params["lambda_home"], params["lambda_away"]],
+        "shots": [av["shots_home"], av["shots_away"]],
+        "sot": [av["sot_home"], av["sot_away"]],
+        "corners": [av["corners_home"], av["corners_away"]],
+        "yellow": [av["yellow_home"], av["yellow_away"]],
+        "fouls": [av["fouls_home"], av["fouls_away"]],
+    }
+    snapshot_probabilities = {
+        "home":result["home_win"],"draw":result["draw"],"away":result["away_win"]
+    }
+    if match["state"] == "pre":
+        save_prematch_snapshot(match,sport_path,league_code,
+                              snapshot_metrics,snapshot_probabilities)
+    saved_snapshot = get_snapshot(sport_path,league_code,match["id"])
 
     # The crossed-out Monte Carlo banner from the reference is intentionally omitted.
     st.markdown('<div class="sn-detail-title">Predicción del partido</div>', unsafe_allow_html=True)
@@ -630,6 +771,11 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 'Estadísticas proyectadas</div><div class="sn-detail-statnames">'
                 + html.escape(home_name) + '<span>vs</span>' + html.escape(away_name)
                 + '</div>' + ''.join(rows) + '</div>', unsafe_allow_html=True)
+    if match["completed"]:
+        render_prediction_audit(match, league_code, saved_snapshot)
+    elif saved_snapshot:
+        st.caption("Predicción registrada antes del partido para comparar al finalizar.")
+
     st.caption("Modelo experimental. Goles y probabilidades se simulan; "
                "otras estadísticas utilizan supuestos generales y pueden no reflejar "
                "datos específicos de cada equipo. El xG oficial no está disponible.")
@@ -1326,6 +1472,12 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
  padding:13px 5px;border:1px solid #424449;border-radius:17px;background:#242528}
 .sn-score-option strong{font-size:19px;color:#f4f4f4}
 .sn-score-option span{font-size:12px;color:#bfc1c5}
+
+.sn-audit-table{overflow-x:auto;width:100%;border-radius:14px;border:1px solid #34363a}
+.sn-audit-table table{border-collapse:collapse;width:100%;font-size:11px;color:#f1f1f1}
+.sn-audit-table th,.sn-audit-table td{padding:11px 8px;border-bottom:1px solid #34363a;text-align:right;white-space:nowrap}
+.sn-audit-table th:first-child,.sn-audit-table td:first-child{text-align:left}
+.sn-audit-table th{background:#242528;color:#bfc0c3;font-weight:600}
 </style>
 
 """,unsafe_allow_html=True)
