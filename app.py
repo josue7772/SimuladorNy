@@ -14,13 +14,13 @@ from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
 # ============================================================
-# SIMULADORNY — Dashboard deportivo con fuentes gratuitas
+# NYUZ — Dashboard deportivo con fuentes gratuitas
 # Ejecutar: pip install streamlit requests
 #           streamlit run app.py
 # ============================================================
 
 st.set_page_config(
-    page_title="SimuladorNy — Analysis AI",
+    page_title="Nyuz — Analysis AI",
     page_icon="⚽",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -86,7 +86,7 @@ def league_url(sport_path, league_code, endpoint="scoreboard"):
 
 @st.cache_data(ttl=120, show_spinner=False)
 def fetch_json(url):
-    headers = {"User-Agent": "SimuladorNy/1.0 (Streamlit sports dashboard)"}
+    headers = {"User-Agent": "Nyuz/1.0 (Streamlit sports dashboard)"}
     response = requests.get(url, headers=headers, timeout=15)
     response.raise_for_status()
     return response.json()
@@ -688,8 +688,8 @@ def render_metric_comparison(title, home, away, total=None):
 
 
 # Snapshots pre-partido: never overwrite a prediction with post-match information.
-MODEL_VERSION = "simuladorny-dixon-coles-2026-11"
-DB_PATH = os.environ.get("SIMULADORNY_DB_PATH", "simuladorny_predictions.sqlite3")
+MODEL_VERSION = "nyuz-dixon-coles-2026-11"
+DB_PATH = os.environ.get("NYUZ_DB_PATH", "simuladorny_predictions.sqlite3")
 
 def snapshot_connection():
     connection = sqlite3.connect(DB_PATH, timeout=10)
@@ -952,7 +952,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     saved_snapshot = get_snapshot(sport_path,league_code,match["id"])
 
     # Match Intelligence: original layout adapted to actual match data.
-    st.markdown('<div class="sn-mi-eyebrow">SIMULADORNY · MATCH INTELLIGENCE</div>',unsafe_allow_html=True)
+    st.markdown('<div class="sn-mi-eyebrow">NYUZ · MATCH INTELLIGENCE</div>',unsafe_allow_html=True)
     st.markdown('<div class="sn-mi-heading">Análisis del partido</div>',unsafe_allow_html=True)
     st.markdown('<div class="sn-mi-subtitle">Proyecciones estadísticas · '+html.escape(str(cutoff))+'</div>',unsafe_allow_html=True)
     st.markdown('<div class="sn-mi-match">'+team_pair_html(match["home"],match["away"],"VS",large=True)+'</div>',unsafe_allow_html=True)
@@ -1344,7 +1344,7 @@ def render_nba_intelligence(match, events, cutoff):
     seed = sum((i+1)*ord(c) for i,c in enumerate(str(match["id"])))
     pred = nba_intelligence_prediction(home_games, away_games, obs_h, obs_a, seed)
     if pred is None: return
-    st.markdown('<div class="sn-nba-wrap"><div class="sn-nba-eyebrow">SIMULADORNY · NBA INTELLIGENCE</div>'
+    st.markdown('<div class="sn-nba-wrap"><div class="sn-nba-eyebrow">NYUZ · NBA INTELLIGENCE</div>'
                 '<div class="sn-nba-title">Análisis NBA</div>'
                 '<div class="sn-nba-subtitle">10,000 simulaciones · Datos históricos disponibles</div></div>',
                 unsafe_allow_html=True)
@@ -1393,7 +1393,7 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
         render_nba_intelligence(match, events, cutoff)
         return
     names = (team_name(match["home"]), team_name(match["away"]))
-    st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>"
+    st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>NYUZ / PREDICTION ENGINE</div>"
                 "<div class='sn-panel-title'>Predicciones del partido</div>"
                 "<div class='sn-chip'>✦ Predicción cuantitativa</div></div>",
                 unsafe_allow_html=True)
@@ -1628,7 +1628,7 @@ h1,h2,h3,p,label{color:#f2f3f4}
 .sn-odds-card{box-shadow:0 8px 20px #0002}
 @media(max-width:500px){.sn-compare{padding:12px 10px}.sn-odds-value{font-size:23px}}
 
-/* SIMULADORNY / OBSIDIAN: premium compact mobile-first presentation */
+/* NYUZ / OBSIDIAN: premium compact mobile-first presentation */
 .stApp{background:radial-gradient(ellipse 95% 390px at 85% -90px,#24272d 0%,transparent 75%),radial-gradient(ellipse 70% 350px at -25% 350px,#1a1d22 0%,transparent 80%),#0b0c0e!important}
 .block-container{max-width:1040px!important;padding-top:14px!important}
 [data-testid="stVerticalBlock"]{gap:.7rem!important}
@@ -1697,7 +1697,7 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) *{color:#141619!important}
 [data-testid="stRadio"] [role="radiogroup"] label:has(input:checked){background:#f0f1f3!important;border-color:#f0f1f3!important}
 
-/* SIMULADORNY MINIMAL / MOBILE-FIRST */
+/* NYUZ MINIMAL / MOBILE-FIRST */
 .stApp{background:#0b0c0e!important}
 .block-container{max-width:960px!important;padding-top:10px!important}
 [data-testid="stVerticalBlock"]{gap:.43rem!important}
@@ -1729,7 +1729,7 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 [data-testid="stCaptionContainer"]{margin:0!important}
 @media(max-width:500px){.block-container{padding:9px 13px 65px!important}.sn-header{margin-bottom:2px!important}.sn-list-heading{margin-top:3px!important}}
 
-/* SIMULADORNY STUDIO — true minimal navigation, no radio controls */
+/* NYUZ STUDIO — true minimal navigation, no radio controls */
 .stApp {background:#0b0c0e!important;}
 .block-container {max-width:900px!important;padding-top:7px!important;}
 .sn-header {padding:0 0 4px!important;}
@@ -1815,7 +1815,7 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
   .sn-fixture-card{margin-top:9px!important}
 }
 
-/* SIMULADORNY SIGNATURE — rounded, monochrome, breathable controls */
+/* NYUZ SIGNATURE — rounded, monochrome, breathable controls */
 .sn-header{padding:13px 0 24px!important}
 .sn-logo{border-radius:50%!important;width:39px!important;height:39px!important}
 .sn-list-heading{margin:9px 0 16px!important}
@@ -2054,6 +2054,80 @@ for day in week_days:
 st.markdown('<nav class="sn-date-rail" aria-label="Seleccionar día">'
             + "".join(date_links) + '</nav>', unsafe_allow_html=True)
 
+def backtest_nba_history(events, max_games=60):
+    """Walk-forward score evaluation. No game sees its own or later scores."""
+    ordered = sorted(
+        (m for m in (parse_event(e) for e in events) if m and m["completed"]),
+        key=lambda m: str(m.get("date") or ""))
+    by_team = {}
+    evaluated = []
+    for match in ordered:
+        hid = str(match["home"].get("team", {}).get("id") or "")
+        aid = str(match["away"].get("team", {}).get("id") or "")
+        hs, aws = numeric_score(match["home"]), numeric_score(match["away"])
+        if not hid or not aid or hs is None or aws is None:
+            continue
+        hg = by_team.get(hid, [])[-10:]
+        ag = by_team.get(aid, [])[-10:]
+        if len(hg) >= 5 and len(ag) >= 5:
+            def wavg(rows, key, decay):
+                values = list(reversed(rows))
+                weights = [1 / (1 + i * decay) for i in range(len(values))]
+                return sum(float(r[key])*w for r,w in zip(values,weights))/sum(weights)
+            def projection(decay):
+                return (
+                    .55*wavg(hg,"gf",decay)+.45*wavg(ag,"ga",decay),
+                    .55*wavg(ag,"gf",decay)+.45*wavg(hg,"ga",decay))
+            base = projection(0)
+            candidate = projection(.17)
+            evaluated.append({"date":str(match["date"])[:10],
+                "match":f'{team_name(match["home"])} vs {team_name(match["away"])}',
+                "actual_home":hs,"actual_away":aws,
+                "base_home":base[0],"base_away":base[1],
+                "candidate_home":candidate[0],"candidate_away":candidate[1]})
+        by_team.setdefault(hid, []).append({"gf":hs,"ga":aws})
+        by_team.setdefault(aid, []).append({"gf":aws,"ga":hs})
+    return evaluated[-max_games:]
+
+
+with st.expander("🧪 Nyuz Model Lab · Backtesting NBA", expanded=False):
+    st.caption("Prueba retrospectiva: solo utiliza partidos anteriores a cada encuentro. "
+               "Compara un promedio simple contra un modelo que pondera la forma reciente. "
+               "Este laboratorio no modifica automáticamente el motor en producción.")
+    if st.button("Evaluar últimos 60 partidos NBA", key="nyuz_backtest"):
+        with st.spinner("Recuperando historial y evaluando partidos NBA..."):
+            historical = nba_recent_scoreboards(selected_date + timedelta(days=1))
+            rows = backtest_nba_history(historical, 60)
+        if len(rows) < 15:
+            st.warning(f"Solo se pudieron evaluar {len(rows)} partidos con al menos cinco "
+                       "antecedentes por equipo. Se necesitan más datos para comparar modelos.")
+        else:
+            split = max(1, int(len(rows)*.8))
+            validation, test = rows[:split], rows[split:]
+            def mae(items, prefix):
+                return sum(abs(r[f"{prefix}_home"]-r["actual_home"])+
+                           abs(r[f"{prefix}_away"]-r["actual_away"]) for r in items)/(2*len(items))
+            st.metric("Partidos evaluados", len(rows))
+            st.caption(f"Validación: {len(validation)} partidos anteriores · "
+                       f"Prueba final: {len(test)} partidos posteriores.")
+            st.markdown("**Error absoluto medio por equipo (puntos; menor es mejor)**")
+            st.table([
+                {"Modelo":"Promedio simple", "Validación":round(mae(validation,"base"),2),
+                 "Prueba final":round(mae(test,"base"),2)},
+                {"Modelo":"Forma reciente ponderada", "Validación":round(mae(validation,"candidate"),2),
+                 "Prueba final":round(mae(test,"candidate"),2)}
+            ])
+            st.caption("Evaluación preliminar de proyección de puntos, no de rebotes, "
+                       "asistencias o triples. El backtesting utiliza medias analíticas "
+                       "equivalentes a la expectativa de una simulación Monte Carlo, "
+                       "sin ejecutar 10,000 muestras por partido. "
+                       "No se ha optimizado ni calibrado el modelo con estos resultados.")
+            st.dataframe([{"Fecha":r["date"],"Partido":r["match"],
+                           "Real":f'{r["actual_home"]:.0f} - {r["actual_away"]:.0f}',
+                           "Base":f'{r["base_home"]:.1f} - {r["base_away"]:.1f}',
+                           "Ponderado":f'{r["candidate_home"]:.1f} - {r["candidate_away"]:.1f}'}
+                          for r in reversed(test)], hide_index=True, use_container_width=True)
+
 sport_label = st.pills(
     "Deporte", list(SPORTS.keys()), selection_mode="single",
     default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs",
@@ -2135,7 +2209,7 @@ except Exception as exc:
 
 st.divider()
 st.caption(
-    "SimuladorNy es un proyecto independiente. ESPN y las ligas mencionadas "
+    "Nyuz es un proyecto independiente. ESPN y las ligas mencionadas "
     "pertenecen a sus respectivos titulares. Los datos pueden retrasarse, "
     "cambiar o no estar disponibles. No se generan estadísticas inexistentes."
 )
