@@ -490,8 +490,13 @@ try:
             "no tenga encuentros programados o que el proveedor gratuito no la cubra."
         )
     else:
+        # Obtener el historial una sola vez por liga y fecha.
+        historical_data = (
+            historical_events(sport["path"], league_code, selected_date)
+            if sport_label == "⚽ Fútbol" else []
+        )
         for match in matches:
-            render_match_card(match, sport_label, league_name)
+            render_match_card(match, sport_label, league_name, historical_data)
 
 except requests.HTTPError as exc:
     st.error(f"El proveedor respondió con un error HTTP: {exc}")
