@@ -589,33 +589,6 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 'Probabilidades de resultado</div><div class="sn-detail-probs">'
                 + prob_cells + '</div></div>', unsafe_allow_html=True)
 
-    score = result["score"]
-    freq = result["score_frequency"]
-    # A result driven mostly by generic priors is not an individualized forecast.
-    sufficient_history = len(home_games) >= 3 and len(away_games) >= 3
-    top_three = result["score_probabilities"][:3]
-    alternatives = "".join(
-        '<div class="sn-score-option"><strong>'
-        + f'{sc[0]} – {sc[1]}' + '</strong><span>'
-        + f'{prob*100:.1f}%' + '</span></div>'
-        for sc, prob in top_three
-    )
-    if not sufficient_history:
-        st.warning(
-            f"Historial insuficiente para personalizar el marcador: "
-            f"{home_name} ({len(home_games)}/5 partidos), "
-            f"{away_name} ({len(away_games)}/5 partidos). "
-            "Las probabilidades siguientes son orientativas y dependen de promedios generales."
-        )
-    st.markdown(
-        '<div class="sn-detail-box"><div class="sn-detail-heading">'
-        + ('Marcadores más probables' if sufficient_history else 'Escenarios orientativos')
-        + '</div><div class="sn-score-options">' + alternatives + '</div>'
-        + '<div class="sn-detail-foot">Ningún marcador es seguro. '
-        + ('Estimación basada en historial reciente.' if sufficient_history
-           else 'No hay historial suficiente para elegir un único marcador fiable.')
-        + '</div></div>', unsafe_allow_html=True
-    )
     st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
                 'Resultado más probable (1X2)</div><div class="sn-detail-winner">'
                 + html.escape(probs[max(range(3), key=lambda i: probs[i][1])][0])
@@ -657,9 +630,6 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 'Estadísticas proyectadas</div><div class="sn-detail-statnames">'
                 + html.escape(home_name) + '<span>vs</span>' + html.escape(away_name)
                 + '</div>' + ''.join(rows) + '</div>', unsafe_allow_html=True)
-    st.caption("Marcador exacto: distribución Dixon–Coles con ajuste histórico "
-               + (f"de {fitted_matches} partidos." if fitted_matches >= 35
-                  else "desactivado por falta de historial suficiente (Poisson base)."))
     st.caption("Modelo experimental. Goles y probabilidades se simulan; "
                "otras estadísticas utilizan supuestos generales y pueden no reflejar "
                "datos específicos de cada equipo. El xG oficial no está disponible.")
