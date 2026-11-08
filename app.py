@@ -973,6 +973,20 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .stButton button[kind="primary"]{background:#e8eaed!important;border:1px solid #e8eaed!important;color:#141619!important;border-radius:13px!important;min-height:58px!important;padding:7px 2px!important;font-weight:800!important}
 .stButton button p{font-size:12px!important;line-height:1.25!important;white-space:pre-line!important}
 @media(max-width:500px){.sn-hero{padding:14px 16px!important}.sn-hero-title{font-size:24px!important}.sn-hero-desc{font-size:12px!important}.sn-workflow{display:none!important}.sn-micro{margin-top:10px!important;padding-top:9px!important}}
+/* El radio semanal se desplaza lateralmente en iPhone; jamás se convierte en columna. */
+[data-testid="stRadio"] [role="radiogroup"]{
+ display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+ overflow-x:auto!important;overflow-y:hidden!important;gap:7px!important;
+ width:100%!important;max-width:100%!important;padding:4px 1px 10px!important;
+ -webkit-overflow-scrolling:touch;scrollbar-width:none;
+}
+[data-testid="stRadio"] [role="radiogroup"]::-webkit-scrollbar{display:none}
+[data-testid="stRadio"] [role="radiogroup"]>label{
+ flex:0 0 auto!important;white-space:nowrap!important;min-width:max-content!important;
+}
+/* En la franja de fechas, el día activo debe tener texto oscuro sobre blanco. */
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked) *{color:#141619!important}
+[data-testid="stRadio"] [role="radiogroup"] label:has(input:checked){background:#f0f1f3!important;border-color:#f0f1f3!important}
 </style>
 
 """,unsafe_allow_html=True)
@@ -994,27 +1008,40 @@ search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", l
 st.markdown("<div class='sn-list-heading'>Centro de partidos <span>Encuentra un encuentro y descubre lo que proyecta el modelo</span></div>", unsafe_allow_html=True)
 status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
                          horizontal=True, label_visibility="collapsed", key="status_tabs")
-# Calendario semanal horizontal inspirado en la referencia, conectado al filtro real.
+# Calendario semanal: un único control horizontal (sin columnas que se apilen en móvil).
 if "sn_selected_date" not in st.session_state:
     st.session_state.sn_selected_date = date.today()
 selected_date = st.session_state.sn_selected_date
-st.markdown('<div class="sn-date-title">SELECCIONA EL DÍA</div>', unsafe_allow_html=True)
-week_days = [selected_date + timedelta(days=i) for i in range(-3, 4)]
-cols = st.columns([0.8] + [1] * 7, gap="small")
-with cols[0]:
-    with st.popover("📅", use_container_width=True):
-        chosen = st.date_input("Ir a fecha", value=selected_date, key="sn_calendar_popup")
-        if chosen != selected_date:
-            st.session_state.sn_selected_date = chosen
-            st.rerun()
 short_days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
-for col, day in zip(cols[1:], week_days):
-    caption = "Hoy" if day == date.today() else short_days[day.weekday()]
-    with col:
-        if st.button(f"{caption}\n{day.day}", key=f"sn_day_{day.isoformat()}",
-                     type="primary" if day == selected_date else "secondary", use_container_width=True):
-            st.session_state.sn_selected_date = day
-            st.rerun()
+week_days = [selected_date + timedelta(days=i) for i in range(-3, 4)]
+labels_by_date = {
+    day.isoformat(): ("Hoy" if day == date.today() else short_days[day.weekday()]) + f"  {day.day}"
+    for day in week_days
+}
+# El calendario puede saltar a cualquier fecha. El selector se sincroniza ANTES de dibujar el widget.
+if st.session_state.get("sn_week_choice") not in labels_by_date:
+    st.session_state.sn_week_choice = selected_date.isoformat()
+
+def _sn_change_day():
+    st.session_state.sn_selected_date = date.fromisoformat(st.session_state.sn_week_choice)
+
+st.markdown('<div class="sn-date-title">SELECCIONA EL DÍA</div>', unsafe_allow_html=True)
+with st.popover("▦  Calendario", use_container_width=False):
+    chosen = st.date_input("Ir a fecha", value=selected_date, key="sn_calendar_popup")
+    if chosen != selected_date:
+        st.session_state.sn_selected_date = chosen
+        st.session_state.sn_week_choice = chosen.isoformat()
+        st.rerun()
+st.radio(
+    "Calendario semanal",
+    options=list(labels_by_date),
+    format_func=lambda iso: labels_by_date[iso],
+    horizontal=True,
+    label_visibility="collapsed",
+    key="sn_week_choice",
+    on_change=_sn_change_day,
+)
+selected_date = st.session_state.sn_selected_date
 
 st.markdown("<div class='sn-section-label'>ELIGE TU DEPORTE</div>", unsafe_allow_html=True)
 sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True,
