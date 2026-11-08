@@ -466,7 +466,7 @@ def render_metric_comparison(title, home, away, total=None):
 
 
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
-    """Panel único: resultados Monte Carlo sin secciones de análisis técnico."""
+    """Panel premium: presentation only; preserves the original Monte Carlo model."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
     home_games, away_games, h2h = history_for_match(
         match, events, sport_path, league_code, cutoff)
@@ -484,72 +484,83 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
     result = run_monte_carlo(params, 10000, seed=seed)
     av = result["averages"]
-    st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>" 
-                "<div class='sn-panel-title'>Predicciones del partido</div>"
-                "<div class='sn-chip'>✦ Predicción cuantitativa</div></div>", unsafe_allow_html=True)
-    st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
+
+    # The crossed-out Monte Carlo banner from the reference is intentionally omitted.
+    st.markdown('<div class="sn-detail-title">Predicción del partido</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sn-detail-sub">Proyecciones estadísticas · '
+                + html.escape(str(cutoff)) + '</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sn-detail-match">'
+                + team_pair_html(match["home"], match["away"], "VS", large=True)
+                + '</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sn-detail-tabs"><span class="active">Resumen</span>'
+                '<span>Probabilidades</span><span>Cuotas</span><span>Estadísticas</span></div>',
                 unsafe_allow_html=True)
-    st.divider()
-    if sport_path == "basketball":
-        st.markdown("<div class='sn-section-title'>Disponibilidad y titulares NBA</div>", unsafe_allow_html=True)
-        st.caption(lineup_source)
-        for name, tid in zip(names, ids):
-            players = lineup.get(tid, {})
-            starters = players.get("starters", [])
-            bench = players.get("bench", [])
-            out = players.get("out", [])
-            st.markdown(f"**{name}** · Titulares: " + (", ".join(starters) if starters else "No confirmados"))
-            if bench: st.caption("Suplentes publicados: " + ", ".join(bench))
-            if out: st.caption("No jugaron (según boxscore): " + ", ".join(out))
-        st.info("Las predicciones NBA usan los últimos resultados de los equipos. "
-                "Los titulares se muestran si están publicados, pero NO se aplican "
-                "ajustes por jugadores sin datos individuales fiables de impacto y minutos. "
-                "Antes del inicio las alineaciones pueden no estar confirmadas.")
-    st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
-    render_probability_comparison(home_name, away_name, result["home_win"], result["away_win"], result["draw"])
-    for label, value in (
-        (f"Victoria {home_name}", result["home_win"]),
-        ("Empate", result["draw"]),
-        (f"Victoria {away_name}", result["away_win"]),
-    ):
-        pct = max(0.0, min(100.0, float(value)))
-        st.markdown(
-            f"<div class='sn-prob'><div class='sn-prob-top'><span>{html.escape(label)}</span>"
-            f"<strong>{pct:.1f}%</strong></div><div class='sn-track'>"
-            f"<div class='sn-fill' style='width:{pct:.1f}%'></div></div></div>",
-            unsafe_allow_html=True)
-    render_fair_odds([
-        ("Local", result["home_win"]), ("Empate", result["draw"]),
-        ("Visitante", result["away_win"]),
-    ])
-    st.divider()
-    st.markdown("<div class='sn-section-title'>Estadísticas proyectadas</div>", unsafe_allow_html=True)
-    stats = [
-        ("Goles proyectados · local", f"{params['lambda_home']:.2f}"),
-        ("Goles proyectados · visitante", f"{params['lambda_away']:.2f}"),
-        ("Total de goles esperados · modelo", f"{params['lambda_home'] + params['lambda_away']:.2f}"),
-        ("Tiros totales · estimación", f"{av['shots_home'] + av['shots_away']:.1f}"),
-        ("Tiros a puerta · estimación", f"{av['sot_home'] + av['sot_away']:.1f}"),
-        ("Córners · estimación", f"{av['corners_home'] + av['corners_away']:.1f}"),
-        ("Tarjetas · estimación", f"{av['yellow_home'] + av['yellow_away']:.1f}"),
-        ("Faltas · estimación", f"{av['fouls_home'] + av['fouls_away']:.1f}"),
-        ("Ambos equipos anotan", f"{result['both_score']:.1f}%"),
-        ("Más de 2.5 goles", f"{result['over_25']:.1f}%"),
+    probs = [
+        (home_name, float(result["home_win"])),
+        ("Empate", float(result["draw"])),
+        (away_name, float(result["away_win"])),
     ]
-    render_metric_comparison("Goles proyectados", params['lambda_home'], params['lambda_away'])
-    stats.insert(3, ("xG oficial · calidad de disparos", "No disponible"))
-    for label, value in stats:
-        st.markdown(
-            f"<div class='stat-row'><span>{html.escape(label)}</span>"
-            f"<strong>{html.escape(value)}</strong></div>",
-            unsafe_allow_html=True)
-    st.caption(
-        "Proyecciones de un modelo experimental. Si faltan resultados históricos, "
-        "se usan promedios generales; tiros, córners, faltas y tarjetas usan "
-        "supuestos generales, no datos históricos específicos. "
-        "El xG auténtico requiere datos de calidad de disparos y no está disponible en esta fuente. "
-        "El total proyectado es la suma de las tasas de gol de ambos equipos, no xG oficial."
+    prob_cells = ''.join(
+        '<div class="sn-detail-prob"><span>' + html.escape(name) + '</span>'
+        + f'<strong>{p:.1f}%</strong>'
+        + f'<i><b style="width:{max(0,min(100,p)):.2f}%"></b></i></div>'
+        for name, p in probs
     )
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Probabilidades de resultado</div><div class="sn-detail-probs">'
+                + prob_cells + '</div></div>', unsafe_allow_html=True)
+
+    score = result["score"]
+    freq = result["score_frequency"]
+    st.markdown('<div class="sn-detail-two">'
+                '<div class="sn-detail-tile"><span>Marcador más frecuente</span>'
+                f'<strong>{int(score[0])} – {int(score[1])}</strong>'
+                f'<small>Ocurrió en {freq:.1f}% de las simulaciones</small></div>'
+                '<div class="sn-detail-tile"><span>Equipo con mayor probabilidad</span>'
+                '<strong class="sn-detail-winner">'
+                + html.escape(probs[max(range(3), key=lambda i: probs[i][1])][0])
+                + '</strong><small>Probabilidad, no garantía</small></div></div>',
+                unsafe_allow_html=True)
+
+    # Fair odds, never fictional bookmaker prices.
+    odds = []
+    for label, p in probs:
+        odds.append('<div class="sn-detail-odd"><span>'
+                    + html.escape(label) + '</span><strong>'
+                    + (f'{100/p:.2f}' if p > 0 else '—')
+                    + '</strong></div>')
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Cuotas justas del modelo</div><div class="sn-detail-odds">'
+                + ''.join(odds) + '</div>'
+                '<div class="sn-detail-foot">Cuotas calculadas, no precios de casas de apuestas.</div>'
+                '</div>', unsafe_allow_html=True)
+
+    # Only show stats already generated by the existing model.
+    metrics = [
+        ("Goles proyectados", params["lambda_home"], params["lambda_away"]),
+        ("Tiros totales", av["shots_home"], av["shots_away"]),
+        ("Tiros a puerta", av["sot_home"], av["sot_away"]),
+        ("Córners", av["corners_home"], av["corners_away"]),
+        ("Tarjetas amarillas", av["yellow_home"], av["yellow_away"]),
+        ("Faltas", av["fouls_home"], av["fouls_away"]),
+    ]
+    rows = []
+    for label, left, right in metrics:
+        left, right = max(0.0, float(left)), max(0.0, float(right))
+        total = left + right
+        lwidth = left / total * 100 if total else 50
+        rows.append('<div class="sn-detail-stat"><div class="sn-detail-stat-label">'
+                    f'<strong>{left:.1f}</strong><span>{html.escape(label)}</span>'
+                    f'<strong>{right:.1f}</strong></div>'
+                    f'<div class="sn-detail-bars"><i style="width:{lwidth:.2f}%"></i>'
+                    f'<b style="width:{100-lwidth:.2f}%"></b></div></div>')
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Estadísticas proyectadas</div><div class="sn-detail-statnames">'
+                + html.escape(home_name) + '<span>vs</span>' + html.escape(away_name)
+                + '</div>' + ''.join(rows) + '</div>', unsafe_allow_html=True)
+    st.caption("Modelo experimental. Goles y probabilidades se simulan; "
+               "otras estadísticas utilizan supuestos generales y pueden no reflejar "
+               "datos específicos de cada equipo. El xG oficial no está disponible.")
 
 
 @st.cache_data(ttl=1800, show_spinner=False)
@@ -1190,6 +1201,53 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
  background:#f2f2f2!important;color:#111!important;border-color:#f2f2f2!important;
 }
 [data-testid="stPills"] button{border-radius:999px!important}
+
+/* Premium prediction detail, matched to the user-selected monochrome reference */
+.sn-detail-title{font-size:22px;font-weight:800;letter-spacing:-.7px;margin:12px 0 3px}
+.sn-detail-sub{font-size:11px;color:#a6a9ae;margin-bottom:12px}
+.sn-detail-match,.sn-detail-box,.sn-detail-tile{
+  background:linear-gradient(145deg,#191a1d,#111214);
+  border:1px solid #383a3e;border-radius:24px;
+}
+.sn-detail-match{padding:10px 12px;margin:8px 0 12px}
+.sn-detail-match .sn-teams{padding:9px 0!important}
+.sn-detail-tabs{display:flex;gap:7px;overflow-x:auto;white-space:nowrap;
+  scrollbar-width:none;margin:12px 0}
+.sn-detail-tabs span{padding:9px 13px;background:#222326;border:1px solid #424448;
+  border-radius:999px;font-size:11px;color:#ddd}
+.sn-detail-tabs span.active{background:#f1f1f1;color:#111;border-color:#f1f1f1;font-weight:700}
+.sn-detail-box{padding:17px 14px;margin:12px 0}
+.sn-detail-heading{font-weight:800;font-size:16px;letter-spacing:-.3px;margin-bottom:17px}
+.sn-detail-probs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.sn-detail-prob{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.sn-detail-prob span{font-size:11px;color:#c6c8ca;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-detail-prob strong{font-size:22px}
+.sn-detail-prob i{width:100%;height:7px;border-radius:9px;background:#44464b;overflow:hidden}
+.sn-detail-prob i b{display:block;height:100%;background:#f0f0f0;border-radius:9px}
+.sn-detail-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+.sn-detail-tile{padding:14px 10px;display:flex;flex-direction:column;align-items:center;
+  text-align:center;justify-content:center;gap:10px;min-height:125px}
+.sn-detail-tile span{font-size:12px;font-weight:700}
+.sn-detail-tile strong{font-size:27px}
+.sn-detail-tile strong.sn-detail-winner{font-size:17px;overflow-wrap:anywhere}
+.sn-detail-tile small{font-size:10px;color:#b5b7ba;line-height:1.4}
+.sn-detail-odds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sn-detail-odd{background:#26272a;border-radius:14px;border:1px solid #424448;
+  padding:12px 3px;display:flex;flex-direction:column;align-items:center;gap:7px}
+.sn-detail-odd span{font-size:10px;color:#c4c5c8;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:100%}
+.sn-detail-odd strong{font-size:20px}
+.sn-detail-foot{color:#999da3;font-size:10px;margin-top:12px}
+.sn-detail-statnames{display:flex;justify-content:space-between;color:#b6b8bb;font-size:11px;margin-bottom:13px}
+.sn-detail-statnames span{color:#75787d}
+.sn-detail-stat{margin:13px 0}
+.sn-detail-stat-label{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.sn-detail-stat-label strong{font-size:14px;min-width:36px}
+.sn-detail-stat-label strong:last-child{text-align:right}
+.sn-detail-stat-label span{font-size:12px;color:#d2d4d6;text-align:center}
+.sn-detail-bars{display:flex;gap:4px;height:7px;margin-top:7px}
+.sn-detail-bars i,.sn-detail-bars b{display:block;border-radius:9px;background:#6e7176}
+.sn-detail-bars b{background:#ededee}
 </style>
 
 """,unsafe_allow_html=True)
