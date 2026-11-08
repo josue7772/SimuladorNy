@@ -4,7 +4,8 @@ import requests
 import math
 import random
 from collections import Counter
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+from zoneinfo import ZoneInfo
 from urllib.parse import quote
 
 # ============================================================
@@ -19,6 +20,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+# Fecha local de la interfaz. Streamlit Cloud suele ejecutarse en UTC.
+# America/Mexico_City evita que aparezca "mañana" cuando aún es hoy en México.
+APP_TIMEZONE = ZoneInfo("America/Mexico_City")
+def local_today():
+    return datetime.now(APP_TIMEZONE).date()
 
 # ESPN publica marcadores JSON sin clave. Es una API no oficial:
 # cobertura, disponibilidad y campos pueden cambiar sin aviso.
@@ -995,13 +1002,6 @@ st.markdown("""
 <div class="sn-header"><div class="sn-mark"><div class="sn-logo">✦</div><div>
 <div class="sn-wordmark">SIMULADOR<span>NY</span></div><div class="sn-brand-sub">SPORTS INTELLIGENCE</div>
 </div></div><div class="sn-header-tag">✦ PREDICTION LAB</div></div>
-<div class="sn-hero">
-<div class="sn-eyebrow">◈ EL FUTURO DEL ANÁLISIS DEPORTIVO</div>
-<div class="sn-hero-title">No solo veas el partido.<br><em>Entiende las posibilidades.</em></div>
-<div class="sn-hero-desc">Probabilidades, estadísticas proyectadas y cuotas justas. Todo en una experiencia diseñada para decidir mejor qué analizar.</div>
-<div class="sn-pills"><span class="sn-pill">✦ Predicciones</span><span class="sn-pill">◉ 4 deportes</span><span class="sn-pill">↗ Cuotas del modelo</span></div>
-<div class="sn-micro"><span class="sn-micro-dot"></span><b>SIMULADORNY ENGINE</b><span>·</span><span>Modelos probabilísticos</span><span>·</span><span>Datos según disponibilidad</span></div>
-</div>
 """,unsafe_allow_html=True)
 
 search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
@@ -1010,12 +1010,12 @@ status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizado
                          horizontal=True, label_visibility="collapsed", key="status_tabs")
 # Calendario semanal: un único control horizontal (sin columnas que se apilen en móvil).
 if "sn_selected_date" not in st.session_state:
-    st.session_state.sn_selected_date = date.today()
+    st.session_state.sn_selected_date = local_today()
 selected_date = st.session_state.sn_selected_date
 short_days = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
 week_days = [selected_date + timedelta(days=i) for i in range(-3, 4)]
 labels_by_date = {
-    day.isoformat(): ("Hoy" if day == date.today() else short_days[day.weekday()]) + f"  {day.day}"
+    day.isoformat(): ("Hoy" if day == local_today() else short_days[day.weekday()]) + f"  {day.day}"
     for day in week_days
 }
 # El calendario puede saltar a cualquier fecha. El selector se sincroniza ANTES de dibujar el widget.
@@ -1027,7 +1027,8 @@ def _sn_change_day():
 
 st.markdown('<div class="sn-date-title">SELECCIONA EL DÍA</div>', unsafe_allow_html=True)
 with st.popover("▦  Calendario", use_container_width=False):
-    chosen = st.date_input("Ir a fecha", value=selected_date, key="sn_calendar_popup")
+    # Sin key persistente: se inicializa siempre desde el día elegido en la franja.
+    chosen = st.date_input("Ir a fecha", value=selected_date)
     if chosen != selected_date:
         st.session_state.sn_selected_date = chosen
         st.session_state.sn_week_choice = chosen.isoformat()
