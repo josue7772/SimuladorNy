@@ -13,13 +13,34 @@ BASE = 'https://site.api.espn.com/apis/site/v2/sports/football/nfl'
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def nfl_past_events(day_iso):
-    # Ventana propia de NFL: temporada actual y, si procede, temporada anterior.
+    """Consulta temporadas NFL por separado; no solicita un rango gigante.
+
+    ESPN publica endpoints de temporada (dates=YYYY, seasontype=2).
+    Si una temporada falla, intenta otra sin bloquear el análisis.
+    El filtro estricto por fecha se hace en _observations.
+    """
     cutoff = datetime.fromisoformat(day_iso).replace(tzinfo=timezone.utc)
-    start = (cutoff - timedelta(days=230)).strftime('%Y%m%d')
-    end = cutoff.strftime('%Y%m%d')
-    r = requests.get(f'{BASE}/scoreboard', params={'dates':f'{start}-{end}', 'limit':'400'},timeout=20)
-    r.raise_for_status()
-    return r.json().get('events', [])
+    years = (cutoff.year, cutoff.year - 1)
+    seen = {}
+    errors = []
+    for year in years:
+        try:
+            response = requests.get(
+                f'{BASE}/scoreboard',
+                params={'dates': str(year), 'seasontype': '2', 'limit': '400'},
+                headers={'User-Agent': 'NYUZ-Sports/3.3 (historical research)',
+                         'Accept': 'application/json'},
+                timeout=12,
+            )
+            response.raise_for_status()
+            for event in response.json().get('events', []):
+                if event.get('id'):
+                    seen[str(event['id'])] = event
+        except (requests.RequestException, ValueError, TypeError) as exc:
+            errors.append(f'{year}: {type(exc).__name__}')
+    if not seen:
+        raise requests.RequestException('No fue posible consultar temporadas NFL: ' + ', '.join(errors))
+    return list(seen.values())
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def nfl_summary(event_id):
@@ -138,7 +159,7 @@ def render_nfl(match,day):
     try:
         history=nfl_past_events(cutoff.date().isoformat())
     except (requests.RequestException,ValueError) as exc:
-        st.warning('ESPN NFL no respondió. No se inventarán estadísticas.')
+        st.warning('No se pudo consultar el historial NFL de ESPN. No se inventarán estadísticas. Prueba actualizar más tarde.')
         return
     hid,aid=_id(h),_id(a)
     if not hid or not aid:
