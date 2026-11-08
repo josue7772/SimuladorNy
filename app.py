@@ -727,7 +727,7 @@ def cloud_config():
             return str(st.secrets.get(name, "")).strip() or os.getenv(name, "").strip()
         except (FileNotFoundError, KeyError, AttributeError):
             return os.getenv(name, "").strip()
-    return secret("SUPABASE_URL").rstrip("/"), secret("SUPABASE_SERVICE_ROLE_KEY")
+    return secret("SUPABASE_URL").rstrip("/"), (secret("SUPABASE_SERVICE_ROLE_KEY") or secret("SUPABASE_SECRET_KEY"))
 
 def cloud_headers(key):
     return {"apikey": key, "Authorization": "Bearer " + key,
@@ -760,7 +760,8 @@ def cloud_save(sport, league, event_id, now, kickoff, record):
                   "model_version":MODEL_VERSION,"payload":record}, timeout=10)
         response.raise_for_status()
         return True
-    except requests.RequestException:
+    except requests.RequestException as exc:
+        print(f"NYUZ storage warning: Supabase insert failed ({type(exc).__name__}).")
         return False
 
 def get_snapshot(sport, league, event_id):
@@ -1644,10 +1645,27 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
         nyuz_comparison(match, historical_data, sport_path, league_code, selected_date)
 
 def run_scheduled_capture():
-    """Call via python app.py --capture; suitable for GitHub Actions cron."""
+    """Automated soccer prematch capture (GitHub Actions, no user visits needed).
+
+    Fail closed on missing cloud configuration; never silently use ephemeral SQLite.
+    """
+    import sys
+    url, key = cloud_config()
+    if not url or not key:
+        print("ERROR: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured as Actions secrets.")
+        return 2
+    try:
+        ping = requests.get(url + "/rest/v1/predictions",
+            headers=cloud_headers(key), params={"select":"event_id","limit":"1"}, timeout=15)
+        ping.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"ERROR: Supabase connection failed ({type(exc).__name__}, status={getattr(getattr(exc, 'response', None), 'status_code', 'unknown')}).")
+        return 3
+
     successes = 0
+    checked = 0
+    failed_leagues = 0
     today = local_today()
-    # Scan major leagues; keep requests bounded and report failures.
     leagues = ["mex.1","eng.1","esp.1","ita.1","ger.1","fra.1",
                "usa.1","uefa.champions","por.1","bra.1","arg.1"]
     for league in leagues:
@@ -1660,15 +1678,18 @@ def run_scheduled_capture():
                     continue
                 historical = historical_events("soccer", league, day)
                 for match in upcoming:
+                    checked += 1
                     if record_upcoming_match(match, historical, "soccer", league, day):
                         successes += 1
             except (requests.RequestException, ValueError, KeyError) as exc:
-                print(f"Capture warning {league} {day}: {exc}")
-    print(f"Snapshots registered or already present: {successes}")
+                failed_leagues += 1
+                print(f"Capture warning: league={league}, day={day}, error={type(exc).__name__}")
+    print(f"NYUZ capture finished: snapshots confirmed={successes}; fixtures checked={checked}; league/date errors={failed_leagues}")
+    # A full outage must be visible in the workflow status.
+    return 4 if failed_leagues == len(leagues) * 2 else 0
 
 if __name__ == "__main__" and "--capture" in __import__("sys").argv:
-    run_scheduled_capture()
-    raise SystemExit(0)
+    raise SystemExit(run_scheduled_capture())
 
 # --------------------------- INTERFAZ PREMIUM (SOLO PRESENTACIÓN) ---------------------------
 st.markdown("""
@@ -2330,6 +2351,8 @@ modelo se actualiza automáticamente al terminar la evaluación.
 from nyuz_lab3 import render_history
 _cloud_url, _cloud_key = cloud_config()
 render_history(DB_PATH, _cloud_url, _cloud_key, get_events, parse_event, numeric_score)
+from nyuz_lab3 import render_auto_evaluation
+render_auto_evaluation(_cloud_url, _cloud_key)
 
 if sport_label == "⚾ KBO":
     st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
