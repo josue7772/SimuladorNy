@@ -1,6 +1,5 @@
 streamlit
-requests
-pandas
-numpy
 streamlit-autorefresh
-scipy
+requests
+numpy
+pandas
