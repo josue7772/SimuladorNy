@@ -7,6 +7,7 @@ import sqlite3
 import json
 import os
 import bisect
+import unicodedata
 from collections import Counter
 from datetime import date, timedelta, datetime
 from zoneinfo import ZoneInfo
@@ -714,10 +715,145 @@ def render_recommended_pick(match, home_games, away_games, params):
                "No se recomiendan córners, tarjetas ni tiros todavía: "
                "sus estimaciones actuales dependen de supuestos generales, "
                "no de un modelo validado para esos mercados. "
-               "Sin cuotas reales ni validación histórica, no podemos "
-               "afirmar que exista una apuesta con valor. "
+               "Sin validación histórica no podemos afirmar que exista "
+               "una apuesta con valor, aunque se muestren cuotas reales. "
                "Ningún pick garantiza ganancias.")
 
+
+# The Odds API v4: keys are configured server-side, never in source code.
+ODDS_LEAGUES = {
+    "mex.1": "soccer_mexico_ligamx", "usa.1": "soccer_usa_mls",
+    "eng.1": "soccer_epl", "eng.2": "soccer_efl_champ",
+    "esp.1": "soccer_spain_la_liga", "ita.1": "soccer_italy_serie_a",
+    "ger.1": "soccer_germany_bundesliga", "fra.1": "soccer_france_ligue_one",
+    "ned.1": "soccer_netherlands_eredivisie", "por.1": "soccer_portugal_primeira_liga",
+    "bra.1": "soccer_brazil_campeonato", "arg.1": "soccer_argentina_primera_division",
+    "sco.1": "soccer_scotland_premiership", "tur.1": "soccer_turkey_super_league",
+    "bel.1": "soccer_belgium_first_div", "aus.1": "soccer_australia_aleague",
+    "UEFA.CHAMPIONS": "soccer_uefa_champs_league",
+    "UEFA.EUROPA": "soccer_uefa_europa_league",
+}
+
+def odds_api_key():
+    try:
+        return str(st.secrets.get("ODDS_API_KEY", "")).strip() or os.getenv("ODDS_API_KEY", "").strip()
+    except (FileNotFoundError, KeyError, AttributeError):
+        return os.getenv("ODDS_API_KEY", "").strip()
+
+@st.cache_data(ttl=900, show_spinner=False)
+def fetch_real_odds(sport_key, region, api_key):
+    response = requests.get(
+        f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/",
+        params={"apiKey":api_key,"regions":region,"markets":"h2h,totals",
+                "oddsFormat":"decimal","dateFormat":"iso"}, timeout=12)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data,list):
+        raise ValueError("Respuesta de cuotas inesperada")
+    return data
+
+def normalized_team(name):
+    value = unicodedata.normalize("NFKD",str(name or "")).encode("ascii","ignore").decode().lower()
+    import re
+    value = re.sub(r"[^a-z0-9 ]", " ",value)
+    noise = {"fc","cf","club","de","the","ac","sc","cd","football","soccer","futbol"}
+    return " ".join(w for w in value.split() if w not in noise)
+
+def match_odds_event(match, events):
+    try:
+        kickoff = datetime.fromisoformat(str(match["date"]).replace("Z","+00:00"))
+    except (ValueError,TypeError,KeyError):
+        return None
+    h = normalized_team(team_name(match["home"]))
+    a = normalized_team(team_name(match["away"]))
+    if not h or not a:
+        return None
+    candidates=[]
+    for ev in events:
+        try:
+            eh = normalized_team(ev["home_team"])
+            ea = normalized_team(ev["away_team"])
+            start = datetime.fromisoformat(ev["commence_time"].replace("Z","+00:00"))
+            diff = abs((start-kickoff).total_seconds())
+            # Exact normalized team names AND close kickoff; never match loosely.
+            if h==eh and a==ea and diff<=7200:
+                candidates.append((diff,ev))
+        except (ValueError,TypeError,KeyError):
+            continue
+    if len(candidates)!=1:
+        return None
+    return candidates[0][1]
+
+def render_real_bookmaker_odds(match, league_code, params):
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Cuotas reales · casas de apuestas</div>',unsafe_allow_html=True)
+    if match.get("state") != "pre":
+        st.caption("Las cuotas actuales solo se consultan para partidos pendientes; "
+                   "no se muestran como si fueran cuotas históricas.")
+        return
+    key=odds_api_key()
+    if not key:
+        st.info("Configura ODDS_API_KEY en los Secrets de Streamlit para activar cuotas reales.")
+        return
+    sport_key=ODDS_LEAGUES.get(league_code.strip())
+    if not sport_key:
+        st.caption("Esta competición todavía no tiene una correspondencia verificada en el proveedor de cuotas.")
+        return
+    try:
+        data=fetch_real_odds(sport_key,"eu",key)
+    except (requests.RequestException,ValueError) as exc:
+        st.warning("No se pudieron consultar cuotas reales. Revisa la clave, el plan, "
+                   "los créditos y la cobertura de la liga.")
+        return
+    ev=match_odds_event(match,data)
+    if ev is None:
+        st.caption("No hay cuotas verificadas para este encuentro. "
+                   "Se exige coincidencia exacta de equipos y horario cercano.")
+        return
+    home=ev["home_team"]; away=ev["away_team"]
+    rows=[]
+    for book in ev.get("bookmakers",[]):
+        for market in book.get("markets",[]):
+            kind=market.get("key")
+            updated=market.get("last_update") or book.get("last_update") or "Sin fecha"
+            for outcome in market.get("outcomes",[]):
+                price=outcome.get("price")
+                try:
+                    price=float(price)
+                except (ValueError,TypeError):
+                    continue
+                if not (1.0<price<1000):
+                    continue
+                name=str(outcome.get("name", ""))
+                point=outcome.get("point")
+                if kind=="h2h":
+                    if name==home: label="Victoria local"
+                    elif name==away: label="Victoria visitante"
+                    elif name.lower()=="draw": label="Empate"
+                    else: continue
+                elif kind=="totals" and point is not None:
+                    try: line=float(point)
+                    except (ValueError,TypeError): continue
+                    if name.lower() not in ("over","under"): continue
+                    label=("Más" if name.lower()=="over" else "Menos")+f" de {line:g} goles"
+                else: continue
+                rows.append((str(book.get("title") or book.get("key") or "Casa"),label,price,updated))
+    if not rows:
+        st.caption("No se publicaron cuotas compatibles con los mercados consultados.")
+        return
+    # Display a bounded list of prices and their provenance; no fabricated odds.
+    rows.sort(key=lambda x:(x[1],-x[2],x[0]))
+    markup=[]
+    for bookmaker,label,price,updated in rows[:35]:
+        markup.append('<tr><td>'+html.escape(bookmaker)+'</td><td>'
+                      +html.escape(label)+'</td><td>'+f'{price:.2f}'
+                      +'</td><td>'+html.escape(str(updated).replace('T',' ')[:19])+'</td></tr>')
+    st.markdown('<div class="sn-audit-table"><table><thead><tr><th>Casa</th>'
+                '<th>Mercado</th><th>Cuota</th><th>Actualizada (UTC)</th></tr>'
+                '</thead><tbody>'+''.join(markup)+'</tbody></table></div>',unsafe_allow_html=True)
+    st.caption(f"Fuente: The Odds API · {len(rows)} precios disponibles · "
+               "Región EU · actualización de datos cada 15 min como máximo en esta app. "
+               "Las cuotas pueden cambiar; verifica en la casa antes de actuar.")
 
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel premium: presentation only; preserves the original Monte Carlo model."""
@@ -785,6 +921,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
                 + '</div></div>', unsafe_allow_html=True)
 
     render_recommended_pick(match, home_games, away_games, params)
+    render_real_bookmaker_odds(match, league_code, params)
 
     # Fair odds, never fictional bookmaker prices.
     odds = []
