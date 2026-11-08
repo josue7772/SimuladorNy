@@ -855,6 +855,54 @@ def render_real_bookmaker_odds(match, league_code, params):
                "Región EU · actualización de datos cada 15 min como máximo en esta app. "
                "Las cuotas pueden cambiar; verifica en la casa antes de actuar.")
 
+def record_upcoming_match(match, events, sport_path, league_code, cutoff):
+    """Capture a prediction once when the fixture is listed, even if analysis stays closed.
+
+    This runs on page visits, not as a continuously running scheduler.
+    """
+    if match.get("state") != "pre" or get_snapshot(sport_path,league_code,match["id"]):
+        return False
+    try:
+        kickoff = datetime.fromisoformat(str(match["date"]).replace("Z", "+00:00"))
+        if kickoff <= datetime.now(ZoneInfo("UTC")):
+            return False
+        home_games, away_games, h2h = history_for_match(
+            match, events, sport_path, league_code, cutoff)
+        params = historical_parameters(home_games, away_games, h2h)
+        hid = str(match["home"].get("team", {}).get("id") or "")
+        if h2h:
+            hh = sum(g["hs"] if g["home_id"] == hid else g["aws"] for g in h2h) / len(h2h)
+            ah = sum(g["aws"] if g["home_id"] == hid else g["hs"] for g in h2h) / len(h2h)
+            params["lambda_home"] = max(.15, min(4.5, .88*params["lambda_home"] + .12*hh))
+            params["lambda_away"] = max(.15, min(4.5, .88*params["lambda_away"] + .12*ah))
+            params["shots_home"] = 7.5 + 3.5*params["lambda_home"]
+            params["shots_away"] = 7.5 + 3.5*params["lambda_away"]
+            params["corners_home"] = 3 + 1.35*params["lambda_home"]
+            params["corners_away"] = 3 + 1.35*params["lambda_away"]
+        rho, fitted_matches = estimate_dixon_coles_rho(events, cutoff)
+        params["dc_rho"] = rho
+        seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
+        result = run_monte_carlo(params, 10000, seed=seed)
+        av = result["averages"]
+
+        snapshot_metrics = {
+            "goals": [params["lambda_home"], params["lambda_away"]],
+            "shots": [av["shots_home"], av["shots_away"]],
+            "sot": [av["sot_home"], av["sot_away"]],
+            "corners": [av["corners_home"], av["corners_away"]],
+            "yellow": [av["yellow_home"], av["yellow_away"]],
+            "fouls": [av["fouls_home"], av["fouls_away"]],
+        }
+        snapshot_probabilities = {
+            "home":result["home_win"],"draw":result["draw"],"away":result["away_win"]
+        }
+        if match["state"] == "pre":
+            save_prematch_snapshot(match,sport_path,league_code,
+                                  snapshot_metrics,snapshot_probabilities)
+        return get_snapshot(sport_path,league_code,match["id"]) is not None
+    except (ValueError, TypeError, KeyError, IndexError, ZeroDivisionError):
+        return False
+
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel premium: presentation only; preserves the original Monte Carlo model."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
@@ -964,6 +1012,9 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     elif saved_snapshot:
         st.caption("Predicción registrada antes del partido para comparar al finalizar.")
 
+    st.caption("El registro automático ocurre cuando la página consulta los partidos; "
+               "para registrar encuentros sin visitas se necesita un programador externo. "
+               "SQLite local no garantiza persistencia en Streamlit Cloud.")
     st.caption("Modelo experimental. Goles y probabilidades se simulan; "
                "otras estadísticas utilizan supuestos generales y pueden no reflejar "
                "datos específicos de cada equipo. El xG oficial no está disponible.")
@@ -1771,6 +1822,12 @@ try:
         historical_data = (
             historical_events(sport["path"], league_code, selected_date)
         )
+        # Automatically capture visible upcoming football fixtures before kickoff.
+        # Does not depend on the user expanding the match analysis.
+        if sport_label == "⚽ Fútbol":
+            for upcoming_match in matches:
+                record_upcoming_match(upcoming_match, historical_data,
+                                      sport["path"], league_code, selected_date)
         for match in matches:
             render_match_card(match, sport_label, league_name, historical_data, sport["path"], league_code, selected_date)
 
