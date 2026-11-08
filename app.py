@@ -1026,6 +1026,45 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .sn-competition{margin:4px 0!important}
 [data-testid="stCaptionContainer"]{margin:0!important}
 @media(max-width:500px){.block-container{padding:9px 13px 65px!important}.sn-header{margin-bottom:2px!important}.sn-list-heading{margin-top:3px!important}}
+
+/* SIMULADORNY STUDIO — true minimal navigation, no radio controls */
+.stApp {background:#0b0c0e!important;}
+.block-container {max-width:900px!important;padding-top:7px!important;}
+.sn-header {padding:0 0 4px!important;}
+.sn-logo {width:32px!important;height:32px!important;border-radius:9px!important;}
+.sn-wordmark {font-size:20px!important;letter-spacing:-.65px!important;}
+.sn-brand-sub {font-size:8px!important;letter-spacing:1.4px!important;}
+.sn-list-heading {font-size:23px!important;margin:0 0 4px!important;}
+[data-testid="stVerticalBlock"] {gap:.30rem!important;}
+[data-testid="stPills"] [role="group"] {
+  display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;
+  overflow-y:hidden!important;gap:6px!important;padding:3px 0 7px!important;
+  scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;
+}
+[data-testid="stPills"] [role="group"]::-webkit-scrollbar {display:none!important;}
+[data-testid="stPills"] button {
+  flex:0 0 auto!important;white-space:nowrap!important;min-height:36px!important;
+  padding:7px 12px!important;border-radius:10px!important;
+  background:#202226!important;border:1px solid #34373c!important;
+  color:#d2d4d7!important;box-shadow:none!important;font-size:12px!important;
+}
+[data-testid="stPills"] button[aria-pressed="true"] {
+  background:#f0f0f0!important;color:#121314!important;
+  border-color:#f0f0f0!important;font-weight:750!important;
+}
+[data-testid="stPills"] button[aria-selected="true"] {
+  background:#f0f0f0!important;color:#121314!important;border-color:#f0f0f0!important;
+}
+[data-testid="stPills"] [data-testid="stWidgetLabel"] {display:none!important;}
+[data-testid="stTextInput"] input {min-height:39px!important;}
+[data-testid="stPopover"] button {min-height:34px!important;}
+[data-testid="stExpander"] {margin:0 0 5px!important;}
+[data-testid="stCaptionContainer"] p {font-size:11px!important;color:#9da1a8!important;}
+@media(max-width:600px) {
+ .block-container {padding:7px 13px 70px!important;}
+ [data-testid="stPills"] button {min-height:35px!important;padding:7px 11px!important;}
+}
+
 </style>
 
 """,unsafe_allow_html=True)
@@ -1036,10 +1075,13 @@ st.markdown("""
 </div></div><div class="sn-header-tag">✦ PREDICTION LAB</div></div>
 """,unsafe_allow_html=True)
 
-search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
+
 st.markdown("<div class='sn-list-heading'>Partidos</div>", unsafe_allow_html=True)
-status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
-                         horizontal=True, label_visibility="collapsed", key="status_tabs")
+status_filter = st.pills(
+    "Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
+    selection_mode="single", default="Todos",
+    label_visibility="collapsed", key="status_tabs",
+) or "Todos"
 # Calendario semanal: un único control horizontal (sin columnas que se apilen en móvil).
 if "sn_selected_date" not in st.session_state:
     st.session_state.sn_selected_date = local_today()
@@ -1057,7 +1099,7 @@ if st.session_state.get("sn_week_choice") not in labels_by_date:
 def _sn_change_day():
     st.session_state.sn_selected_date = date.fromisoformat(st.session_state.sn_week_choice)
 
-st.markdown('<div class="sn-date-title">SELECCIONA EL DÍA</div>', unsafe_allow_html=True)
+
 with st.popover("▦  Calendario", use_container_width=False):
     # Sin key persistente: se inicializa siempre desde el día elegido en la franja.
     chosen = st.date_input("Ir a fecha", value=selected_date)
@@ -1065,28 +1107,31 @@ with st.popover("▦  Calendario", use_container_width=False):
         st.session_state.sn_selected_date = chosen
         st.session_state.sn_week_choice = chosen.isoformat()
         st.rerun()
-st.radio(
+st.pills(
     "Calendario semanal",
     options=list(labels_by_date),
     format_func=lambda iso: labels_by_date[iso],
-    horizontal=True,
+    selection_mode="single",
     label_visibility="collapsed",
     key="sn_week_choice",
     on_change=_sn_change_day,
 )
 selected_date = st.session_state.sn_selected_date
 
-st.markdown("<div class='sn-section-label'>ELIGE TU DEPORTE</div>", unsafe_allow_html=True)
-sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True,
-                       label_visibility="collapsed", key="sport_tabs")
+
+sport_label = st.pills(
+    "Deporte", list(SPORTS.keys()), selection_mode="single",
+    default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs",
+) or "⚽ Fútbol"
 sport = SPORTS[sport_label]
 if sport_label == "⚾ KBO":
     st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
             "Se ha desactivado esa consulta para evitar el error HTTP 400. "
             "Los partidos y las predicciones KBO requieren integrar otra fuente verificable.")
+search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
 with st.expander("Liga o competición", expanded=False):
     league_name = st.selectbox("Selecciona una liga", list(sport["leagues"].keys()))
-st.markdown("<div class='sn-competition'>" + html.escape(league_name) + "</div>", unsafe_allow_html=True)
+
 
 league_code = sport["leagues"][league_name]
 try:
@@ -1110,9 +1155,9 @@ try:
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
 
-    st.caption(f"{len(matches)} partidos  ·  {live} en vivo  ·  {finished} finalizados")
+    st.caption(f"{league_name}  ·  {len(matches)} partidos  ·  {live} en vivo")
 
-    st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {html.escape(league_name)}")
+
 
     if not matches:
         st.info(
