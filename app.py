@@ -931,6 +931,8 @@ def record_upcoming_match(match, events, sport_path, league_code, cutoff):
         return False
 
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
+    if sport_path != "soccer":
+        return  # Soccer projections must never appear in NBA/NHL/KBO.
     """Panel premium: presentation only; preserves the original Monte Carlo model."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
     home_games, away_games, h2h = history_for_match(
@@ -1553,10 +1555,6 @@ def nyuz_comparison(match, historical_data, sport_path, league_code, cutoff):
         else:
             hg, ag, h2h = history_for_match(match, historical_data, sport_path, league_code, cutoff)
         label, reason = nyuz_confidence(hg, ag)
-        st.markdown('<div class="ny-intel-label">NYUZ CONFIDENCE · CALIDAD DE DATOS</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="ny-confidence"><strong>{html.escape(label)}</strong>'
-                    f'<span>{html.escape(reason)} · No representa una probabilidad de acierto.</span></div>',
-                    unsafe_allow_html=True)
         with st.expander("Comparador de equipos", expanded=False):
             hname, aname = team_name(match["home"]), team_name(match["away"])
             c1,c2=st.columns(2)
@@ -1581,6 +1579,9 @@ def nyuz_comparison(match, historical_data, sport_path, league_code, cutoff):
                 st.caption("No hay suficientes resultados anteriores para comparar.")
             st.caption(f"Enfrentamientos directos recuperados: {len(h2h)}. "
                        "Se usan únicamente partidos anteriores al encuentro.")
+        with st.expander("NYUZ Confidence · Cobertura de datos", expanded=False):
+            st.caption(f"{label} · {reason}.")
+            st.caption("Mide cantidad de historial, no probabilidad de acierto.")
     except (KeyError, ValueError, TypeError, requests.RequestException):
         st.caption("Comparación no disponible: faltan datos históricos verificables.")
 
@@ -1624,12 +1625,16 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
     )
     with st.expander("Ver análisis y predicciones", expanded=False):
         nyuz_live_details(match, sport_path, league_code)
-        nyuz_comparison(match, historical_data, sport_path, league_code, selected_date)
-        if sport_label == "⚽ Fútbol":
+        # Route by ESPN sport path, not translated button labels.
+        # This prevents NBA games from ever entering the soccer-only renderer.
+        if sport_path == "soccer":
             render_monte_carlo_panel(
                 match, historical_data, sport_path, league_code, selected_date)
+        elif sport_path == "basketball":
+            render_nba_intelligence(match, historical_data, selected_date)
         else:
             render_other_sport_panel(match, historical_data, sport_path, league_code, selected_date)
+        nyuz_comparison(match, historical_data, sport_path, league_code, selected_date)
 
 def run_scheduled_capture():
     """Call via python app.py --capture; suitable for GitHub Actions cron."""
@@ -2415,6 +2420,4 @@ st.caption(
 st.markdown("""<nav class="ny-bottom-nav" aria-label="Navegación NYUZ">
 <a class="nav-item active" href="#ny-inicio"><strong>⌂</strong>Inicio</a>
 <a class="nav-item" href="#ny-partidos"><strong>▦</strong>Partidos</a>
-<a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</a>
-<a class="nav-item" href="#ny-partidos"><strong>⌕</strong>Explorar</a>
-</nav>""",unsafe_allow_html=True)
+<a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</
