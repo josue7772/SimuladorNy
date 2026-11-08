@@ -95,7 +95,7 @@ SOCCER_LEAGUES = {
 SPORTS = {
     "⚽ Fútbol": {"path": "soccer", "leagues": SOCCER_LEAGUES},
     "🏀 NBA": {"path": "basketball", "leagues": {"NBA · Estados Unidos": "nba"}},
-    "⚾ KBO": {"path": "baseball", "leagues": {"KBO League · Corea del Sur": "kbo"}},
+    "🏈 NFL": {"path": "football", "leagues": {"NFL · Estados Unidos": "nfl"}},
     "🏒 NHL": {"path": "hockey", "leagues": {"NHL · Estados Unidos/Canadá": "nhl"}},
 }
 
@@ -1640,9 +1640,13 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
                 match, historical_data, sport_path, league_code, selected_date)
         elif sport_path == "basketball":
             render_nba_intelligence(match, historical_data, selected_date)
+        elif sport_path == "football" and league_code == "nfl":
+            from nyuz_nfl import render_nfl
+            render_nfl(match, selected_date)
         else:
             render_other_sport_panel(match, historical_data, sport_path, league_code, selected_date)
-        nyuz_comparison(match, historical_data, sport_path, league_code, selected_date)
+        if sport_path != "football":
+            nyuz_comparison(match, historical_data, sport_path, league_code, selected_date)
 
 def run_scheduled_capture():
     """Automated soccer prematch capture (GitHub Actions, no user visits needed).
@@ -2171,11 +2175,135 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 """,unsafe_allow_html=True)
 
 st.markdown("""
-<div class="ny-brand" id="ny-inicio"><div class="ny-monogram">N</div><div class="ny-brand-name">NYUZ<small>SPORTS INTELLIGENCE</small></div>
-<div class="ny-header-actions"><span>⌕</span><span>♧</span></div></div>
-<div class="ny-hero"><div class="ny-hero-copy"><h1>Análisis y<br>predicciones<br>deportivas</h1><p>Simulaciones, estadísticas y<br>backtesting avanzado.</p></div><div class="ny-hero-art">N</div></div>
+<style>
+:root{color-scheme:dark;--navy:#0a1225;--blue:#1e3158;--border-n:#344460}
+.stApp{background:radial-gradient(ellipse 95% 420px at 82% -70px,#1b2b54 0%,#091020 45%,#050810 100%)!important;color:#f9fbff!important}
+.block-container{max-width:980px!important;padding:22px 15px 90px!important}
+.ny-brand{margin:3px 0 15px!important}.ny-monogram{background:linear-gradient(145deg,#fff,#95b8ff)!important;background-clip:text!important;font-size:40px!important}
+.ny-brand-name{letter-spacing:-1.8px!important}.ny-brand-name small{color:#afb9d1!important;letter-spacing:1.3px!important}
+.ny-header-actions span{background:#19253d!important;border-color:#38496b!important;border-radius:50%!important}
+.ny-hero{background:radial-gradient(ellipse 90% 135% at 92% 3%,#223861a8,#111d33 45%,#0d1422 95%)!important;border-color:#3a4d72!important;box-shadow:0 12px 46px #030b1dc7,inset 0 1px #ffffff14!important;min-height:180px!important}
+.ny-hero h1{font-size:clamp(26px,6vw,37px)!important}.ny-hero p{color:#abbad3!important}.ny-hero-art{color:#759ce2!important;opacity:.15!important}
+.sn-fixture-card,.pc-shell,[data-testid="stExpander"],[data-testid="stVerticalBlockBorderWrapper"]>div[style*="border"]{background:linear-gradient(155deg,#17233a,#0d1424 88%)!important;border:1px solid #2c3c5b!important;box-shadow:inset 0 1px #fff1,0 6px 24px #02040a45!important}
+[data-testid="stPills"] button,[data-testid="stRadio"] label{background:#131e33!important;border-color:#34435d!important;color:#e8eeff!important;border-radius:40px!important}
+[data-testid="stPills"] button[aria-selected="true"]{background:linear-gradient(120deg,#293d65,#1a2a49)!important;color:#fff!important;border-color:#91b1ed!important;box-shadow:0 0 0 1px #acc9ff45 inset!important}
+[data-testid="stTextInput"] input,[data-testid="stDateInput"] input,[data-testid="stSelectbox"]>div>div{background:#121f35!important;border-color:#344667!important}
+.sn-fixture-meta{color:#acbbda!important}.sn-fixture-card .sn-center{background:#253453!important}
+.sn-mi-prob,.sn-nba-score,.ny-confidence,.sn-mi-stat-wrap{background:#1b2943!important;border-color:#3c4d6d!important}
+.sn-prob,.sn-pick-muted{background:#17243b!important;border-color:#344563!important}
+.sn-track,.sn-mi-prob i{background:#34435d!important}
+.sn-fill,.sn-mi-prob b{background:#eaf0ff!important}
+[data-testid="stMetric"]{background:#1a2942;border:1px solid #344662;border-radius:14px;padding:12px}
+[data-testid="stMetricLabel"]{color:#b8c8e2!important}
+.sn-date-rail .sn-day{background:#172137!important;border:1px solid #3b4a67!important}
+.sn-date-rail .sn-day.selected{background:#eaf1ff!important;color:#101727!important}
+.ny-bottom-nav{background:#111e34!important;border-color:#3a4a6a!important}
+.pc-shell{border-radius:24px;padding:21px 19px;margin:15px 0 22px;}
+.pc-overline{font-size:10px;font-weight:800;letter-spacing:1.1px;color:#b7c7e6}
+.pc-shell h2{font-size:clamp(21px,5vw,30px);margin:9px 0 4px;color:#fafcff;letter-spacing:-.7px}
+.pc-glyph{float:right;font-size:25px;opacity:.8}.pc-sub{font-size:12px;color:#aabbd6;margin:0 0 17px}
+.pc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pc-metric{display:flex;flex-direction:column;gap:5px;min-width:0;border-radius:16px;padding:15px 14px;background:linear-gradient(135deg,#24334e,#1a263b);border:1px solid #344563}
+.pc-metric strong{font-size:clamp(24px,6vw,32px);color:#fff;letter-spacing:-1px}
+.pc-metric span{color:#b7c4db;font-size:12px}
+.pc-chart{border:1px solid #344563;border-radius:18px;background:linear-gradient(145deg,#1a2940,#101827);padding:15px;margin-top:12px}
+.pc-chart h3{font-size:19px;margin:0 0 8px;color:#fff}.pc-chart svg{width:100%;height:110px}
+.pc-chart-meta{display:flex;justify-content:space-between;color:#aabbd0;font-size:11px;margin-top:7px}
+.pc-empty{min-height:100px;display:flex;align-items:center;font-size:13px;color:#a4b4cf}
+.ny-top-links{display:flex;overflow-x:auto;gap:9px;margin:5px 0 18px;scrollbar-width:none}.ny-top-links a{white-space:nowrap;text-decoration:none!important;border-radius:30px;background:linear-gradient(135deg,#15223a,#101929);border:1px solid #354563;padding:10px 14px;color:#ecf3ff!important;font-size:12px;font-weight:750}.ny-top-links a:first-child{background:linear-gradient(130deg,#354b72,#1a2948);border-color:#91ade2;box-shadow:inset 0 1px #fff4}.ny-sport-heading{margin:20px 0 7px;font-size:18px;font-weight:800;color:#fff}
+.ny-sport-note{color:#aab9d2;font-size:12px;margin-bottom:10px}
+@media(max-width:500px){.pc-shell{padding:16px 13px}.pc-metric{padding:12px 10px}.ny-hero{padding:18px 16px!important}.block-container{padding-left:12px!important;padding-right:12px!important}}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="ny-brand" id="ny-inicio"><div class="ny-monogram">↗</div><div class="ny-brand-name">NYUZ<small>SPORTS INTELLIGENCE</small></div>
+<div class="ny-header-actions"><span>◉</span><span>♙</span></div></div>
+<nav class="ny-top-links" aria-label="Navegación principal"><a href="#ny-inicio">⌂ Inicio</a><a href="#ny-deportes">◎ Predicciones</a><a href="#ny-historial">◷ Historial</a><a href="#ny-performance">▥ Performance Center</a></nav>
+<div class="ny-hero"><div class="ny-hero-copy"><div class="sn-eyebrow">NYUZ / INTELIGENCIA CUANTITATIVA</div>
+<h1>Predicciones deportivas<br>basadas en datos.</h1><p>10,000 simulaciones · Historial verificable<br>Backtesting y evaluación automática.</p></div><div class="ny-hero-art">↗</div></div>
 """,unsafe_allow_html=True)
 
+
+# NYUZ Signature Navy · Performance Center 3.3
+# Render only factual Supabase records. No demo performance figures.
+def nyuz_performance_center():
+    from nyuz_lab3 import _rows, _evaluations, _num
+    url, key = cloud_config()
+    predictions, pred_notice = _rows(DB_PATH, url, key, limit=500)
+    evaluations, eval_notice = _evaluations(url, key, limit=1000)
+    evaluated = {(str(e.get('sport')),str(e.get('league')),str(e.get('event_id'))):e
+                 for e in evaluations if isinstance(e,dict)}
+    original = {(str(p.get('sport')),str(p.get('league')),str(p.get('event_id'))):p
+                for p in predictions if isinstance(p,dict)}
+    checked = [e for k,e in evaluated.items() if k in original]
+    good = []
+    goal_errors = []
+    shot_errors = []
+    history=[]
+    for e in sorted(checked,key=lambda x:str(x.get('evaluated_utc',''))):
+        result = e.get('outcome') or {}
+        errors = e.get('errors') or {}
+        if isinstance(result,str):
+            try:result=json.loads(result)
+            except (ValueError,TypeError):result={}
+        if isinstance(errors,str):
+            try:errors=json.loads(errors)
+            except (ValueError,TypeError):errors={}
+        if isinstance(result,dict) and isinstance(result.get('correct'),bool):
+            good.append(result['correct'])
+            history.append(100*sum(good)/len(good))
+        for name,dest in [('goals',goal_errors),('shots',shot_errors)]:
+            if isinstance(errors,dict):
+                values=errors.get(name)
+                if isinstance(values,list):
+                    dest.extend(abs(n) for n in (_num(v) for v in values) if n is not None)
+    accuracy=(f'{100*sum(good)/len(good):.1f}%' if good else '—')
+    goal_mae=f'{sum(goal_errors)/len(goal_errors):.2f}' if goal_errors else '—'
+    shot_mae=f'{sum(shot_errors)/len(shot_errors):.2f}' if shot_errors else '—'
+    def card(value,label):
+        return f'<div class="pc-metric"><strong>{html.escape(str(value))}</strong><span>{html.escape(label)}</span></div>'
+    # Accuracy curve based only on completed assessments with valid 1X2 outcomes.
+    if len(history)>=2:
+        lo=min(history);hi=max(history);span=max(1,hi-lo)
+        pts=' '.join(f'{10+i*300/(len(history)-1):.1f},{91-(v-lo)*68/span:.1f}' for i,v in enumerate(history))
+        chart=f'<svg viewBox="0 0 320 105" preserveAspectRatio="none" role="img" aria-label="Histórico de acierto en partidos evaluados"><path d="M10 26H310 M10 58H310 M10 91H310" fill="none" stroke="#46516b" stroke-dasharray="4 6"/><polyline points="{pts}" fill="none" stroke="#f1f5ff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    else:
+        chart='<div class="pc-empty">La gráfica aparecerá al tener al menos dos evaluaciones 1X2 verificadas.</div>'
+    st.markdown('<section id="ny-performance" class="pc-shell">'
+                '<div class="pc-overline">NYUZ SPORTS INTELLIGENCE</div>'
+                '<h2>PERFORMANCE CENTER <span class="pc-glyph">↗</span></h2>'
+                '<p class="pc-sub">Resultados reales del modelo · Supabase</p>'
+                '<div class="pc-grid">'
+                +card(len(checked),'Partidos evaluados')+card(accuracy,'Acierto 1X2')
+                +card(goal_mae,'MAE de goles')+card(shot_mae,'MAE de tiros')
+                +'</div><div class="pc-chart"><h3>Historial de rendimiento</h3>'
+                +chart+'<div class="pc-chart-meta"><span>Primeras evaluaciones</span><span>Más recientes</span></div></div></section>',
+                unsafe_allow_html=True)
+    if pred_notice or eval_notice:
+        st.caption('Rendimiento: conexión incompleta. Los valores no disponibles se indican con —.')
+    elif not checked:
+        st.caption('Todavía no hay resultados evaluados; no mostramos cifras inventadas. El evaluador de GitHub se ejecuta cada 6 horas.')
+    else:
+        st.caption(f'Basado en {len(checked)} pronósticos originales con evaluación; acierto 1X2 calculado sobre {len(good)} resultados válidos.')
+    with st.expander('Ver resultados reales y auditoría de rendimiento',expanded=False):
+        st.markdown('**Predicción original vs. resultados**')
+        rows=[]
+        for key,e in sorted(evaluated.items(),key=lambda x:str(x[1].get('evaluated_utc','')),reverse=True)[:100]:
+            p=original.get(key)
+            if p is None:continue
+            payload=p.get('payload') or {}
+            if isinstance(payload,str):
+                try:payload=json.loads(payload)
+                except ValueError:payload={}
+            rows.append({'Liga':key[1],'Partido':str(payload.get('home','?'))+' vs '+str(payload.get('away','?')),
+                        'Resultado':str(e.get('actual_home','?'))+' - '+str(e.get('actual_away','?')),
+                        'Fecha evaluación':str(e.get('evaluated_utc',''))[:19]})
+        if rows:st.dataframe(rows,hide_index=True,use_container_width=True)
+        else:st.info('Aún no hay partidos finalizados evaluados para mostrar.')
+
+nyuz_performance_center()
+st.markdown('<div class="ny-sport-heading" id="ny-deportes">Explorar deportes</div><div class="ny-sport-note">Selecciona tu liga. KBO se retira de la navegación al terminar la temporada.</div>',unsafe_allow_html=True)
 # Sports selection moved above match status, visually matching reference.
 sport_label = st.pills("Deporte", list(SPORTS.keys()), selection_mode="single", default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs") or "⚽ Fútbol"
 sport = SPORTS[sport_label]
@@ -2354,10 +2482,6 @@ render_history(DB_PATH, _cloud_url, _cloud_key, get_events, parse_event, numeric
 from nyuz_lab3 import render_auto_evaluation
 render_auto_evaluation(_cloud_url, _cloud_key)
 
-if sport_label == "⚾ KBO":
-    st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
-            "Se ha desactivado esa consulta para evitar el error HTTP 400. "
-            "Los partidos y las predicciones KBO requieren integrar otra fuente verificable.")
 st.toggle("Destacados primero ✦", value=True, key="sn_trending",
           help="Orden editorial: partidos en vivo, transmisiones y equipos reconocidos. No son tendencias medidas por audiencia.")
 search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
@@ -2422,6 +2546,7 @@ try:
     else:
         # Obtener el historial una sola vez por liga y fecha.
         historical_data = (
+            [] if sport["path"] == "football" else
             historical_events(sport["path"], league_code, selected_date)
         )
         # Automatically capture visible upcoming football fixtures before kickoff.
@@ -2455,7 +2580,7 @@ st.caption(
 # Section links scroll to real sections in the same page.
 st.markdown("""<nav class="ny-bottom-nav" aria-label="Navegación NYUZ">
 <a class="nav-item active" href="#ny-inicio"><strong>⌂</strong>Inicio</a>
-<a class="nav-item" href="#ny-partidos"><strong>▦</strong>Partidos</a>
-<a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</a>
+<a class="nav-item" href="#ny-deportes"><strong>◉</strong>Deportes</a>
+<a class="nav-item" href="#ny-performance"><strong>▥</strong>Rendimiento</a>
 <a class="nav-item" href="#ny-historial"><strong>◷</strong>Historial</a>
 </nav>""",unsafe_allow_html=True)
