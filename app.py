@@ -408,6 +408,23 @@ def team_pair_html(home, away, center="VS", large=False):
             f'<div class="sn-center">{html.escape(str(center))}</div>'
             f'{item(away)}</div>')
 
+def render_fair_odds(probabilities):
+    """Decimal fair odds derived from model probabilities, without bookmaker margin."""
+    st.markdown("<div class='sn-section-title'>Cuotas del simulador</div>", unsafe_allow_html=True)
+    cards = []
+    for label, probability in probabilities:
+        p = max(0.0, min(100.0, float(probability)))
+        value = f"{100.0 / p:.2f}" if p > 0 else "—"
+        cards.append(
+            "<div class='sn-odds-card'>"
+            f"<div class='sn-odds-label'>{html.escape(label)}</div>"
+            f"<div class='sn-odds-value'>{value}</div>"
+            f"<div class='sn-odds-prob'>{p:.1f}%</div></div>"
+        )
+    st.markdown("<div class='sn-odds-grid'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
+    st.caption("Cuotas decimales justas del modelo, sin margen comercial. No son cuotas de casas de apuestas.")
+
+
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel único: resultados Monte Carlo sin secciones de análisis técnico."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
@@ -460,6 +477,10 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
             f"<strong>{pct:.1f}%</strong></div><div class='sn-track'>"
             f"<div class='sn-fill' style='width:{pct:.1f}%'></div></div></div>",
             unsafe_allow_html=True)
+    render_fair_odds([
+        ("Local", result["home_win"]), ("Empate", result["draw"]),
+        ("Visitante", result["away_win"]),
+    ])
     st.divider()
     st.markdown("<div class='sn-section-title'>Estadísticas proyectadas</div>", unsafe_allow_html=True)
     stats = [
@@ -699,6 +720,9 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
                     f"<strong>{value:.1f}%</strong></div><div class='sn-track'>"
                     f"<div class='sn-fill' style='width:{value:.1f}%'></div></div></div>",
                     unsafe_allow_html=True)
+    render_fair_odds([
+        ("Local", prediction["win_h"]), ("Visitante", prediction["win_a"]),
+    ])
     st.divider()
     st.markdown("<div class='sn-section-title'>Estadísticas proyectadas</div>", unsafe_allow_html=True)
     if sport_path == "basketball":
@@ -787,36 +811,36 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-:root{color-scheme:dark;--bg:#080d12;--surface:#111b23;--border:#283740;--muted:#93a5b0;--accent:#64e5b5}
+:root{color-scheme:dark;--bg:#090e19;--surface:#111b2a;--border:#2a3e5c;--muted:#93a5b0;--accent:#6aa8ff}
 html,body,[class*="css"]{font-family:'DM Sans',sans-serif!important}
-.stApp{background:radial-gradient(ellipse 110% 380px at 50% -120px,#19383b 0%,#080d12 72%);color:#f5f8fa}
+.stApp{background:radial-gradient(ellipse 110% 380px at 50% -120px,#17294b 0%,#090e19 72%);color:#f5f8fa}
 .block-container{max-width:920px!important;padding:20px 17px 90px!important}
 [data-testid="stSidebar"],[data-testid="collapsedControl"]{display:none!important}
 header[data-testid="stHeader"]{background:transparent!important}
 h1,h2,h3,p,label{color:#f2f7f8}
 .sn-header{display:flex;align-items:center;justify-content:space-between;padding:8px 0 18px;gap:12px}
-.sn-mark{display:flex;align-items:center;gap:10px}.sn-logo{width:39px;height:39px;border-radius:13px;background:linear-gradient(140deg,#72f1bf,#159976);color:#062019;display:grid;place-items:center;font-size:23px;font-weight:900;box-shadow:0 5px 22px #1acb8750}
-.sn-wordmark{font-weight:800;font-size:clamp(19px,5vw,25px);letter-spacing:-.8px;color:#f8fbfc;line-height:1.1}.sn-wordmark span{color:#79dfb7}
+.sn-mark{display:flex;align-items:center;gap:10px}.sn-logo{width:39px;height:39px;border-radius:13px;background:linear-gradient(140deg,#85baff,#245fce);color:#07172e;display:grid;place-items:center;font-size:23px;font-weight:900;box-shadow:0 5px 22px #2d72e650}
+.sn-wordmark{font-weight:800;font-size:clamp(19px,5vw,25px);letter-spacing:-.8px;color:#f8fbfc;line-height:1.1}.sn-wordmark span{color:#88b9ff}
 .sn-brand-sub{font-size:9px;letter-spacing:2.4px;font-weight:800;color:#8ca6ad;margin-top:4px}
 .sn-header-tag{font-size:10px;color:#9ab2b9;border:1px solid #34454b;border-radius:30px;padding:7px 10px;white-space:nowrap}
-.sn-hero{background:linear-gradient(130deg,#152b2d,#101921 70%);border:1px solid #2c4644;border-radius:23px;padding:19px 19px 18px;margin:4px 0 18px;box-shadow:0 14px 30px #0003}
-.sn-eyebrow{color:#74e5b4;font-size:10px;letter-spacing:2px;font-weight:800}.sn-hero-title{font-size:clamp(22px,6vw,32px);font-weight:800;letter-spacing:-1.1px;line-height:1.15;margin:9px 0}.sn-hero-desc{font-size:13px;color:#9fb2b7;line-height:1.5;max-width:500px}
-.sn-pills{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}.sn-pill{font-size:11px;font-weight:700;background:#233637;border:1px solid #35524b;border-radius:99px;padding:7px 10px;color:#b9e8d3}.sn-pill-live{color:#f1b7bd;background:#3b252c;border-color:#62404b}
+.sn-hero{background:linear-gradient(130deg,#142442,#101a2b 70%);border:1px solid #304e78;border-radius:23px;padding:19px 19px 18px;margin:4px 0 18px;box-shadow:0 14px 30px #0003}
+.sn-eyebrow{color:#85baff;font-size:10px;letter-spacing:2px;font-weight:800}.sn-hero-title{font-size:clamp(22px,6vw,32px);font-weight:800;letter-spacing:-1.1px;line-height:1.15;margin:9px 0}.sn-hero-desc{font-size:13px;color:#9fb2b7;line-height:1.5;max-width:500px}
+.sn-pills{display:flex;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}.sn-pill{font-size:11px;font-weight:700;background:#1b3154;border:1px solid #345581;border-radius:99px;padding:7px 10px;color:#c0d9ff}.sn-pill-live{color:#f1b7bd;background:#3b252c;border-color:#62404b}
 .sn-list-heading{font-size:clamp(24px,6vw,32px);font-weight:800;letter-spacing:-1px;margin:17px 0 6px;color:#f5fafb}.sn-list-heading span{font-size:12px;letter-spacing:0;font-weight:500;color:#9aabb2;margin-left:7px}
 .sn-section-label{font-size:11px;color:#94aab2;letter-spacing:1.5px;font-weight:800;margin:13px 0 9px}
 .sn-competition{color:#95aab1;font-size:12px;margin:0 0 13px}
-[data-testid="stTextInput"] input,[data-testid="stDateInput"] input,[data-testid="stSelectbox"]>div>div{background:#152027!important;color:#f4f8fa!important;border:1px solid #34474e!important;border-radius:13px!important;min-height:45px}
-[data-testid="stTextInput"] input:focus{border-color:#62d9ae!important}
+[data-testid="stTextInput"] input,[data-testid="stDateInput"] input,[data-testid="stSelectbox"]>div>div{background:#142034!important;color:#f4f8fa!important;border:1px solid #31476b!important;border-radius:13px!important;min-height:45px}
+[data-testid="stTextInput"] input:focus{border-color:#6aa8ff!important}
 [data-testid="stRadio"]>div[role="radiogroup"]{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:7px!important;padding:3px 0 10px!important;scrollbar-width:none}
-[data-testid="stRadio"]>div[role="radiogroup"] label{border:1px solid #34464e!important;border-radius:12px!important;background:#17232a!important;padding:10px 13px!important;white-space:nowrap!important;flex-shrink:0!important;margin:0!important}
-[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked){background:#eaf9f2!important;border-color:#eaf9f2!important}
-[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked) p{color:#10241d!important;font-weight:800!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label{border:1px solid #31476b!important;border-radius:12px!important;background:#18263d!important;padding:10px 13px!important;white-space:nowrap!important;flex-shrink:0!important;margin:0!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked){background:#dceaff!important;border-color:#dceaff!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked) p{color:#102344!important;font-weight:800!important}
 [data-testid="stRadio"] [data-baseweb="radio"]>div:first-child{display:none!important}
 [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p{font-size:13px!important}
 [data-testid="stDateInput"]{max-width:230px}
-[data-testid="stExpander"]{background:#111c22!important;border:1px solid #2c3e44!important;border-radius:16px!important;overflow:hidden;margin:5px 0 15px}
-[data-testid="stExpander"] summary{color:#d8f6e8!important;font-weight:750!important;font-size:13px!important}
-[data-testid="stVerticalBlockBorderWrapper"]>div[style*="border"]{background:linear-gradient(145deg,#152027,#10191f)!important;border:1px solid #2c3e45!important;border-radius:19px!important;box-shadow:0 8px 25px #0003}
+[data-testid="stExpander"]{background:#111c22!important;border:1px solid #2d4363!important;border-radius:16px!important;overflow:hidden;margin:5px 0 15px}
+[data-testid="stExpander"] summary{color:#dceaff!important;font-weight:750!important;font-size:13px!important}
+[data-testid="stVerticalBlockBorderWrapper"]>div[style*="border"]{background:linear-gradient(145deg,#142034,#10191f)!important;border:1px solid #2d4363!important;border-radius:19px!important;box-shadow:0 8px 25px #0003}
 .sn-teams{display:flex;flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:6px;padding:13px 0;box-sizing:border-box}
 .sn-side{width:40%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:750;font-size:clamp(12px,3.2vw,16px);overflow-wrap:anywhere;line-height:1.25;color:#f6f9fa}
 .sn-side img{display:block;width:56px;height:56px;max-width:100%;object-fit:contain;filter:drop-shadow(0 6px 10px #0007)}
@@ -824,18 +848,24 @@ h1,h2,h3,p,label{color:#f2f7f8}
 .sn-large .sn-side img{width:73px;height:73px}.sn-large .sn-side{font-size:clamp(13px,3.5vw,18px)}
 .sn-logo-fallback{font-size:32px}
 .sn-panel-head{padding:7px 0 14px;border-bottom:1px solid #2a3a3d;margin-bottom:16px}
-.sn-kicker{color:#74dfb0;font-size:10px;letter-spacing:1.8px;font-weight:800;margin-bottom:9px}
+.sn-kicker{color:#8bbaff;font-size:10px;letter-spacing:1.8px;font-weight:800;margin-bottom:9px}
 .sn-panel-title{font-size:clamp(21px,5vw,27px);font-weight:800;letter-spacing:-.6px;color:#f5fafa}
-.sn-chip{display:inline-block;background:#173b2e;color:#7df0bc;border:1px solid #2d6650;padding:7px 11px;border-radius:99px;font-size:11px;font-weight:750;margin-top:12px}
+.sn-chip{display:inline-block;background:#1b3154;color:#a8ccff;border:1px solid #365d97;padding:7px 11px;border-radius:99px;font-size:11px;font-weight:750;margin-top:12px}
 .sn-section-title{font-size:19px;font-weight:800;letter-spacing:-.4px;margin:20px 0 17px;color:#f6fafb}
 .sn-prob{margin:0 0 18px}.sn-prob-top{display:flex;justify-content:space-between;gap:12px;font-size:13px;font-weight:650;margin-bottom:9px;color:#dce8e8}.sn-prob-top strong{font-variant-numeric:tabular-nums}
-.sn-track{height:8px;border-radius:99px;background:#2a393e;overflow:hidden}.sn-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#1ab889,#79edb5)}
-.stat-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 1px;border-bottom:1px solid #2a3a3e;font-size:13px}.stat-row span{color:#b4c5cb;max-width:70%}.stat-row strong{color:#f4f9fa;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.sn-track{height:8px;border-radius:99px;background:#293b5a;overflow:hidden}.sn-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#2768df,#83b7ff)}
+.stat-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 1px;border-bottom:1px solid #2b3d58;font-size:13px}.stat-row span{color:#b4c5cb;max-width:70%}.stat-row strong{color:#f4f9fa;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .sn-teams{padding:15px 3px 19px!important}
 .stButton button{border-radius:12px!important}
 [data-testid="stAlert"]{border-radius:14px!important}
 @media(max-width:500px){.block-container{padding:16px 12px 70px!important}.sn-hero{padding:17px}.sn-header-tag{display:none}.sn-side img{width:48px;height:48px}.sn-large .sn-side img{width:63px;height:63px}.sn-teams{gap:3px}.stat-row{font-size:12px}}
 </style>
+.sn-odds-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:8px 0 12px}
+.sn-odds-card{background:linear-gradient(145deg,#192b4a,#121f35);border:1px solid #35517b;border-radius:15px;text-align:center;padding:15px 7px}
+.sn-odds-label{color:#b0c6e7;font-size:11px;font-weight:700}
+.sn-odds-value{color:#90bcff;font-size:clamp(20px,5vw,29px);font-weight:850;margin:6px 0;font-variant-numeric:tabular-nums}
+.sn-odds-prob{color:#c7d8f0;font-size:11px}
+
 """,unsafe_allow_html=True)
 
 st.markdown("""
@@ -843,8 +873,8 @@ st.markdown("""
 <div class="sn-wordmark">SIMULADOR<span>NY</span></div><div class="sn-brand-sub">SPORTS INTELLIGENCE</div>
 </div></div><div class="sn-header-tag">● LIVE SPORTS</div></div>
 <div class="sn-hero"><div class="sn-eyebrow">TU CENTRO DE PREDICCIONES</div>
-<div class="sn-hero-title">Cada partido.<br>Una perspectiva más clara.</div>
-<div class="sn-hero-desc">Explora encuentros y consulta probabilidades y estadísticas proyectadas de forma sencilla.</div>
+<div class="sn-hero-title">El deporte, desde otra perspectiva.</div>
+<div class="sn-hero-desc">Predicciones, estadísticas y cuotas justas en un solo lugar.</div>
 <div class="sn-pills"><span class="sn-pill">✦ Predicciones</span><span class="sn-pill">◉ 4 deportes</span><span class="sn-pill sn-pill-live">● En vivo</span></div></div>
 """,unsafe_allow_html=True)
 
