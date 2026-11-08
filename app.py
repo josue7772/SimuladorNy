@@ -1095,7 +1095,7 @@ def boxscore_team_metrics(payload):
 
     # ESPN NBA commonly publishes AST/REB/3PM/TO in boxscore.players,
     # even when boxscore.teams.statistics lacks the corresponding totals.
-    aliases = {"AST":"assists", "REB":"totalrebounds", "3PM":"threepointfieldgoalsmade", "TO":"turnovers"}
+    aliases = {"AST":"assists", "REB":"totalrebounds", "3PM":"threepointfieldgoalsmade", "3PT":"threepointfieldgoalsmade", "3P":"threepointfieldgoalsmade", "TO":"turnovers", "TOV":"turnovers"}
     for team_block in box.get("players") or []:
         tid = str((team_block.get("team") or {}).get("id") or "")
         if not tid:
@@ -1104,7 +1104,7 @@ def boxscore_team_metrics(payload):
         sums = {k:0.0 for k in aliases.values()}
         seen = {k:0 for k in aliases.values()}
         for group in team_block.get("statistics") or []:
-            labels = [str(x).upper() for x in group.get("labels") or []]
+            labels = [str(x).upper().strip() for x in (group.get("labels") or group.get("names") or [])]
             for athlete in group.get("athletes") or []:
                 if athlete.get("didNotPlay"):
                     continue
@@ -1113,7 +1113,10 @@ def boxscore_team_metrics(payload):
                     if label not in aliases or pos >= len(values):
                         continue
                     key = aliases[label]
-                    val = _num_stat(values[pos])
+                    raw = values[pos]
+                    if key == "threepointfieldgoalsmade" and isinstance(raw, str) and "-" in raw:
+                        raw = raw.split("-", 1)[0]
+                    val = _num_stat(raw)
                     if val is not None:
                         sums[key] += val
                         seen[key] += 1
@@ -1377,7 +1380,7 @@ def render_nba_intelligence(match, events, cutoff):
            ("Posesiones estimadas", f'{pred["pace"]:.1f}' if pred["pace"] is not None else "No disponible")]
     for key,(label,_) in NBA_METRICS.items():
         left,right=pred["metrics"][key]
-        items.append((label,f"{left:.1f} / {right:.1f}" if left is not None and right is not None else "Datos insuficientes"))
+        items.append((label,(f"{left:.1f}" if left is not None else "—") + " / " + (f"{right:.1f}" if right is not None else "—")))
     rows=''.join('<div class="sn-nba-stat"><span>'+html.escape(label)+'</span><strong>'
                  +html.escape(value)+'</strong></div>' for label,value in items)
     st.markdown('<div class="sn-nba-section">Estadísticas proyectadas</div>'
@@ -1405,7 +1408,7 @@ def render_nba_intelligence(match, events, cutoff):
     else:
         st.caption("Partido en curso. La comparación se activará al finalizar.")
     st.caption(f"Historial: {len(home_games)} partidos de {home_name} y {len(away_games)} de {away_name}. "
-               "Las métricas sin al menos tres boxscores reales se ocultan. "
+               "El guion indica una métrica sin al menos tres boxscores válidos. "
                "Modelo experimental, sin apuestas ni cuotas. SQLite local no es almacenamiento permanente en Streamlit Cloud.")
 
 def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
@@ -2226,15 +2229,42 @@ st.markdown('<nav class="sn-date-rail" aria-label="Seleccionar día">'
 
 
 
-st.markdown('<div class="ny-lab-heading" id="ny-lab">♧ &nbsp; <b>Model Lab</b><small>Backtesting y evaluación de modelos</small></div>',unsafe_allow_html=True)
-with st.expander("🧪 Nyuz Model Lab · Backtesting NBA", expanded=(st.query_params.get("sn_view") == "lab")):
+st.markdown('<div id="ny-lab"></div>', unsafe_allow_html=True)
+with st.expander("Model Lab 2.0 · Laboratorio cuantitativo", expanded=(st.query_params.get("sn_view") == "lab")):
+    st.markdown("### Laboratorio NBA")
+    st.caption("Evaluación histórica · Comparación de modelos · Auditoría")
+    st.markdown("""
+**¿Qué hace Model Lab?**
+
+Reconstruye pronósticos de partidos NBA ya finalizados utilizando solamente
+datos anteriores a cada encuentro. Compara cada pronóstico con el marcador
+real y mide el error.
+
+**Modelos comparados**
+
+- **Promedio simple:** referencia de rendimiento previo.
+- **Forma reciente ponderada:** da más importancia a los juegos recientes.
+
+**Cómo leer los resultados**
+
+El error absoluto medio (MAE) indica cuántos puntos se desvía el pronóstico
+en promedio: **menor es mejor**. El sesgo indica si el modelo sobreestima
+o subestima habitualmente.
+
+La prueba final utiliza partidos posteriores a los de validación. Ningún
+modelo se actualiza automáticamente al terminar la evaluación.
+""")
+    st.divider()
+    st.markdown("#### Ejecutar auditoría histórica")
     st.caption("Prueba retrospectiva: solo utiliza partidos anteriores a cada encuentro. "
                "Compara un promedio simple contra un modelo que pondera la forma reciente. "
                "Este laboratorio no modifica automáticamente el motor en producción.")
     if st.button("Evaluar últimos 60 partidos NBA", key="nyuz_backtest"):
         with st.spinner("Recuperando historial y evaluando partidos NBA..."):
             historical = nba_recent_scoreboards(selected_date + timedelta(days=1))
-            rows = backtest_nba_history(historical, 60)
+            st.session_state["nyuz_lab_rows"] = backtest_nba_history(historical, 60)
+    if "nyuz_lab_rows" in st.session_state:
+        rows = st.session_state["nyuz_lab_rows"]
         if len(rows) < 15:
             st.warning(f"Solo se pudieron evaluar {len(rows)} partidos con al menos cinco "
                        "antecedentes por equipo. Se necesitan más datos para comparar modelos.")
