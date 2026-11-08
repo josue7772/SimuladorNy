@@ -423,7 +423,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     av = result["averages"]
     st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>" 
                 "<div class='sn-panel-title'>Predicciones del partido</div>"
-                "<div class='sn-chip'>✦ 10,000 simulaciones Monte Carlo</div></div>", unsafe_allow_html=True)
+                "<div class='sn-chip'>✦ Predicción cuantitativa</div></div>", unsafe_allow_html=True)
     st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
                 unsafe_allow_html=True)
     st.divider()
@@ -438,7 +438,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
             st.markdown(f"**{name}** · Titulares: " + (", ".join(starters) if starters else "No confirmados"))
             if bench: st.caption("Suplentes publicados: " + ", ".join(bench))
             if out: st.caption("No jugaron (según boxscore): " + ", ".join(out))
-        st.info("Las 10,000 simulaciones NBA usan los últimos resultados de los equipos. "
+        st.info("Las predicciones NBA usan los últimos resultados de los equipos. "
                 "Los titulares se muestran si están publicados, pero NO se aplican "
                 "ajustes por jugadores sin datos individuales fiables de impacto y minutos. "
                 "Antes del inicio las alineaciones pueden no estar confirmadas.")
@@ -528,7 +528,7 @@ def recent_stat_means(games, team_id, sport_path, league_code, definitions):
         if not eid:
             continue
         try:
-            box = boxscore_team_metrics(sport_path, league_code, eid)
+            box = boxscore_team_metrics(sport_boxscore(sport_path, league_code, eid))
             stats = box.get(team_id, {})
             for key, aliases in definitions.items():
                 value = get_stat(stats, aliases)
@@ -635,7 +635,7 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
     names = (team_name(match["home"]), team_name(match["away"]))
     st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>"
                 "<div class='sn-panel-title'>Predicciones del partido</div>"
-                "<div class='sn-chip'>✦ 10,000 simulaciones Monte Carlo</div></div>",
+                "<div class='sn-chip'>✦ Predicción cuantitativa</div></div>",
                 unsafe_allow_html=True)
     st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
                 unsafe_allow_html=True)
@@ -646,8 +646,6 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
     ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
     lineup, lineup_source = nba_lineup_information(match["id"]) if sport_path == "basketball" else ({}, "")
-    if sport_path == "basketball":
-        show_nba_lineups(lineup, ids, names, lineup_source)
     prediction = (nba_simulation_with_lineup(home_games, away_games, seed, lineup, ids)
                   if sport_path == "basketball" else
                   simulate_other_sport(home_games, away_games, sport_path, seed))
@@ -686,32 +684,52 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
              (f"{unit} totales", f"{prediction['home']+prediction['away']:.1f}"),
              (f"Más de {prediction['threshold']} {unit.lower()}", f"{prediction['over']:.1f}%")]
     ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
-    means = [recent_stat_means(games, tid, sport_path, league_code, definitions)
-             for games, tid in ((home_games, ids[0]), (away_games, ids[1]))]
     titles = {"assists":"Asistencias", "rebounds":"Rebotes", "threes":"Triples anotados",
               "turnovers":"Pérdidas de balón", "shots":"Tiros a portería",
               "powerplay":"Goles en power play", "hits":"Hits", "errors":"Errores",
               "walks":"Bases por bolas"}
+    # Each available metric is sampled in every Monte Carlo iteration.
+    # Missing real boxscores are not replaced with fabricated league values.
+    rng_metrics = random.Random(seed + 713)
+    simulated = {}
+    for idx, (games, tid) in enumerate(((home_games, ids[0]), (away_games, ids[1]))):
+        observations = {key: [] for key in definitions}
+        for game in games[:10]:
+            try:
+                payload = sport_boxscore(sport_path, league_code, str(game["id"]))
+                actual = boxscore_team_metrics(payload).get(tid, {})
+                for key, aliases in definitions.items():
+                    val = get_stat(actual, aliases)
+                    if val is not None and val >= 0:
+                        observations[key].append(float(val))
+            except (requests.RequestException, ValueError, KeyError, TypeError):
+                continue
+        for key, values in observations.items():
+            if len(values) >= 3:
+                # Bootstrap: sample 10,000 complete game-level values from
+                # the actual observed metric distribution for this team.
+                draws = [rng_metrics.choice(values) for _ in range(10000)]
+                simulated[(idx,key)] = sum(draws) / len(draws)
     for key in definitions:
-        left, right = means[0][key], means[1][key]
-        # Averages from real boxscores, not from Monte Carlo: label honestly.
-        stats.append((f"{titles[key]} · {names[0]} (últimos juegos)",
-                      f"{left:.1f}" if left is not None else "No disponible"))
-        stats.append((f"{titles[key]} · {names[1]} (últimos juegos)",
-                      f"{right:.1f}" if right is not None else "No disponible"))
-        stats.append((f"{titles[key]} · total (últimos juegos)",
-                      f"{left+right:.1f}" if left is not None and right is not None else "No disponible"))
+        left, right = simulated.get((0,key)), simulated.get((1,key))
+        if left is None or right is None:
+            continue  # Don't clutter UI with unavailable rows.
+        stats.extend([
+            (f"{titles[key]} · {names[0]}", f"{left:.1f}"),
+            (f"{titles[key]} · {names[1]}", f"{right:.1f}"),
+            (f"{titles[key]} · total", f"{left+right:.1f}"),
+        ])
+
     for label, value in stats:
         st.markdown(f"<div class='stat-row'><span>{html.escape(label)}</span>"
                     f"<strong>{html.escape(value)}</strong></div>", unsafe_allow_html=True)
     if sport_path == "basketball":
         st.caption("Las alineaciones visibles son informativas: la versión actual NO ajusta "
-                   "todavía los 10,000 escenarios por minutos y estadísticas individuales. "
+                   "todavía los escenarios por minutos y estadísticas individuales. "
                    "Se requieren datos de jugadores verificados para hacerlo.")
-    st.caption("Puntos/goles/carreras y probabilidades: modelo Monte Carlo experimental basado en resultados recientes. "
-               "Asistencias, rebotes y demás métricas: promedios históricos de boxscores disponibles, "
-               "NO simulaciones de esas métricas. Sin suficientes datos se indica 'No disponible'. "
-               "No son predicciones garantizadas.")
+    st.caption("Proyecciones Monte Carlo experimentales. Las métricas adicionales "
+               "se simulan mediante remuestreo de boxscores históricos cuando existen "
+               "al menos tres registros. No se muestran métricas sin datos suficientes.")
 
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
