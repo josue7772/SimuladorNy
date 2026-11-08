@@ -1,31 +1,13 @@
-pip install streamlit requests pandas numpy streamlit-autorefresh scipy
-SimuladorNy/
-│
-├── app.py
-├── requirements.txt
-├── .streamlit/
-│   └── secrets.toml
-│
-└── assets/
-    ├── style.css
-    └── app.js
-  function changeSport(sport) {
-    currentSport = sport;
-    selectedLeague = 'Todas';
+import streamlit as st
+import streamlit.components.v1 as components
+import requests
+import sqlite3
+import numpy as np
+import pandas as pd
+import json
+import math
+import os
 
-    document.getElementById('header-icon').textContent =
-        sport === 'football' ? '⚽' :
-        sport === 'nba' ? '🏀' : '⚾';
-
-    document.getElementById('nav-football')
-        .classList.toggle('active', sport === 'football');
-
-    document.getElementById('nav-nba')
-        .classList.toggle('active', sport === 'nba');
-
-    document.getElementById('nav-kbo')
-        .classList.toggle('active', sport === 'kbo');
-
-    goHome();
-    render();
-}
+API_FOOTBALL_KEY = "TU_CLAVE_DE_API_FOOTBALL"
+API_BASEBALL_KEY = "TU_CLAVE_DE_API_BASEBALL"
+KBO_LEAGUE_ID = "ID_DE_KBO"
