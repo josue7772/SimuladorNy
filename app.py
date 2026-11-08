@@ -933,7 +933,6 @@ def record_upcoming_match(match, events, sport_path, league_code, cutoff):
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     if sport_path != "soccer":
         return  # Soccer projections must never appear in NBA/NHL/KBO.
-    """Panel premium: presentation only; preserves the original Monte Carlo model."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
     home_games, away_games, h2h = history_for_match(
         match, events, sport_path, league_code, cutoff)
@@ -1609,6 +1608,18 @@ def nyuz_live_details(match, sport_path, league_code):
         st.caption("No hay eventos detallados disponibles en esta fuente.")
 
 
+def display_match_status(status):
+    raw = str(status or "").strip()
+    translated = {
+        "scheduled": "Programado", "pre": "Programado", "in progress": "En vivo",
+        "in progress - live": "En vivo", "live": "En vivo", "halftime": "Descanso",
+        "final": "Finalizado", "full time": "Finalizado", "post": "Finalizado",
+        "postponed": "Pospuesto", "canceled": "Cancelado", "cancelled": "Cancelado",
+        "delayed": "Retrasado", "suspended": "Suspendido"
+    }
+    return translated.get(raw.lower(), raw)
+
+
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
@@ -1619,7 +1630,7 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
         shown = f"{score_of(home)} : {score_of(away)}"
     st.markdown(
         '<div class="sn-fixture-card">'
-        f'<div class="sn-fixture-meta">{html.escape(league_name)} · {html.escape(str(match["status"]))}</div>'
+        f'<div class="sn-fixture-meta">{html.escape(league_name)} · {html.escape(display_match_status(match["status"]))}</div>'
         + team_pair_html(home, away, shown)
         + '</div>', unsafe_allow_html=True
     )
