@@ -254,7 +254,7 @@ def run_monte_carlo(params, iterations=10000, seed=None):
 def historical_events(sport_path, league_code, selected_date):
     if sport_path == "baseball" and league_code == "kbo":
         return []
-    """Calendario histórico en bloques semanales para evitar rangos ignorados por ESPN."""
+    # Consulta el historial por semanas para evitar límites del proveedor.
     found = {}
     # Incluye hasta ~100 días: suficiente para localizar cinco juegos de liga,
     # aunque puede ser insuficiente durante parones o al inicio de temporada.
@@ -842,15 +842,17 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
     hlogo, alogo = safe_logo(home), safe_logo(away)
-    with st.container(border=True):
-        st.caption(f"{league_name} · {match['status']}")
-        if match["state"] == "pre":
-            shown = "VS"
-        else:
-            shown = f"{score_of(home)} : {score_of(away)}"
-        st.markdown(team_pair_html(home, away, shown), unsafe_allow_html=True)
-        st.caption(f"🏟️ {match['venue']}")
-    with st.expander("✦ Ver predicciones y estadísticas", expanded=False):
+    if match["state"] == "pre":
+        shown = "VS"
+    else:
+        shown = f"{score_of(home)} : {score_of(away)}"
+    st.markdown(
+        '<div class="sn-fixture-card">'
+        f'<div class="sn-fixture-meta">{html.escape(league_name)} · {html.escape(str(match["status"]))}</div>'
+        + team_pair_html(home, away, shown)
+        + '</div>', unsafe_allow_html=True
+    )
+    with st.expander("Ver análisis y predicciones", expanded=False):
         if sport_label == "⚽ Fútbol":
             render_monte_carlo_panel(
                 match, historical_data, sport_path, league_code, selected_date)
@@ -1065,6 +1067,53 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
  [data-testid="stPills"] button {min-height:35px!important;padding:7px 11px!important;}
 }
 
+
+/* STUDIO REFINEMENT: airy header, single-row date rail, compact fixtures */
+.sn-header{padding:10px 0 19px!important;margin-bottom:3px!important}
+.sn-list-heading{margin:6px 0 11px!important;font-size:25px!important}
+[data-testid="stPills"]{width:100%!important;min-width:0!important;overflow:hidden!important}
+[data-testid="stPills"] > div{max-width:100%!important;min-width:0!important}
+[data-testid="stPills"] [role="group"]{
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  display:flex!important;flex-flow:row nowrap!important;
+  justify-content:flex-start!important;align-items:center!important;
+  overflow-x:auto!important;overflow-y:hidden!important;
+  overscroll-behavior-x:contain!important;scrollbar-width:none!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+[data-testid="stPills"] [role="group"] > *{flex:0 0 auto!important}
+[data-testid="stPills"] [role="group"]::-webkit-scrollbar{display:none!important}
+[data-testid="stPills"] button{
+  border-radius:9px!important;border:1px solid #35383d!important;
+  color:#d5d6d8!important;background:#1e2023!important;
+  padding:9px 13px!important;font-weight:500!important;
+}
+[data-testid="stPills"] button[aria-pressed="true"],
+[data-testid="stPills"] button[aria-selected="true"],
+[data-testid="stPills"] button[data-selected="true"]{
+  color:#111214!important;background:#f3f3f3!important;
+  border:1px solid #f3f3f3!important;box-shadow:none!important;
+}
+[data-testid="stPills"] button:focus-visible{outline:2px solid #aaa!important;outline-offset:2px}
+[data-testid="stPills"] button:focus:not(:focus-visible){outline:none!important;box-shadow:none!important}
+.sn-fixture-card{
+  background:#151618;border:1px solid #34363a;border-radius:15px;
+  padding:13px 14px 5px;margin:12px 0 3px;
+}
+.sn-fixture-meta{font-size:11px;color:#a6a9ae;letter-spacing:.15px}
+.sn-fixture-card .sn-teams{padding:7px 0 9px!important;min-height:76px!important}
+.sn-fixture-card .sn-side{gap:4px!important;font-size:13px!important}
+.sn-fixture-card .sn-side img{width:40px!important;height:40px!important;filter:none!important}
+.sn-fixture-card .sn-center{font-size:20px!important}
+[data-testid="stExpander"]{border-radius:12px!important}
+[data-testid="stExpander"] summary{padding:10px 14px!important}
+[data-testid="stTextInput"]{margin-top:10px!important}
+@media(max-width:600px){
+  .block-container{padding:12px 15px 70px!important}
+  .sn-header{padding:9px 0 20px!important}
+  [data-testid="stPills"] [role="group"]{flex-wrap:nowrap!important}
+  .sn-fixture-card{margin-top:9px!important}
+}
 </style>
 
 """,unsafe_allow_html=True)
@@ -1100,7 +1149,7 @@ def _sn_change_day():
     st.session_state.sn_selected_date = date.fromisoformat(st.session_state.sn_week_choice)
 
 
-with st.popover("▦  Calendario", use_container_width=False):
+with st.popover("▦  Elegir fecha", use_container_width=False):
     # Sin key persistente: se inicializa siempre desde el día elegido en la franja.
     chosen = st.date_input("Ir a fecha", value=selected_date)
     if chosen != selected_date:
