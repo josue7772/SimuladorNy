@@ -376,8 +376,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         st.caption("Sin enfrentamientos directos recuperados en el periodo consultado.")
 
     if not home_games or not away_games:
-        st.warning("No se recuperó ningún partido anterior de uno de los equipos. No se generará una predicción inventada. La fuente gratuita podría estar limitando el historial.")
-        return
+        st.warning("No se pudo recuperar el historial completo. Mostraremos una simulación exploratoria con promedios generales de referencia, NO una predicción personalizada. No la uses como pronóstico fiable.")
     params = historical_parameters(home_games, away_games, h2h)
     hid = str(match["home"].get("team", {}).get("id") or "")
     if h2h:
@@ -405,7 +404,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         st.caption(f"{i}. {h}-{a} · {count/100:.2f}% · {count:,} simulaciones")
         st.progress(count/10000)
     av=result["averages"]
-    st.markdown("**Estadísticas estimadas en 10,000 simulaciones**")
+    st.markdown("**Estadísticas proyectadas · 10,000 simulaciones**")
     st.dataframe([
         {"Métrica":"Goles estimados (proxy de xG)",home_name:f'{params["xg_home"]:.2f}',away_name:f'{params["xg_away"]:.2f}'},
         {"Métrica":"Tiros totales*",home_name:f'{av["shots_home"]:.1f}',away_name:f'{av["shots_away"]:.1f}'},
@@ -418,7 +417,7 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     c1.metric("Ambos anotan",f'{result["both_score"]:.1f}%')
     c2.metric("Más de 2.5 goles",f'{result["over_25"]:.1f}%')
     if min(hn,an)<5:
-        st.warning(f"Muestra parcial: {home_name} {hn}/5 · {away_name} {an}/5 partidos. Confianza limitada.")
+        st.warning(f"Muestra parcial: {home_name} {hn}/5 · {away_name} {an}/5 partidos. Los resultados usan promedios generales para suplir los datos faltantes; confianza baja.")
     st.caption("Goles estimados a partir de marcadores previos, no xG oficial. *Tiros, córners, faltas y tarjetas son simulaciones con supuestos generales, NO estimaciones basadas en históricos específicos de esas métricas. La fuente gratuita puede ser incompleta.")
 
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
@@ -448,7 +447,7 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
         if sport_label == "⚽ Fútbol":
             render_monte_carlo_panel(match, historical_data, sport_path, league_code, selected_date)
             st.markdown("---")
-        st.write("**Estadísticas reales publicadas por el proveedor (si existen)**")
+        st.write("**Estadísticas oficiales del encuentro (si existen)**")
         if sport_label == "⚽ Fútbol":
             try:
                 summary = fetch_summary(match["id"])
