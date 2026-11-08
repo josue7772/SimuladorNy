@@ -591,15 +591,35 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
 
     score = result["score"]
     freq = result["score_frequency"]
-    st.markdown('<div class="sn-detail-two">'
-                '<div class="sn-detail-tile"><span>Marcador más frecuente</span>'
-                f'<strong>{int(score[0])} – {int(score[1])}</strong>'
-                f'<small>Probabilidad estimada: {freq:.1f}%</small></div>'
-                '<div class="sn-detail-tile"><span>Equipo con mayor probabilidad</span>'
-                '<strong class="sn-detail-winner">'
+    # A result driven mostly by generic priors is not an individualized forecast.
+    sufficient_history = len(home_games) >= 3 and len(away_games) >= 3
+    top_three = result["score_probabilities"][:3]
+    alternatives = "".join(
+        '<div class="sn-score-option"><strong>'
+        + f'{sc[0]} – {sc[1]}' + '</strong><span>'
+        + f'{prob*100:.1f}%' + '</span></div>'
+        for sc, prob in top_three
+    )
+    if not sufficient_history:
+        st.warning(
+            f"Historial insuficiente para personalizar el marcador: "
+            f"{home_name} ({len(home_games)}/5 partidos), "
+            f"{away_name} ({len(away_games)}/5 partidos). "
+            "Las probabilidades siguientes son orientativas y dependen de promedios generales."
+        )
+    st.markdown(
+        '<div class="sn-detail-box"><div class="sn-detail-heading">'
+        + ('Marcadores más probables' if sufficient_history else 'Escenarios orientativos')
+        + '</div><div class="sn-score-options">' + alternatives + '</div>'
+        + '<div class="sn-detail-foot">Ningún marcador es seguro. '
+        + ('Estimación basada en historial reciente.' if sufficient_history
+           else 'No hay historial suficiente para elegir un único marcador fiable.')
+        + '</div></div>', unsafe_allow_html=True
+    )
+    st.markdown('<div class="sn-detail-box"><div class="sn-detail-heading">'
+                'Resultado más probable (1X2)</div><div class="sn-detail-winner">'
                 + html.escape(probs[max(range(3), key=lambda i: probs[i][1])][0])
-                + '</strong><small>Probabilidad, no garantía</small></div></div>',
-                unsafe_allow_html=True)
+                + '</div></div>', unsafe_allow_html=True)
 
     # Fair odds, never fictional bookmaker prices.
     odds = []
@@ -1330,6 +1350,12 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .sn-detail-bars{display:flex;gap:4px;height:7px;margin-top:7px}
 .sn-detail-bars i,.sn-detail-bars b{display:block;border-radius:9px;background:#6e7176}
 .sn-detail-bars b{background:#ededee}
+
+.sn-score-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sn-score-option{display:flex;flex-direction:column;align-items:center;gap:7px;
+ padding:13px 5px;border:1px solid #424449;border-radius:17px;background:#242528}
+.sn-score-option strong{font-size:19px;color:#f4f4f4}
+.sn-score-option span{font-size:12px;color:#bfc1c5}
 </style>
 
 """,unsafe_allow_html=True)
