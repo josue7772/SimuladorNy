@@ -1204,7 +1204,177 @@ def simulate_other_sport(home_games, away_games, sport, seed, iterations=10000):
             "threshold":threshold}
 
 
+
+# NBA Intelligence: dynamic history only; no fixed season/team ratings or betting advice.
+NBA_METRICS = {
+    "rebounds": ("Rebotes", ["totalrebounds", "rebounds", "reb", "trb"]),
+    "assists": ("Asistencias", ["assists", "ast"]),
+    "threes": ("Triples anotados", ["threepointfieldgoalsmade", "threepointfieldgoals", "3pm"]),
+    "turnovers": ("Pérdidas de balón", ["turnovers", "to"]),
+}
+
+
+def nba_team_observations(games, team_id):
+    observations = {key: [] for key in NBA_METRICS}
+    pace_observations = []
+    for game in games[:10]:
+        eid = game.get("id")
+        if not eid:
+            continue
+        try:
+            data = boxscore_team_metrics(sport_boxscore("basketball", "nba", str(eid)))
+            stats = data.get(str(team_id), {})
+        except (requests.RequestException, ValueError, KeyError, TypeError):
+            continue
+        for key, (_, aliases) in NBA_METRICS.items():
+            value = get_stat(stats, aliases)
+            if value is not None and 0 <= value < 200:
+                observations[key].append(float(value))
+        fga = get_stat(stats, ["fieldgoalattempts", "fga"])
+        fta = get_stat(stats, ["freethrowattempts", "fta"])
+        orb = get_stat(stats, ["offensiverebounds", "orb"])
+        tov = get_stat(stats, ["turnovers", "to"])
+        if all(x is not None for x in (fga, fta, orb, tov)):
+            poss = fga + .44 * fta - orb + tov
+            if 75 <= poss <= 125:
+                pace_observations.append(poss)
+    return observations, pace_observations
+
+
+def nba_intelligence_prediction(home_games, away_games, home_obs, away_obs, seed):
+    if len(home_games) < 3 or len(away_games) < 3:
+        return None
+    rng = random.Random(seed)
+    def weighted_mean(games, field):
+        recent = games[:10]
+        weights = [1.0 / (1 + i * .17) for i in range(len(recent))]
+        return sum(float(g[field]) * w for g, w in zip(recent, weights)) / sum(weights)
+    # Score model is grounded in the actual recent points for/against.
+    mu_h = .55 * weighted_mean(home_games, "gf") + .45 * weighted_mean(away_games, "ga")
+    mu_a = .55 * weighted_mean(away_games, "gf") + .45 * weighted_mean(home_games, "ga")
+    def std(games):
+        values = [float(g["gf"]) for g in games[:10]]
+        mean = sum(values) / len(values)
+        return max(8.0, min(22.0, (sum((x - mean)**2 for x in values) / max(1, len(values)-1))**.5))
+    sh, sa = std(home_games), std(away_games)
+    # Shared game-tempo noise introduces positive correlation; residuals remain independent.
+    common_sd = 3.5
+    sums = [0.0, 0.0]
+    home_wins = 0
+    for _ in range(10000):
+        common = rng.gauss(0, common_sd)
+        h = max(0, round(rng.gauss(mu_h + common, max(1, (sh*sh-common_sd*common_sd)**.5))))
+        a = max(0, round(rng.gauss(mu_a + common, max(1, (sa*sa-common_sd*common_sd)**.5))))
+        if h == a:
+            # Overtime approximation: break tie without claiming a calibrated OT model.
+            if rng.random() < .5: h += 1
+            else: a += 1
+        sums[0] += h
+        sums[1] += a
+        home_wins += h > a
+    metrics = {}
+    for key in NBA_METRICS:
+        values = [home_obs[0][key], away_obs[0][key]]
+        metrics[key] = [sum(rng.choice(v) for _ in range(10000))/10000 if len(v) >= 3 else None for v in values]
+    pace_values = home_obs[1] + away_obs[1]
+    pace = sum(pace_values)/len(pace_values) if len(pace_values) >= 6 else None
+    return {"home":sums[0]/10000, "away":sums[1]/10000,
+            "total":sum(sums)/10000, "win_h":home_wins/100,
+            "win_a":100-home_wins/100, "pace":pace, "metrics":metrics,
+            "history_count":(len(home_games),len(away_games))}
+
+
+def nba_audit_db():
+    conn = sqlite3.connect("simuladorny_nba_audit.sqlite3", timeout=5)
+    conn.execute("""CREATE TABLE IF NOT EXISTS nba_predictions (
+        event_id TEXT PRIMARY KEY, kickoff TEXT NOT NULL, saved_at TEXT NOT NULL,
+        payload TEXT NOT NULL)""")
+    conn.commit()
+    return conn
+
+
+def nba_prediction_snapshot(match, prediction):
+    # Never overwrite pre-game predictions, and never create a retroactive snapshot.
+    event_id = str(match["id"])
+    try:
+        with nba_audit_db() as conn:
+            row = conn.execute("SELECT payload FROM nba_predictions WHERE event_id=?", (event_id,)).fetchone()
+            if row:
+                return json.loads(row[0])
+            if match["state"] != "pre":
+                return None
+            payload = {"home":prediction["home"], "away":prediction["away"],
+                       "total":prediction["total"], "metrics":prediction["metrics"]}
+            conn.execute("INSERT OR IGNORE INTO nba_predictions VALUES (?,?,?,?)",
+                         (event_id, str(match.get("date") or "unknown"),
+                          datetime.now(ZoneInfo("UTC")).isoformat(), json.dumps(payload)))
+            conn.commit()
+            return payload
+    except (sqlite3.Error, ValueError, TypeError):
+        return None
+
+
+def render_nba_intelligence(match, events, cutoff):
+    home_name, away_name = team_name(match["home"]), team_name(match["away"])
+    home_games, away_games, _ = nba_history_for_match(match, events, cutoff)
+    ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
+    if len(home_games) < 3 or len(away_games) < 3:
+        st.info(f"Datos insuficientes para NBA: {home_name} ({len(home_games)} partidos), "
+                f"{away_name} ({len(away_games)} partidos). No se inventan proyecciones.")
+        return
+    obs_h = nba_team_observations(home_games, ids[0])
+    obs_a = nba_team_observations(away_games, ids[1])
+    seed = sum((i+1)*ord(c) for i,c in enumerate(str(match["id"])))
+    pred = nba_intelligence_prediction(home_games, away_games, obs_h, obs_a, seed)
+    if pred is None: return
+    st.markdown('<div class="sn-nba-wrap"><div class="sn-nba-eyebrow">SIMULADORNY · NBA INTELLIGENCE</div>'
+                '<div class="sn-nba-title">Análisis NBA</div>'
+                '<div class="sn-nba-subtitle">10,000 simulaciones · Datos históricos disponibles</div></div>',
+                unsafe_allow_html=True)
+    st.markdown('<div class="sn-nba-teamline">'+team_pair_html(match["home"],match["away"],"VS",large=True)+'</div>',unsafe_allow_html=True)
+    cards = ''.join('<div class="sn-nba-score"><div>'+html.escape(name)+'</div>'
+                    +f'<strong>{val:.1f}</strong><span>Puntos proyectados</span></div>'
+                    for name,val in ((home_name,pred["home"]),(away_name,pred["away"])))
+    st.markdown('<div class="sn-nba-scores">'+cards+'</div>',unsafe_allow_html=True)
+    items=[("Puntos totales",f'{pred["total"]:.1f}'),
+           ("Posesiones estimadas", f'{pred["pace"]:.1f}' if pred["pace"] is not None else "No disponible")]
+    for key,(label,_) in NBA_METRICS.items():
+        left,right=pred["metrics"][key]
+        items.append((label,f"{left:.1f} / {right:.1f}" if left is not None and right is not None else "Datos insuficientes"))
+    rows=''.join('<div class="sn-nba-stat"><span>'+html.escape(label)+'</span><strong>'
+                 +html.escape(value)+'</strong></div>' for label,value in items)
+    st.markdown('<div class="sn-nba-section">Estadísticas proyectadas</div>'
+                '<div class="sn-nba-stats">'+rows+'</div>',unsafe_allow_html=True)
+    st.markdown('<div class="sn-nba-audit">▥ &nbsp; Predicción vs. Realidad'
+                '<small>Evaluación al finalizar el partido</small></div>',unsafe_allow_html=True)
+    snap = nba_prediction_snapshot(match, pred)
+    if match.get("completed") and snap:
+        # Real score is always sourced from the completed event; no invented boxscore.
+        try:
+            actual_h=float(score_of(match["home"]))
+            actual_a=float(score_of(match["away"]))
+            st.table({"Estadística":["Puntos local","Puntos visitante","Puntos totales"],
+                      "Pronosticado":[round(snap["home"],1),round(snap["away"],1),round(snap["total"],1)],
+                      "Real":[actual_h,actual_a,actual_h+actual_a],
+                      "Error absoluto":[round(abs(snap["home"]-actual_h),1),
+                                        round(abs(snap["away"]-actual_a),1),
+                                        round(abs(snap["total"]-actual_h-actual_a),1)]})
+        except (ValueError, TypeError):
+            st.caption("Marcador final aún no disponible en la fuente.")
+    elif match.get("completed"):
+        st.caption("No hay una predicción guardada antes del partido para comparar.")
+    elif match["state"] == "pre":
+        st.caption("La comparación aparecerá al finalizar, si se guardó la predicción previa.")
+    else:
+        st.caption("Partido en curso. La comparación se activará al finalizar.")
+    st.caption(f"Historial: {len(home_games)} partidos de {home_name} y {len(away_games)} de {away_name}. "
+               "Las métricas sin al menos tres boxscores reales se ocultan. "
+               "Modelo experimental, sin apuestas ni cuotas. SQLite local no es almacenamiento permanente en Streamlit Cloud.")
+
 def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
+    if sport_path == "basketball":
+        render_nba_intelligence(match, events, cutoff)
+        return
     names = (team_name(match["home"]), team_name(match["away"]))
     st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>"
                 "<div class='sn-panel-title'>Predicciones del partido</div>"
@@ -1795,6 +1965,23 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .sn-mi-right i{background:#777a80}
 .sn-mi-audit-title{font-size:15px;font-weight:750;padding:16px 0 6px;border-top:1px solid #393b40;margin-top:20px}
 @media(max-width:420px){.sn-mi-prob strong{font-size:19px}.sn-mi-prob{padding:12px 5px}.sn-mi-prob span{font-size:10px}}
+
+/* NBA Intelligence: screenshot-matched minimalist mobile panel */
+.sn-nba-wrap{margin:14px 0 20px}.sn-nba-eyebrow{font-size:12px;font-weight:750;letter-spacing:1.5px;color:#b7b8be}
+.sn-nba-title{font-size:27px;font-weight:800;color:#fff;margin:16px 0 13px}
+.sn-nba-subtitle{color:#a4a5ac;font-size:14px;padding-bottom:20px;border-bottom:1px solid #393a40}
+.sn-nba-teamline{margin:12px 0 18px}.sn-nba-scores{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:18px 0 24px}
+.sn-nba-score{background:#25262b;border-radius:18px;padding:17px 13px;min-width:0;display:flex;flex-direction:column;gap:7px}
+.sn-nba-score>div{color:#b5b6bb;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sn-nba-score strong{color:#fff;font-size:35px;font-weight:800;letter-spacing:-1px}
+.sn-nba-score span{color:#b0b1b8;font-size:11px}
+.sn-nba-section{font-size:18px;font-weight:800;color:#fff;margin:24px 0 16px}
+.sn-nba-stats{display:flex;flex-direction:column;gap:19px;margin-bottom:24px}
+.sn-nba-stat{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.sn-nba-stat span{color:#b2b3bb;font-size:14px}.sn-nba-stat strong{color:#fff;font-size:17px;white-space:nowrap}
+.sn-nba-audit{border-top:1px solid #393a40;padding-top:23px;font-size:18px;font-weight:800;color:#fff;margin-top:18px}
+.sn-nba-audit small{display:block;color:#a9abb2;font-size:13px;font-weight:400;margin:7px 0 16px}
+@media(max-width:420px){.sn-nba-score strong{font-size:30px}.sn-nba-stat span{font-size:12px}.sn-nba-stat strong{font-size:15px}}
 </style>
 
 """,unsafe_allow_html=True)
