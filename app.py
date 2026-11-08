@@ -2242,7 +2242,7 @@ st.markdown('<nav class="sn-date-rail" aria-label="Seleccionar día">'
 
 
 st.markdown('<div id="ny-lab"></div>', unsafe_allow_html=True)
-with st.expander("Model Lab 2.0 · Laboratorio cuantitativo", expanded=(st.query_params.get("sn_view") == "lab")):
+with st.expander("Model Lab 3.0 · Laboratorio cuantitativo", expanded=(st.query_params.get("sn_view") == "lab")):
     st.markdown("### Laboratorio NBA")
     st.caption("Evaluación histórica · Comparación de modelos · Auditoría")
     st.markdown("""
@@ -2296,6 +2296,8 @@ modelo se actualiza automáticamente al terminar la evaluación.
                 {"Modelo":"Forma reciente ponderada", "Validación":round(mae(validation,"candidate"),2),
                  "Prueba final":round(mae(test,"candidate"),2)}
             ])
+            from nyuz_lab3 import render_lab3_metrics
+            render_lab3_metrics(rows)
             st.markdown("**Diagnóstico de errores en prueba final**")
             for prefix,name in [("base","Promedio simple"),("candidate","Forma reciente ponderada")]:
                 errors=[(r[f"{prefix}_home"]-r["actual_home"]+
@@ -2324,6 +2326,10 @@ modelo se actualiza automáticamente al terminar la evaluación.
                            "Ponderado":f'{r["candidate_home"]:.1f} - {r["candidate_away"]:.1f}'}
                           for r in reversed(test)], hide_index=True, use_container_width=True)
 
+
+from nyuz_lab3 import render_history
+_cloud_url, _cloud_key = cloud_config()
+render_history(DB_PATH, _cloud_url, _cloud_key, get_events, parse_event, numeric_score)
 
 if sport_label == "⚾ KBO":
     st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
@@ -2428,5 +2434,5 @@ st.markdown("""<nav class="ny-bottom-nav" aria-label="Navegación NYUZ">
 <a class="nav-item active" href="#ny-inicio"><strong>⌂</strong>Inicio</a>
 <a class="nav-item" href="#ny-partidos"><strong>▦</strong>Partidos</a>
 <a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</a>
-<a class="nav-item" href="#ny-partidos"><strong>⌕</strong>Explorar</a>
+<a class="nav-item" href="#ny-historial"><strong>◷</strong>Historial</a>
 </nav>""",unsafe_allow_html=True)
