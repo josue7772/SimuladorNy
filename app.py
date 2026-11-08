@@ -2302,7 +2302,7 @@ def nyuz_performance_center():
         if rows:st.dataframe(rows,hide_index=True,use_container_width=True)
         else:st.info('Aún no hay partidos finalizados evaluados para mostrar.')
 
-nyuz_performance_center()
+# nyuz_performance_center()
 st.markdown('<div class="ny-sport-heading" id="ny-deportes">Explorar deportes</div><div class="ny-sport-note">Selecciona tu liga. KBO se retira de la navegación al terminar la temporada.</div>',unsafe_allow_html=True)
 # Sports selection moved above match status, visually matching reference.
 sport_label = st.pills("Deporte", list(SPORTS.keys()), selection_mode="single", default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs") or "⚽ Fútbol"
