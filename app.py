@@ -183,7 +183,7 @@ def sample_binomial(rng, n, probability):
     return sum(1 for _ in range(max(0, int(n))) if rng.random() < probability)
 
 def run_monte_carlo(params, iterations=10000, seed=None):
-    """Simulación Monte Carlo con parámetros editables, no datos históricos automáticos."""
+    """Simulación Monte Carlo con parámetros calculados internamente."""
     rng = random.Random(seed)
     scores = Counter()
     home_wins = draws = away_wins = both_score = over_25 = 0
@@ -198,6 +198,8 @@ def run_monte_carlo(params, iterations=10000, seed=None):
         ac = sample_poisson(rng, params["corners_away"])
         hy = sample_poisson(rng, params["yellow_home"])
         ay = sample_poisson(rng, params["yellow_away"])
+        hf = sample_poisson(rng, params["fouls_home"])
+        af = sample_poisson(rng, params["fouls_away"])
         hst = sample_binomial(rng, hs, 0.36)
         ast = sample_binomial(rng, aws, 0.36)
 
@@ -219,6 +221,8 @@ def run_monte_carlo(params, iterations=10000, seed=None):
         totals["corners_away"] += ac
         totals["yellow_home"] += hy
         totals["yellow_away"] += ay
+        totals["fouls_home"] += hf
+        totals["fouls_away"] += af
 
     best_score, best_count = scores.most_common(1)[0]
     averages = {key: value / iterations for key, value in totals.items()}
@@ -237,140 +241,185 @@ def run_monte_carlo(params, iterations=10000, seed=None):
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def historical_events(sport_path, league_code, selected_date):
-    """Resultados recientes; la cobertura del feed gratuito puede ser incompleta."""
-    start = selected_date - timedelta(days=35)
-    url = league_url(sport_path, league_code) + f"?dates={start:%Y%m%d}-{selected_date:%Y%m%d}&limit=500"
-    try:
-        return fetch_json(url).get("events", [])
-    except (requests.RequestException, ValueError):
-        return []
+    """Calendario histórico en bloques semanales para evitar rangos ignorados por ESPN."""
+    found = {}
+    # Incluye hasta ~100 días: suficiente para localizar cinco juegos de liga,
+    # aunque puede ser insuficiente durante parones o al inicio de temporada.
+    for weeks_ago in range(15):
+        start = selected_date - timedelta(days=7 * (weeks_ago + 1))
+        finish = selected_date - timedelta(days=7 * weeks_ago + 1)
+        url = league_url(sport_path, league_code) + f"?dates={start:%Y%m%d}-{finish:%Y%m%d}&limit=300"
+        try:
+            for e in fetch_json(url).get("events", []):
+                found[str(e.get("id"))] = e
+        except (requests.RequestException, ValueError):
+            continue
+    return list(found.values())
 
-@st.cache_data(ttl=3600, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)
 def team_recent_games(sport_path, league_code, team_id, cutoff):
-    """Try the team's schedule, excluding games on/after the prediction date."""
+    """Intenta el calendario de equipo de la temporada actual y anterior."""
     if not team_id:
         return []
-    url = league_url(sport_path, league_code, f"teams/{team_id}/schedule")
-    try:
-        payload = fetch_json(url + f"?dates={cutoff.year}")
-        return payload.get("events") or []
-    except (requests.RequestException, ValueError):
-        return []
-
-def historical_parameters(match, events, sport_path, league_code, cutoff):
-    """Separate per-team models; never substitute league priors as if verified."""
-    home_id = str(match["home"].get("team", {}).get("id") or "")
-    away_id = str(match["away"].get("team", {}).get("id") or "")
-    records = {home_id: [], away_id: []}
-    raw = list(events)
-    for team_id in (home_id, away_id):
-        raw.extend(team_recent_games(sport_path, league_code, team_id, cutoff))
-    seen = set()
-    for event in raw:
-        eid = str(event.get("id", ""))
-        if not eid or eid in seen or eid == match["id"]:
-            continue
-        seen.add(eid)
+    events = {}
+    for season in (cutoff.year, cutoff.year - 1):
+        url = league_url(sport_path, league_code, f"teams/{team_id}/schedule")
         try:
-            when = date.fromisoformat(event["date"][:10])
-            if when >= cutoff:
-                continue
-        except (KeyError, ValueError, TypeError):
+            payload = fetch_json(url + f"?dates={season}&limit=200")
+            for event in payload.get("events", []):
+                events[str(event.get("id"))] = event
+        except (requests.RequestException, ValueError):
             continue
-        parsed = parse_event(event)
-        if not parsed or not parsed["completed"]:
+    return list(events.values())
+
+def numeric_score(competitor):
+    value = competitor.get("score")
+    if isinstance(value, dict):
+        value = value.get("value", value.get("displayValue"))
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+def event_day(raw):
+    try:
+        return date.fromisoformat(str(raw.get("date", ""))[:10])
+    except ValueError:
+        return None
+
+def history_for_match(match, league_events, sport_path, league_code, cutoff):
+    """Cinco resultados previos por equipo y hasta cinco duelos directos.
+    Nunca incorpora resultados del encuentro a pronosticar ni fechas posteriores.
+    """
+    hid = str(match["home"].get("team", {}).get("id") or "")
+    aid = str(match["away"].get("team", {}).get("id") or "")
+    raw = {str(e.get("id")): e for e in league_events if e.get("id")}
+    for tid in (hid, aid):
+        for e in team_recent_games(sport_path, league_code, tid, cutoff):
+            if e.get("id"):
+                raw[str(e["id"])] = e
+    home_games, away_games, h2h = [], [], []
+    for e in raw.values():
+        day = event_day(e)
+        if day is None or day >= cutoff or str(e.get("id")) == str(match["id"]):
             continue
-        for side, other in (("home", "away"), ("away", "home")):
-            team = parsed[side]
-            team_id = str(team.get("team", {}).get("id") or "")
-            if team_id not in records:
-                continue
-            try:
-                gf = float(team["score"])
-                ga = float(parsed[other]["score"])
-            except (KeyError, TypeError, ValueError):
-                continue
-            records[team_id].append((when, gf, ga, side == "home"))
-    hg = sorted(records[home_id], reverse=True)[:10]
-    ag = sorted(records[away_id], reverse=True)[:10]
-    if len(hg) < 3 or len(ag) < 3:
-        return None, len(hg), len(ag)
-    def weighted(games, col, fallback):
-        vals = [row[col] for row in games]
-        weights = [0.90 ** i for i in range(len(vals))]
-        return (sum(v*w for v,w in zip(vals,weights)) + 2*fallback) / (sum(weights)+2)
-    ha = weighted(hg,1,1.35)
-    hd = weighted(hg,2,1.30)
-    aa = weighted(ag,1,1.25)
-    ad = weighted(ag,2,1.35)
-    xgh = min(4.2,max(.2,(ha*.60 + ad*.40)*1.07))
-    xga = min(4.2,max(.2,(aa*.60 + hd*.40)*.94))
+        m = parse_event(e)
+        if not m or not m["completed"]:
+            continue
+        h, a = m["home"], m["away"]
+        hs, aws = numeric_score(h), numeric_score(a)
+        if hs is None or aws is None:
+            continue
+        eh = str(h.get("team", {}).get("id") or "")
+        ea = str(a.get("team", {}).get("id") or "")
+        row = {"date":day, "home":team_name(h), "away":team_name(a),
+               "hs":hs, "aws":aws, "home_id":eh, "away_id":ea}
+        if hid in (eh, ea):
+            home_games.append({**row, "gf":hs if eh == hid else aws,
+                               "ga":aws if eh == hid else hs, "at_home":eh == hid})
+        if aid in (eh, ea):
+            away_games.append({**row, "gf":hs if eh == aid else aws,
+                               "ga":aws if eh == aid else hs, "at_home":eh == aid})
+        if {hid, aid} == {eh, ea}:
+            h2h.append(row)
+    key = lambda r:r["date"]
+    return (sorted(home_games, key=key, reverse=True)[:5],
+            sorted(away_games, key=key, reverse=True)[:5],
+            sorted(h2h, key=key, reverse=True)[:5])
+
+def historical_parameters(home_games, away_games, h2h):
+    """Ataque/defensa de últimos cinco, localía y H2H con regularización.
+    La estimación de goles NO es xG oficial basado en calidad de disparos.
+    """
+    def weighted(games, field, prior):
+        weights = [1.0, .86, .74, .64, .55][:len(games)]
+        return (sum(g[field]*w for g,w in zip(games,weights)) + 1.5*prior)/(sum(weights)+1.5)
+    ha = weighted(home_games,"gf",1.35)
+    hd = weighted(home_games,"ga",1.35)
+    aa = weighted(away_games,"gf",1.30)
+    ad = weighted(away_games,"ga",1.35)
+    # Acentúa la forma propia y el rival, sin asignar una intensidad fija universal.
+    xgh = (.58*ha + .42*ad)*1.08
+    xga = (.58*aa + .42*hd)*.94
+    xgh = max(.15,min(4.5,xgh))
+    xga = max(.15,min(4.5,xga))
     return {
-        "xg_home": xgh, "xg_away": xga,
-        "shots_home": 8 + 3*xgh, "shots_away": 8 + 3*xga,
-        "corners_home": 3 + 1.2*xgh, "corners_away": 3 + 1.2*xga,
-        "yellow_home": 1.9, "yellow_away": 2.0,
-    },len(hg),len(ag)
+        "xg_home":xgh,"xg_away":xga,
+        "shots_home": 7.5 + 3.5*xgh,"shots_away":7.5 + 3.5*xga,
+        "corners_home":3.0 + 1.35*xgh,"corners_away":3.0 + 1.35*xga,
+        "yellow_home":1.8,"yellow_away":2.0,
+        "fouls_home":12.0,"fouls_away":12.5,
+    }
 
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
-    from html import escape
-    home_name = team_name(match["home"])
-    away_name = team_name(match["away"])
-    params, hn, an = historical_parameters(match, events, sport_path, league_code, cutoff)
-    st.markdown("### ✦ SIMULADORNY · ANÁLISIS PREDICTIVO")
-    st.caption("10,000 simulaciones Monte Carlo · modelos por equipo · sin modificar xG")
-    if params is None:
-        st.warning(f"Predicción no disponible: se necesitan al menos 3 partidos anteriores de cada equipo. Historial encontrado: {escape(home_name)} {hn}; {escape(away_name)} {an}. No mostramos un 1-1 genérico.")
+    home_name, away_name = team_name(match["home"]), team_name(match["away"])
+    home_games, away_games, h2h = history_for_match(
+        match, events, sport_path, league_code, cutoff)
+    hn, an = len(home_games), len(away_games)
+    st.markdown("#### ✦ Análisis predictivo")
+    st.caption("Últimos cinco partidos por equipo · enfrentamientos directos · 10,000 simulaciones")
+    st.markdown("**Forma reciente**")
+    c1,c2=st.columns(2)
+    for col,name,games in ((c1,home_name,home_games),(c2,away_name,away_games)):
+        with col:
+            st.markdown(f"**{name}**")
+            if games:
+                for g in games:
+                    st.caption(f"{g['date']:%d/%m} · {g['home']} {g['hs']:g}-{g['aws']:g} {g['away']}")
+            else:
+                st.caption("Sin resultados recuperados")
+    st.markdown("**Enfrentamientos anteriores**")
+    if h2h:
+        for g in h2h:
+            st.caption(f"{g['date']:%d/%m/%Y} · {g['home']} {g['hs']:g}-{g['aws']:g} {g['away']}")
+    else:
+        st.caption("Sin enfrentamientos directos recuperados en el periodo consultado.")
+
+    if not home_games or not away_games:
+        st.warning("No se recuperó ningún partido anterior de uno de los equipos. No se generará una predicción inventada. La fuente gratuita podría estar limitando el historial.")
         return
-    # Seed differs per match; inputs differ according to team history.
-    seed = sum((i+1)*ord(c) for i,c in enumerate(str(match["id"])))
-    rng = random.Random(seed)
-    # Reuse the established Monte Carlo engine with a per-match seed.
-    result = run_monte_carlo(params, 10000, seed=seed)
-    st.markdown('<div class="analysis-panel">', unsafe_allow_html=True)
-    a,b,c = st.columns([2,2,2],vertical_alignment="center")
-    with a:
-        if safe_logo(match["home"]): st.image(safe_logo(match["home"]),width=64)
-        st.markdown(f"**{home_name}**")
-    with b:
-        st.markdown(f'<div class="predicted-score">{result["score"][0]} - {result["score"][1]}</div>',unsafe_allow_html=True)
-        st.caption(f'Marcador más frecuente · {result["score_frequency"]:.1f}%')
-    with c:
-        if safe_logo(match["away"]): st.image(safe_logo(match["away"]),width=64)
-        st.markdown(f"**{away_name}**")
-    st.markdown("#### Goles esperados · estimación")
-    x1,x2 = st.columns(2)
-    x1.metric(home_name,f'{params["xg_home"]:.2f}')
-    x2.metric(away_name,f'{params["xg_away"]:.2f}')
-    st.markdown("#### Probabilidad de victoria al finalizar")
-    w1,w2,w3 = st.columns(3)
-    w1.metric("1 · Local",f'{result["home_win"]:.1f}%')
-    w2.metric("X · Empate",f'{result["draw"]:.1f}%')
-    w3.metric("2 · Visitante",f'{result["away_win"]:.1f}%')
-    for label,value in [(home_name,result["home_win"]),("Empate",result["draw"]),(away_name,result["away_win"])]:
-        st.markdown(f'<div class="prob-label"><span>{escape(label)}</span><b>{value:.1f}%</b></div>',unsafe_allow_html=True)
-        st.progress(value/100)
-    st.markdown("#### Cinco marcadores exactos más probables")
+    params = historical_parameters(home_games, away_games, h2h)
+    hid = str(match["home"].get("team", {}).get("id") or "")
+    if h2h:
+        hh = sum(g["hs"] if g["home_id"]==hid else g["aws"] for g in h2h)/len(h2h)
+        ah = sum(g["aws"] if g["home_id"]==hid else g["hs"] for g in h2h)/len(h2h)
+        params["xg_home"] = max(.15,min(4.5,.88*params["xg_home"]+.12*hh))
+        params["xg_away"] = max(.15,min(4.5,.88*params["xg_away"]+.12*ah))
+        params["shots_home"] = 7.5+3.5*params["xg_home"]
+        params["shots_away"] = 7.5+3.5*params["xg_away"]
+        params["corners_home"] = 3+1.35*params["xg_home"]
+        params["corners_away"] = 3+1.35*params["xg_away"]
+    seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
+    result = run_monte_carlo(params,10000,seed=seed)
+    top = result["top_scores"][0]
+    st.markdown("**Marcador más frecuente en las simulaciones**")
+    st.markdown(f"<div class='predicted-score'>{top[0][0]} - {top[0][1]}</div>",unsafe_allow_html=True)
+    st.caption(f"{top[1]:,} de 10,000 simulaciones · {top[1]/100:.2f}%")
+    st.markdown("**Probabilidades 1 · X · 2**")
+    cols=st.columns(3)
+    for col,label,value in zip(cols,("Local","Empate","Visitante"),
+                               (result["home_win"],result["draw"],result["away_win"])):
+        col.metric(label,f"{value:.1f}%")
+    st.markdown("**Cinco marcadores más probables**")
     for i,((h,a),count) in enumerate(result["top_scores"],1):
-        st.markdown(f'**{i}. {h} - {a}** · {count/100:.2f}% · {count:,} de 10,000')
+        st.caption(f"{i}. {h}-{a} · {count/100:.2f}% · {count:,} simulaciones")
         st.progress(count/10000)
-    st.markdown("#### Estadísticas proyectadas")
     av=result["averages"]
-    table=[
-        {"Métrica":"xG estimado",home_name:f'{params["xg_home"]:.2f}',away_name:f'{params["xg_away"]:.2f}'},
+    st.markdown("**Estadísticas estimadas en 10,000 simulaciones**")
+    st.dataframe([
+        {"Métrica":"Goles estimados (proxy de xG)",home_name:f'{params["xg_home"]:.2f}',away_name:f'{params["xg_away"]:.2f}'},
         {"Métrica":"Tiros totales*",home_name:f'{av["shots_home"]:.1f}',away_name:f'{av["shots_away"]:.1f}'},
         {"Métrica":"Tiros a puerta*",home_name:f'{av["sot_home"]:.1f}',away_name:f'{av["sot_away"]:.1f}'},
         {"Métrica":"Córners*",home_name:f'{av["corners_home"]:.1f}',away_name:f'{av["corners_away"]:.1f}'},
+        {"Métrica":"Faltas*",home_name:f'{av["fouls_home"]:.1f}',away_name:f'{av["fouls_away"]:.1f}'},
         {"Métrica":"Tarjetas amarillas*",home_name:f'{av["yellow_home"]:.1f}',away_name:f'{av["yellow_away"]:.1f}'},
-    ]
-    st.dataframe(table,hide_index=True,use_container_width=True)
-    p1,p2=st.columns(2)
-    p1.metric("Ambos anotan",f'{result["both_score"]:.1f}%')
-    p2.metric("Más de 2.5 goles",f'{result["over_25"]:.1f}%')
-    st.caption(f'Base histórica: {home_name} {hn} partidos · {away_name} {an} partidos anteriores.')
-    st.caption('El xG es una aproximación basada en goles anotados y recibidos, no xG oficial basado en tiros. *Tiros, córners y tarjetas son estimaciones genéricas, no modelos históricos por equipo. No hay garantía de acierto.')
-    st.markdown('</div>',unsafe_allow_html=True)
-
+    ],hide_index=True,use_container_width=True)
+    c1,c2=st.columns(2)
+    c1.metric("Ambos anotan",f'{result["both_score"]:.1f}%')
+    c2.metric("Más de 2.5 goles",f'{result["over_25"]:.1f}%')
+    if min(hn,an)<5:
+        st.warning(f"Muestra parcial: {home_name} {hn}/5 · {away_name} {an}/5 partidos. Confianza limitada.")
+    st.caption("Goles estimados a partir de marcadores previos, no xG oficial. *Tiros, córners, faltas y tarjetas son simulaciones con supuestos generales, NO estimaciones basadas en históricos específicos de esas métricas. La fuente gratuita puede ser incompleta.")
 
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
