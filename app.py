@@ -2206,4 +2206,52 @@ try:
 
     st.caption(f"{league_name} · {len(matches)} partidos · {live} en vivo")
     if st.session_state.get("sn_trending", True):
-        st.caption("✦ Destacados pri
+        st.caption("✦ Destacados primero · orden orientativo, no popularidad en tiempo real")
+
+
+
+    if not matches:
+        st.info(
+            "No se encontraron partidos para esta fecha. Puede que la competición "
+            "no tenga encuentros programados o que el proveedor gratuito no la cubra."
+        )
+    else:
+        # Obtener el historial una sola vez por liga y fecha.
+        historical_data = (
+            historical_events(sport["path"], league_code, selected_date)
+        )
+        # Automatically capture visible upcoming football fixtures before kickoff.
+        # Does not depend on the user expanding the match analysis.
+        if sport_label == "⚽ Fútbol":
+            for upcoming_match in matches:
+                record_upcoming_match(upcoming_match, historical_data,
+                                      sport["path"], league_code, selected_date)
+        for match in matches:
+            render_match_card(match, sport_label, league_name, historical_data, sport["path"], league_code, selected_date)
+
+except requests.HTTPError as exc:
+    st.error(f"El proveedor respondió con un error HTTP: {exc}")
+    st.info(
+        "Comprueba otra fecha o competición. Algunas ligas no están disponibles "
+        "en la fuente gratuita."
+    )
+except requests.RequestException as exc:
+    st.error(f"No se pudo conectar con el proveedor deportivo: {exc}")
+    st.info("Revisa tu conexión e inténtalo de nuevo.")
+except Exception as exc:
+    st.error(f"No se pudieron interpretar los datos: {exc}")
+
+st.divider()
+st.caption(
+    "Nyuz es un proyecto independiente. ESPN y las ligas mencionadas "
+    "pertenecen a sus respectivos titulares. Los datos pueden retrasarse, "
+    "cambiar o no estar disponibles. No se generan estadísticas inexistentes."
+)
+
+# Section links scroll to real sections in the same page.
+st.markdown("""<nav class="ny-bottom-nav" aria-label="Navegación NYUZ">
+<a class="nav-item active" href="#ny-inicio"><strong>⌂</strong>Inicio</a>
+<a class="nav-item" href="#ny-partidos"><strong>▦</strong>Partidos</a>
+<a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</a>
+<a class="nav-item" href="#ny-partidos"><strong>⌕</strong>Explorar</a>
+</nav>""",unsafe_allow_html=True)
