@@ -17,7 +17,7 @@ st.set_page_config(
     page_title="SimuladorNy — Analysis AI",
     page_icon="⚽",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 # ESPN publica marcadores JSON sin clave. Es una API no oficial:
@@ -823,34 +823,55 @@ section[data-testid="stSidebar"]{background:#0c1114;border-right:1px solid #2631
 .stat-row span{color:#bacac3!important;max-width:70%}
 .stat-row strong{color:#f4faf6!important;font-variant-numeric:tabular-nums}
 @media(max-width:500px){.block-container{padding-left:13px!important;padding-right:13px!important}.sn-large .sn-side img{width:62px;height:62px}.sn-panel-title{font-size:22px}}
+
+/* Mobile-first premium dashboard */
+[data-testid="stSidebar"]{display:none!important}
+[data-testid="collapsedControl"]{display:none!important}
+.block-container{max-width:940px!important;padding-top:22px!important}
+.sn-topbar{padding:7px 2px 21px;border-bottom:1px solid #22292d}
+.sn-wordmark{font-weight:900;font-size:23px;letter-spacing:1.1px;color:#f8fafb}
+.sn-wordmark span{color:#89949a}
+.sn-brand-sub{font-size:9px;letter-spacing:3px;font-weight:800;color:#88949b;margin-top:2px}
+.sn-trending{display:flex;align-items:center;gap:14px;overflow:hidden;white-space:nowrap;padding:22px 0 18px;border-bottom:1px solid #22292d;font-size:13px}
+.sn-fire{background:#f3f5f6;color:#141718;border-radius:28px;padding:9px 12px;font-weight:800}
+.sn-live{color:#f05d70;border:1px solid #b63b50;padding:8px 12px;border-radius:14px;font-weight:800}
+.sn-trend-desc{color:#9fa9ad;font-size:12px}
+.sn-list-heading{font-size:29px;font-weight:850;margin:13px 0 14px;letter-spacing:-.8px}
+.sn-list-heading span{font-size:12px;font-weight:500;color:#9ca7aa;letter-spacing:0}
+.sn-sport-label{color:#98a4a8;font-size:10px;font-weight:800;letter-spacing:2px;margin:15px 0 8px}
+.sn-competition{color:#9aa8a9;font-size:12px;margin:4px 0 16px}
+[data-testid="stRadio"]>div[role="radiogroup"]{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:7px!important;padding:2px 0 10px!important;scrollbar-width:none}
+[data-testid="stRadio"]>div[role="radiogroup"] label{border:1px solid #333d42!important;border-radius:12px!important;background:#1a2125!important;padding:9px 12px!important;white-space:nowrap!important;flex-shrink:0!important;margin:0!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked){background:#f3f5f5!important;border-color:#f3f5f5!important}
+[data-testid="stRadio"]>div[role="radiogroup"] label:has(input:checked) p{color:#111619!important;font-weight:800!important}
+[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p{font-size:13px!important}
+[data-testid="stRadio"] [data-baseweb="radio"]>div:first-child{display:none!important}
+[data-testid="stDateInput"]{max-width:260px}
+[data-testid="stTextInput"] input{background:#141a1d!important;border:1px solid #344046!important;border-radius:13px!important;padding:14px!important}
+@media(max-width:550px){.block-container{padding-left:15px!important;padding-right:15px!important}.sn-trending{gap:9px}.sn-wordmark{font-size:21px}.sn-list-heading{font-size:27px}}
 </style>
 """, unsafe_allow_html=True)
 
-# --------------------------- CABECERA ---------------------------
+# --------------------------- INTERFAZ PRINCIPAL ---------------------------
 st.markdown("""
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-  <div style="font-size:30px">⚽</div>
-  <div>
-    <div style="font-size:23px;font-weight:800;letter-spacing:1px">SIMULADOR<span style="color:#9ca3af">NY</span></div>
-    <div style="font-size:10px;color:#9ca3af;letter-spacing:3px;font-weight:700">SPORTS ANALYSIS</div>
-  </div>
-</div>
+<div class="sn-topbar"><div class="sn-wordmark">SIMULADOR<span>NY</span></div>
+<div class="sn-brand-sub">SPORTS ANALYSIS</div></div>
+<div class="sn-trending"><span class="sn-fire">♨ Tendencias</span><span>Hoy</span>
+<span class="sn-live">● EN VIVO</span><span class="sn-trend-desc">Predicciones deportivas</span></div>
 """, unsafe_allow_html=True)
-st.caption("PREDICCIONES DEPORTIVAS · MOTOR MONTE CARLO")
 
-# --------------------------- CONTROLES ---------------------------
-with st.sidebar:
-    st.markdown("## ⚡ Explorar deportes")
-    sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True)
-    sport = SPORTS[sport_label]
-    league_name = st.selectbox("Liga / competición", list(sport["leagues"].keys()))
-    selected_date = st.date_input("Fecha de partidos", value=date.today())
-    search = st.text_input("Buscar equipo", placeholder="🔎 Buscar equipos...")
-    status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"], horizontal=True)
-    st.divider()
-    st.caption("Fuentes gratuitas / sin clave")
-    st.markdown("- ESPN scoreboard (no oficial)\n- Escudos entregados por el proveedor")
-    st.caption("Los límites y la cobertura dependen de cada liga.")
+search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
+st.markdown("<div class='sn-list-heading'>Partidos <span>· Explorar encuentros</span></div>", unsafe_allow_html=True)
+status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
+                         horizontal=True, label_visibility="collapsed", key="status_tabs")
+selected_date = st.date_input("Fecha", value=date.today(), label_visibility="collapsed")
+st.markdown("<div class='sn-sport-label'>DEPORTES</div>", unsafe_allow_html=True)
+sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True,
+                       label_visibility="collapsed", key="sport_tabs")
+sport = SPORTS[sport_label]
+with st.expander("⚙ Liga / competición", expanded=False):
+    league_name = st.selectbox("Selecciona una liga", list(sport["leagues"].keys()))
+st.markdown("<div class='sn-competition'>" + html.escape(league_name) + "</div>", unsafe_allow_html=True)
 
 league_code = sport["leagues"][league_name]
 try:
@@ -876,9 +897,8 @@ try:
 
     st.caption(f"{len(matches)} partidos  ·  {live} en vivo  ·  {finished} finalizados")
 
-    st.markdown(f"### Partidos · {sport_label}")
-    st.caption(league_name)
-    st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} partido(s) encontrados")
+    st.markdown(f"#### {sport_label} · Partidos")
+    st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} encuentros")
 
     if not matches:
         st.info(
