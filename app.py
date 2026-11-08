@@ -80,6 +80,10 @@ def fetch_json(url):
     return response.json()
 
 def get_events(sport_path, league_code, selected_date):
+    if sport_path == "baseball" and league_code == "kbo":
+        # ESPN's baseball/kbo route returns HTTP 400. Do not request it.
+        # KBO needs a separate verified, accessible feed; don't invent fixtures.
+        return []
     # ESPN acepta fechas YYYYMMDD en scoreboard.
     url = league_url(sport_path, league_code) + f"?dates={selected_date:%Y%m%d}&limit=100"
     payload = fetch_json(url)
@@ -241,6 +245,8 @@ def run_monte_carlo(params, iterations=10000, seed=None):
 
 @st.cache_data(ttl=1800, show_spinner=False)
 def historical_events(sport_path, league_code, selected_date):
+    if sport_path == "baseball" and league_code == "kbo":
+        return []
     """Calendario histórico en bloques semanales para evitar rangos ignorados por ESPN."""
     found = {}
     # Incluye hasta ~100 días: suficiente para localizar cinco juegos de liga,
@@ -259,7 +265,7 @@ def historical_events(sport_path, league_code, selected_date):
 @st.cache_data(ttl=1800, show_spinner=False)
 def team_recent_games(sport_path, league_code, team_id, cutoff):
     """Intenta el calendario de equipo de la temporada actual y anterior."""
-    if not team_id:
+    if not team_id or (sport_path == "baseball" and league_code == "kbo"):
         return []
     events = {}
     for season in (cutoff.year, cutoff.year - 1):
@@ -313,7 +319,7 @@ def history_for_match(match, league_events, sport_path, league_code, cutoff):
         eh = str(h.get("team", {}).get("id") or "")
         ea = str(a.get("team", {}).get("id") or "")
         row = {"date":day, "home":team_name(h), "away":team_name(a),
-               "hs":hs, "aws":aws, "home_id":eh, "away_id":ea}
+               "hs":hs, "aws":aws, "home_id":eh, "away_id":ea, "id":str(e.get("id") or "")}
         if hid in (eh, ea):
             home_games.append({**row, "gf":hs if eh == hid else aws,
                                "ga":aws if eh == hid else hs, "at_home":eh == hid})
@@ -489,10 +495,20 @@ def sport_boxscore(sport_path, league_code, event_id):
     return fetch_json(url)
 
 
+def _num_stat(value):
+    try:
+        if value is None or isinstance(value, bool):
+            return None
+        return float(str(value).replace(",", ""))
+    except (ValueError, TypeError):
+        return None
+
+
 def boxscore_team_metrics(payload):
-    """Only use actual published team boxscore numbers, never synthetic assists/rebounds."""
+    """Team boxscore, with NBA player-boxscore fallback for AST/REB/3PM/TO."""
     result = {}
-    for entry in (payload.get("boxscore") or {}).get("teams") or []:
+    box = payload.get("boxscore") or {}
+    for entry in box.get("teams") or []:
         tid = str((entry.get("team") or {}).get("id") or "")
         if not tid:
             continue
@@ -501,15 +517,38 @@ def boxscore_team_metrics(payload):
             if not isinstance(item, dict):
                 continue
             key = str(item.get("name") or item.get("abbreviation") or item.get("label") or "").lower().replace(" ", "")
-            val = item.get("value", item.get("displayValue"))
-            if isinstance(val, (int, float)):
-                stats[key] = float(val)
-            elif isinstance(val, str):
-                try:
-                    stats[key] = float(val.replace(",", ""))
-                except ValueError:
-                    pass
+            value = _num_stat(item.get("value", item.get("displayValue")))
+            if value is not None:
+                stats[key] = value
         result[tid] = stats
+
+    # ESPN NBA commonly publishes AST/REB/3PM/TO in boxscore.players,
+    # even when boxscore.teams.statistics lacks the corresponding totals.
+    aliases = {"AST":"assists", "REB":"totalrebounds", "3PM":"threepointfieldgoalsmade", "TO":"turnovers"}
+    for team_block in box.get("players") or []:
+        tid = str((team_block.get("team") or {}).get("id") or "")
+        if not tid:
+            continue
+        team_stats = result.setdefault(tid, {})
+        sums = {k:0.0 for k in aliases.values()}
+        seen = {k:0 for k in aliases.values()}
+        for group in team_block.get("statistics") or []:
+            labels = [str(x).upper() for x in group.get("labels") or []]
+            for athlete in group.get("athletes") or []:
+                if athlete.get("didNotPlay"):
+                    continue
+                values = athlete.get("stats") or []
+                for pos, label in enumerate(labels):
+                    if label not in aliases or pos >= len(values):
+                        continue
+                    key = aliases[label]
+                    val = _num_stat(values[pos])
+                    if val is not None:
+                        sums[key] += val
+                        seen[key] += 1
+        for key in sums:
+            if seen[key] and key not in team_stats:
+                team_stats[key] = sums[key]
     return result
 
 
@@ -651,7 +690,6 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
                   simulate_other_sport(home_games, away_games, sport_path, seed))
     if prediction is None:
         st.warning(f"Historial insuficiente: {names[0]} ({len(home_games)}), {names[1]} ({len(away_games)}). "
-                   "Se intentaron calendarios de equipos y 30 días de marcadores NBA. "
                    "No se mostrarán cifras inventadas.")
         return
     st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
@@ -694,7 +732,7 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
     simulated = {}
     for idx, (games, tid) in enumerate(((home_games, ids[0]), (away_games, ids[1]))):
         observations = {key: [] for key in definitions}
-        for game in games[:10]:
+        for game in games[:5]:
             try:
                 payload = sport_boxscore(sport_path, league_code, str(game["id"]))
                 actual = boxscore_team_metrics(payload).get(tid, {})
@@ -723,13 +761,8 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
     for label, value in stats:
         st.markdown(f"<div class='stat-row'><span>{html.escape(label)}</span>"
                     f"<strong>{html.escape(value)}</strong></div>", unsafe_allow_html=True)
-    if sport_path == "basketball":
-        st.caption("Las alineaciones visibles son informativas: la versión actual NO ajusta "
-                   "todavía los escenarios por minutos y estadísticas individuales. "
-                   "Se requieren datos de jugadores verificados para hacerlo.")
-    st.caption("Proyecciones Monte Carlo experimentales. Las métricas adicionales "
-               "se simulan mediante remuestreo de boxscores históricos cuando existen "
-               "al menos tres registros. No se muestran métricas sin datos suficientes.")
+    st.caption("Proyecciones experimentales; las estadísticas adicionales se remuestrean "
+               "a partir de boxscores verificados. Las alineaciones aún no ajustan el modelo.")
 
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
@@ -869,6 +902,10 @@ st.markdown("<div class='sn-sport-label'>DEPORTES</div>", unsafe_allow_html=True
 sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True,
                        label_visibility="collapsed", key="sport_tabs")
 sport = SPORTS[sport_label]
+if sport_label == "⚾ KBO":
+    st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
+            "Se ha desactivado esa consulta para evitar el error HTTP 400. "
+            "Los partidos y las predicciones KBO requieren integrar otra fuente verificable.")
 with st.expander("⚙ Liga / competición", expanded=False):
     league_name = st.selectbox("Selecciona una liga", list(sport["leagues"].keys()))
 st.markdown("<div class='sn-competition'>" + html.escape(league_name) + "</div>", unsafe_allow_html=True)
