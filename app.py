@@ -463,23 +463,40 @@ def history_for_match(match, league_events, sport_path, league_code, cutoff):
             sorted(away_games, key=key, reverse=True)[:10],
             sorted(h2h, key=key, reverse=True)[:5])
 
-@st.cache_data(ttl=900, show_spinner=False)
+@st.cache_data(ttl=1800, show_spinner=False)
 def nba_recent_scoreboards(cutoff):
-    """NBA: retrieve individual calendar days, avoiding unsupported date ranges."""
-    events = {}
-    for days_back in range(1, 31):
+    """NBA scoreboard history with date-range retrieval and daily fallback.
+
+    ESPN may cap the number of games in a response; collect several windows,
+    then fill with day-specific calls when required.
+    """
+    found = {}
+    # Larger windows reduce requests; fall back to individual days below.
+    for offset in range(0, 120, 14):
+        finish = cutoff - timedelta(days=offset + 1)
+        start = max(cutoff - timedelta(days=120), finish - timedelta(days=13))
+        url = league_url("basketball", "nba") + (
+            f"?dates={start:%Y%m%d}-{finish:%Y%m%d}&limit=500")
+        try:
+            for event in fetch_json(url).get("events", []):
+                if event.get("id"):
+                    found[str(event["id"])] = event
+        except (requests.RequestException, ValueError, KeyError):
+            pass
+    # Some ESPN endpoints ignore date ranges or return only partial windows.
+    for days_back in range(1, 76):
         day = cutoff - timedelta(days=days_back)
         try:
             for event in get_events("basketball", "nba", day):
                 if event.get("id"):
-                    events[str(event["id"])] = event
+                    found[str(event["id"])] = event
         except (requests.RequestException, ValueError, KeyError):
             continue
-    return list(events.values())
+    return list(found.values())
 
 
 def nba_history_for_match(match, events, cutoff):
-    """Combine league/team schedules with individual-day scoreboard fallback."""
+    """Merge season schedules and NBA scoreboard games without duplicates."""
     league_events = list(events) + nba_recent_scoreboards(cutoff)
     return history_for_match(match, league_events, "basketball", "nba", cutoff)
 
@@ -1320,7 +1337,7 @@ def render_nba_intelligence(match, events, cutoff):
     ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
     if len(home_games) < 3 or len(away_games) < 3:
         st.info(f"Datos insuficientes para NBA: {home_name} ({len(home_games)} partidos), "
-                f"{away_name} ({len(away_games)} partidos). No se inventan proyecciones.")
+                f"{away_name} ({len(away_games)} partidos). No se inventan proyecciones. ESPN no devolvió suficiente historial; revisa la cobertura del proveedor.")
         return
     obs_h = nba_team_observations(home_games, ids[0])
     obs_a = nba_team_observations(away_games, ids[1])
