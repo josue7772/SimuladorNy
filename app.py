@@ -390,6 +390,21 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
                 unsafe_allow_html=True)
     st.divider()
+    if sport_path == "basketball":
+        st.markdown("<div class='sn-section-title'>Disponibilidad y titulares NBA</div>", unsafe_allow_html=True)
+        st.caption(lineup_source)
+        for name, tid in zip(names, ids):
+            players = lineup.get(tid, {})
+            starters = players.get("starters", [])
+            bench = players.get("bench", [])
+            out = players.get("out", [])
+            st.markdown(f"**{name}** · Titulares: " + (", ".join(starters) if starters else "No confirmados"))
+            if bench: st.caption("Suplentes publicados: " + ", ".join(bench))
+            if out: st.caption("No jugaron (según boxscore): " + ", ".join(out))
+        st.info("Las 10,000 simulaciones NBA usan los últimos resultados de los equipos. "
+                "Los titulares se muestran si están publicados, pero NO se aplican "
+                "ajustes por jugadores sin datos individuales fiables de impacto y minutos. "
+                "Antes del inicio las alineaciones pueden no estar confirmadas.")
     st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
     for label, value in (
         (f"Victoria {home_name}", result["home_win"]),
@@ -488,6 +503,50 @@ def recent_stat_means(games, team_id, sport_path, league_code, definitions):
             for key, vals in collected.items()}
 
 
+def nba_lineup_information(event_id):
+    """Read only explicitly published player availability/starting flags."""
+    try:
+        payload = sport_boxscore("basketball", "nba", event_id)
+    except (requests.RequestException, ValueError, KeyError):
+        return {}, "Sin alineaciones confirmadas del proveedor"
+    info = {}
+    for group in ((payload.get("boxscore") or {}).get("players") or []):
+        tid = str((group.get("team") or {}).get("id") or "")
+        if not tid:
+            continue
+        starters, bench, out = [], [], []
+        for statgroup in group.get("statistics") or []:
+            for athlete in statgroup.get("athletes") or []:
+                person = athlete.get("athlete") or {}
+                name = person.get("displayName") or person.get("shortName")
+                if not name:
+                    continue
+                did_not_play = athlete.get("didNotPlay") is True
+                if did_not_play:
+                    out.append(name)
+                elif athlete.get("starter") is True:
+                    starters.append(name)
+                elif athlete.get("starter") is False:
+                    bench.append(name)
+        if starters or bench or out:
+            info[tid] = {"starters": starters, "bench": bench, "out": out}
+    return info, ("Alineación publicada en boxscore" if info else
+                  "Alineación no confirmada: sin ajustes por titulares")
+
+
+def nba_simulation_with_lineup(home_games, away_games, seed, lineup, ids, iterations=10000):
+    """NBA Monte Carlo; no invented lineup impact when individual data is missing.
+
+    Player-aware adjustment requires individual historical on/off impact and
+    confirmed active status. Starter flags alone cannot quantify that impact.
+    """
+    base = simulate_other_sport(home_games, away_games, "basketball", seed, iterations)
+    if base is None:
+        return None
+    base["lineup_adjusted"] = False
+    base["lineup_coverage"] = [bool(lineup.get(tid, {}).get("starters")) for tid in ids]
+    return base
+
 def simulate_other_sport(home_games, away_games, sport, seed, iterations=10000):
     """Scores derive from five historical games; no default fictitious projections."""
     if len(home_games) < 3 or len(away_games) < 3:
@@ -545,7 +604,11 @@ def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
                 unsafe_allow_html=True)
     home_games, away_games, _ = history_for_match(match, events, sport_path, league_code, cutoff)
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
-    prediction = simulate_other_sport(home_games, away_games, sport_path, seed)
+    ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
+    lineup, lineup_source = nba_lineup_information(match["id"]) if sport_path == "basketball" else ({}, "")
+    prediction = (nba_simulation_with_lineup(home_games, away_games, seed, lineup, ids)
+                  if sport_path == "basketball" else
+                  simulate_other_sport(home_games, away_games, sport_path, seed))
     if prediction is None:
         st.warning(f"No hay suficientes partidos previos con resultados: {names[0]} ({len(home_games)}), {names[1]} ({len(away_games)}). Se requieren al menos 3 por equipo para evitar predicciones inventadas.")
         return
