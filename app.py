@@ -2420,4 +2420,6 @@ st.caption(
 st.markdown("""<nav class="ny-bottom-nav" aria-label="Navegación NYUZ">
 <a class="nav-item active" href="#ny-inicio"><strong>⌂</strong>Inicio</a>
 <a class="nav-item" href="#ny-partidos"><strong>▦</strong>Partidos</a>
-<a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</
+<a class="nav-item" href="#ny-lab"><strong>▥</strong>Model Lab</a>
+<a class="nav-item" href="#ny-partidos"><strong>⌕</strong>Explorar</a>
+</nav>""",unsafe_allow_html=True)
