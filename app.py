@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
 import math
+import random
+from collections import Counter
 from datetime import date, timedelta
 from urllib.parse import quote
 
@@ -162,6 +164,170 @@ def score_prediction(home_goals, away_goals):
                 best = (h, a, p)
     return best
 
+
+def sample_poisson(rng, lam):
+    """Muestra de Poisson mediante el algoritmo de Knuth."""
+    lam = max(0.01, float(lam))
+    limit = math.exp(-lam)
+    product = 1.0
+    count = 0
+    while product > limit:
+        count += 1
+        product *= rng.random()
+    return count - 1
+
+def sample_binomial(rng, n, probability):
+    """Muestra binomial sencilla para conteos como tiros a puerta."""
+    probability = min(1.0, max(0.0, probability))
+    return sum(1 for _ in range(max(0, int(n))) if rng.random() < probability)
+
+def run_monte_carlo(params, iterations=10000):
+    """Simulación Monte Carlo con parámetros editables, no datos históricos automáticos."""
+    rng = random.Random()
+    scores = Counter()
+    home_wins = draws = away_wins = both_score = over_25 = 0
+    totals = Counter()
+
+    for _ in range(iterations):
+        hg = sample_poisson(rng, params["xg_home"])
+        ag = sample_poisson(rng, params["xg_away"])
+        hs = sample_poisson(rng, params["shots_home"])
+        aws = sample_poisson(rng, params["shots_away"])
+        hc = sample_poisson(rng, params["corners_home"])
+        ac = sample_poisson(rng, params["corners_away"])
+        hy = sample_poisson(rng, params["yellow_home"])
+        ay = sample_poisson(rng, params["yellow_away"])
+        hst = sample_binomial(rng, hs, 0.36)
+        ast = sample_binomial(rng, aws, 0.36)
+
+        scores[(hg, ag)] += 1
+        if hg > ag:
+            home_wins += 1
+        elif hg == ag:
+            draws += 1
+        else:
+            away_wins += 1
+        both_score += int(hg > 0 and ag > 0)
+        over_25 += int(hg + ag >= 3)
+
+        totals["shots_home"] += hs
+        totals["shots_away"] += aws
+        totals["sot_home"] += hst
+        totals["sot_away"] += ast
+        totals["corners_home"] += hc
+        totals["corners_away"] += ac
+        totals["yellow_home"] += hy
+        totals["yellow_away"] += ay
+
+    best_score, best_count = scores.most_common(1)[0]
+    averages = {key: value / iterations for key, value in totals.items()}
+    return {
+        "iterations": iterations,
+        "home_win": home_wins / iterations * 100,
+        "draw": draws / iterations * 100,
+        "away_win": away_wins / iterations * 100,
+        "both_score": both_score / iterations * 100,
+        "over_25": over_25 / iterations * 100,
+        "score": best_score,
+        "score_frequency": best_count / iterations * 100,
+        "averages": averages,
+    }
+
+def render_monte_carlo_panel(match):
+    home_name = team_name(match["home"])
+    away_name = team_name(match["away"])
+    st.markdown("### 🔬 Simulador Monte Carlo")
+    st.caption("10,000 simulaciones · ajusta los parámetros antes de ejecutar el modelo")
+
+    # Valores iniciales de demostración. El usuario puede sustituirlos por
+    # promedios históricos propios; no se presentan como datos oficiales.
+    with st.form(f"mc_form_{match['id']}"):
+        st.markdown("**Goles esperados (xG de entrada)**")
+        x1, x2 = st.columns(2)
+        with x1:
+            xg_home = st.number_input(f"xG · {home_name}", min_value=0.10, max_value=6.0,
+                                      value=1.55, step=0.05, key=f"xgh_{match['id']}")
+        with x2:
+            xg_away = st.number_input(f"xG · {away_name}", min_value=0.10, max_value=6.0,
+                                      value=1.30, step=0.05, key=f"xga_{match['id']}")
+
+        st.markdown("**Parámetros proyectados por equipo**")
+        c1, c2 = st.columns(2)
+        with c1:
+            corners_home = st.number_input(f"Córners · {home_name}", min_value=0.0, max_value=20.0,
+                                           value=5.2, step=0.1, key=f"ch_{match['id']}")
+            yellow_home = st.number_input(f"Amarillas · {home_name}", min_value=0.0, max_value=10.0,
+                                          value=1.9, step=0.1, key=f"yh_{match['id']}")
+        with c2:
+            corners_away = st.number_input(f"Córners · {away_name}", min_value=0.0, max_value=20.0,
+                                           value=4.6, step=0.1, key=f"ca_{match['id']}")
+            yellow_away = st.number_input(f"Amarillas · {away_name}", min_value=0.0, max_value=10.0,
+                                          value=2.1, step=0.1, key=f"ya_{match['id']}")
+
+        s1, s2 = st.columns(2)
+        with s1:
+            shots_home = st.number_input(f"Tiros · {home_name}", min_value=0.0, max_value=40.0,
+                                         value=13.0, step=0.5, key=f"sh_{match['id']}")
+        with s2:
+            shots_away = st.number_input(f"Tiros · {away_name}", min_value=0.0, max_value=40.0,
+                                         value=11.0, step=0.5, key=f"sa_{match['id']}")
+
+        submitted = st.form_submit_button("▶ Ejecutar 10,000 simulaciones", use_container_width=True)
+
+    if submitted:
+        params = {
+            "xg_home": xg_home, "xg_away": xg_away,
+            "corners_home": corners_home, "corners_away": corners_away,
+            "yellow_home": yellow_home, "yellow_away": yellow_away,
+            "shots_home": shots_home, "shots_away": shots_away,
+        }
+        result = run_monte_carlo(params, 10000)
+        st.markdown("---")
+        st.markdown("**Marcador más probable**")
+        left, middle, right = st.columns([2, 3, 2], vertical_alignment="center")
+        with left:
+            st.markdown(f"<div style='text-align:center;font-weight:700'>{home_name}</div>",
+                        unsafe_allow_html=True)
+        with middle:
+            st.markdown(
+                f"<div class='predicted-score'>{result['score'][0]} - {result['score'][1]}</div>",
+                unsafe_allow_html=True)
+        with right:
+            st.markdown(f"<div style='text-align:center;font-weight:700'>{away_name}</div>",
+                        unsafe_allow_html=True)
+        st.caption(f"Este marcador apareció en {result['score_frequency']:.1f}% de las simulaciones.")
+
+        st.markdown("**Probabilidades del resultado**")
+        probability_rows = [
+            (f"Victoria {home_name}", result["home_win"]),
+            ("Empate", result["draw"]),
+            (f"Victoria {away_name}", result["away_win"]),
+        ]
+        for label, value in probability_rows:
+            st.markdown(f"<div class='prob-label'><span>{label}</span><b>{value:.1f}%</b></div>",
+                        unsafe_allow_html=True)
+            st.progress(min(1.0, value / 100.0))
+
+        st.markdown("**Estadísticas proyectadas**")
+        av = result["averages"]
+        table_data = [
+            {"Métrica": "Goles esperados (xG)", home_name: f"{xg_home:.2f}", away_name: f"{xg_away:.2f}"},
+            {"Métrica": "Tiros totales", home_name: f"{av['shots_home']:.1f}", away_name: f"{av['shots_away']:.1f}"},
+            {"Métrica": "Tiros a puerta", home_name: f"{av['sot_home']:.1f}", away_name: f"{av['sot_away']:.1f}"},
+            {"Métrica": "Tiros de esquina", home_name: f"{av['corners_home']:.1f}", away_name: f"{av['corners_away']:.1f}"},
+            {"Métrica": "Tarjetas amarillas", home_name: f"{av['yellow_home']:.1f}", away_name: f"{av['yellow_away']:.1f}"},
+        ]
+        st.dataframe(table_data, hide_index=True, use_container_width=True)
+        st.columns(2)[0].metric("Ambos equipos anotan", f"{result['both_score']:.1f}%")
+        st.columns(2)[1].metric("Más de 2.5 goles", f"{result['over_25']:.1f}%")
+        st.caption(
+            "Modelo probabilístico con distribuciones Poisson/binomial. Los valores iniciales "
+            "son supuestos editables, no estadísticas históricas verificadas. Para predicciones "
+            "personalizadas de cada equipo hay que alimentar estos parámetros con datos históricos."
+        )
+    else:
+        st.info("Ajusta los parámetros y pulsa «Ejecutar 10,000 simulaciones» para generar la predicción.")
+
 def render_match_card(match, sport_label, league_name):
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
@@ -197,8 +363,11 @@ def render_match_card(match, sport_label, league_name):
         st.caption("VISITANTE")
 
     st.caption(f"🏟️ {match['venue']}")
-    with st.expander("Ver análisis y estadísticas"):
-        st.write("**Datos disponibles del proveedor**")
+    with st.expander("Ver análisis y estadísticas", expanded=False):
+        if sport_label == "⚽ Fútbol":
+            render_monte_carlo_panel(match)
+            st.markdown("---")
+        st.write("**Estadísticas reales publicadas por el proveedor (si existen)**")
         if sport_label == "⚽ Fútbol":
             try:
                 summary = fetch_summary(match["id"])
@@ -250,6 +419,8 @@ h1, h2, h3, p, label { color: #f3f4f6; }
 div[data-testid="stMetric"] { background: #141923; border: 1px solid #252a36; padding: 14px; border-radius: 14px; }
 .match-card { background: #12151c; border: 1px solid #252a36; border-radius: 16px; padding: 16px; margin: 0 0 16px 0; }
 .score { text-align: center; font-size: 27px; font-weight: 800; padding-top: 8px; }
+.predicted-score { text-align:center; font-size:38px; font-weight:800; letter-spacing:2px; padding:8px 0; color:#22c55e; }
+.prob-label { display:flex; justify-content:space-between; margin:8px 0 2px; color:#e5e7eb; font-size:14px; }
 div[data-testid="stExpander"] { border: 1px solid #252a36; border-radius: 12px; }
 .stButton button { border-radius: 10px; }
 .small-muted { color: #9ca3af; font-size: 12px; }
@@ -266,7 +437,7 @@ st.markdown("""
   </div>
 </div>
 """, unsafe_allow_html=True)
-st.caption("Centro de partidos · estadísticas disponibles · múltiples deportes")
+st.caption("Centro de partidos · predicciones Monte Carlo · 10,000 simulaciones")
 
 # --------------------------- CONTROLES ---------------------------
 with st.sidebar:
