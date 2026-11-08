@@ -1999,18 +1999,95 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .sn-nba-audit{border-top:1px solid #393a40;padding-top:23px;font-size:18px;font-weight:800;color:#fff;margin-top:18px}
 .sn-nba-audit small{display:block;color:#a9abb2;font-size:13px;font-weight:400;margin:7px 0 16px}
 @media(max-width:420px){.sn-nba-score strong{font-size:30px}.sn-nba-stat span{font-size:12px}.sn-nba-stat strong{font-size:15px}}
+
+/* NYUZ Signature — monochrome mobile-first redesign */
+.stApp{background:#08090b!important;color:#f6f6f7!important}
+.block-container{max-width:790px!important;padding:25px 18px 120px!important}
+.ny-brand{display:flex;align-items:center;gap:12px;margin:10px 0 23px}
+.ny-monogram{font-size:39px;font-weight:950;letter-spacing:-6px;transform:skew(-13deg);background:linear-gradient(145deg,#fff,#85888e);color:transparent;background-clip:text;line-height:1}
+.ny-brand-name{font-size:35px;font-weight:850;letter-spacing:-1.8px;line-height:.91}
+.ny-brand-name small{display:block;font-size:8px;letter-spacing:3px;color:#b9bac0;margin-top:10px;font-weight:750}
+.ny-header-actions{margin-left:auto;display:flex;gap:10px}.ny-header-actions span{width:42px;height:42px;border:1px solid #303136;border-radius:13px;background:#17181b;display:grid;place-items:center;font-size:24px}
+.ny-hero{border:1px solid #33353a;background:radial-gradient(ellipse at 95% 60%,#34363b 0%,#16171a 40%,#0c0d0f 75%);border-radius:24px;min-height:202px;display:flex;align-items:center;justify-content:space-between;overflow:hidden;padding:24px 23px;margin:0 0 22px;position:relative}
+.ny-hero-copy{position:relative;z-index:1}.ny-hero h1{font-size:clamp(29px,6.8vw,42px);font-weight:850;line-height:1.04;letter-spacing:-1.5px;margin:0 0 12px}.ny-hero p{color:#b7b7bc;font-size:15px;line-height:1.45;margin:0}
+.ny-hero-art{position:absolute;right:-30px;bottom:-35px;font-size:210px;font-weight:950;font-style:italic;letter-spacing:-25px;line-height:1;color:#65686f;opacity:.33;text-shadow:-14px -12px 35px #fff3;transform:rotate(-13deg)}
+.ny-lab-heading{border:1px solid #393a40;background:linear-gradient(135deg,#242529,#161719);padding:18px 17px;border-radius:19px;margin:15px 0 6px;font-size:21px;line-height:1.15}
+.ny-lab-heading small{display:block;font-size:13px;color:#adaeb3;margin:6px 0 0 32px}
+.ny-section-heading{font-size:clamp(28px,7vw,36px);font-weight:850;letter-spacing:-1.2px;margin:27px 0 12px}
+[data-testid="stPills"] button{font-size:15px!important;min-height:47px!important;border-radius:16px!important;padding:9px 14px!important;background:#17181b!important;border:1px solid #393a3f!important;color:#f2f2f3!important}
+[data-testid="stPills"] button[aria-selected="true"]{background:#f4f4f5!important;color:#111214!important;border-color:#f4f4f5!important}
+[data-testid="stExpander"]{border-radius:20px!important;background:#17181b!important}
+[data-testid="stExpander"] summary{font-size:16px!important;min-height:52px!important}
+.sn-fixture-card{border-radius:21px!important;background:linear-gradient(155deg,#1c1d20,#111214)!important;padding:17px 14px!important;margin-top:17px!important}
+.sn-fixture-meta{font-size:13px!important;color:#aeb0b6!important}
+.sn-fixture-card .sn-side{font-size:16px!important;font-weight:800!important}
+.sn-fixture-card .sn-side img{width:51px!important;height:51px!important}
+.sn-fixture-card .sn-teams{min-height:95px!important}
+.sn-fixture-card .sn-center{font-size:19px!important;background:#292a2e;border-radius:100px;padding:7px 10px}
+.sn-date-rail{margin-bottom:14px!important}
+.sn-day{min-width:56px!important}
+[data-testid="stCaptionContainer"] p{font-size:12px!important}
+.ny-bottom-nav{display:flex;justify-content:space-around;gap:7px;background:linear-gradient(180deg,#191a1d,#101113);border:1px solid #303136;border-radius:26px;padding:15px 5px 13px;margin-top:38px}
+.ny-bottom-nav .nav-item{flex:1;text-align:center;color:#aeb0b7;font-size:12px;font-weight:650;text-decoration:none;display:flex;align-items:center;flex-direction:column;gap:8px}
+.ny-bottom-nav .nav-item strong{font-size:23px;font-weight:650;line-height:1;color:#f5f5f6}
+.ny-bottom-nav .nav-item.active{color:#fff}
+.ny-bottom-nav .nav-item.active strong{filter:drop-shadow(0 0 6px #fff5)}
+@media(max-width:420px){.ny-hero{min-height:184px;padding:20px 17px}.ny-hero h1{font-size:31px}.ny-hero-art{font-size:170px;right:-27px}.ny-brand-name{font-size:31px}.ny-brand-name small{font-size:7px}.sn-fixture-card .sn-side{font-size:14px!important}}
+
 </style>
 
 """,unsafe_allow_html=True)
 
 st.markdown("""
-<div class="sn-header"><div class="sn-mark"><div class="sn-logo">✦</div><div>
-<div class="sn-wordmark">SIMULADOR<span>NY</span></div><div class="sn-brand-sub">SPORTS INTELLIGENCE</div>
-</div></div><div class="sn-header-tag">✦ PREDICTION LAB</div></div>
+<div class="ny-brand" id="ny-inicio"><div class="ny-monogram">N</div><div class="ny-brand-name">NYUZ<small>SPORTS INTELLIGENCE</small></div>
+<div class="ny-header-actions"><span>⌕</span><span>♧</span></div></div>
+<div class="ny-hero"><div class="ny-hero-copy"><h1>Análisis y<br>predicciones<br>deportivas</h1><p>Simulaciones, estadísticas y<br>backtesting avanzado.</p></div><div class="ny-hero-art">N</div></div>
 """,unsafe_allow_html=True)
 
+# Sports selection moved above match status, visually matching reference.
+sport_label = st.pills("Deporte", list(SPORTS.keys()), selection_mode="single", default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs") or "⚽ Fútbol"
+sport = SPORTS[sport_label]
 
-st.markdown("<div class='sn-list-heading'>Partidos</div>", unsafe_allow_html=True)
+st.markdown('<div class="ny-lab-heading" id="ny-lab">♧ &nbsp; <b>Model Lab</b><small>Backtesting y evaluación de modelos</small></div>',unsafe_allow_html=True)
+with st.expander("🧪 Nyuz Model Lab · Backtesting NBA", expanded=(st.query_params.get("sn_view") == "lab")):
+    st.caption("Prueba retrospectiva: solo utiliza partidos anteriores a cada encuentro. "
+               "Compara un promedio simple contra un modelo que pondera la forma reciente. "
+               "Este laboratorio no modifica automáticamente el motor en producción.")
+    if st.button("Evaluar últimos 60 partidos NBA", key="nyuz_backtest"):
+        with st.spinner("Recuperando historial y evaluando partidos NBA..."):
+            historical = nba_recent_scoreboards(selected_date + timedelta(days=1))
+            rows = backtest_nba_history(historical, 60)
+        if len(rows) < 15:
+            st.warning(f"Solo se pudieron evaluar {len(rows)} partidos con al menos cinco "
+                       "antecedentes por equipo. Se necesitan más datos para comparar modelos.")
+        else:
+            split = max(1, int(len(rows)*.8))
+            validation, test = rows[:split], rows[split:]
+            def mae(items, prefix):
+                return sum(abs(r[f"{prefix}_home"]-r["actual_home"])+
+                           abs(r[f"{prefix}_away"]-r["actual_away"]) for r in items)/(2*len(items))
+            st.metric("Partidos evaluados", len(rows))
+            st.caption(f"Validación: {len(validation)} partidos anteriores · "
+                       f"Prueba final: {len(test)} partidos posteriores.")
+            st.markdown("**Error absoluto medio por equipo (puntos; menor es mejor)**")
+            st.table([
+                {"Modelo":"Promedio simple", "Validación":round(mae(validation,"base"),2),
+                 "Prueba final":round(mae(test,"base"),2)},
+                {"Modelo":"Forma reciente ponderada", "Validación":round(mae(validation,"candidate"),2),
+                 "Prueba final":round(mae(test,"candidate"),2)}
+            ])
+            st.caption("Evaluación preliminar de proyección de puntos, no de rebotes, "
+                       "asistencias o triples. El backtesting utiliza medias analíticas "
+                       "equivalentes a la expectativa de una simulación Monte Carlo, "
+                       "sin ejecutar 10,000 muestras por partido. "
+                       "No se ha optimizado ni calibrado el modelo con estos resultados.")
+            st.dataframe([{"Fecha":r["date"],"Partido":r["match"],
+                           "Real":f'{r["actual_home"]:.0f} - {r["actual_away"]:.0f}',
+                           "Base":f'{r["base_home"]:.1f} - {r["base_away"]:.1f}',
+                           "Ponderado":f'{r["candidate_home"]:.1f} - {r["candidate_away"]:.1f}'}
+                          for r in reversed(test)], hide_index=True, use_container_width=True)
+
+st.markdown('<div class="ny-section-heading" id="ny-partidos">Partidos de hoy</div>',unsafe_allow_html=True)
 status_filter = st.pills(
     "Estado", ["Todos", "En vivo", "Próximos", "Finalizados"],
     selection_mode="single", default="Todos",
@@ -2090,49 +2167,6 @@ def backtest_nba_history(events, max_games=60):
     return evaluated[-max_games:]
 
 
-with st.expander("🧪 Nyuz Model Lab · Backtesting NBA", expanded=False):
-    st.caption("Prueba retrospectiva: solo utiliza partidos anteriores a cada encuentro. "
-               "Compara un promedio simple contra un modelo que pondera la forma reciente. "
-               "Este laboratorio no modifica automáticamente el motor en producción.")
-    if st.button("Evaluar últimos 60 partidos NBA", key="nyuz_backtest"):
-        with st.spinner("Recuperando historial y evaluando partidos NBA..."):
-            historical = nba_recent_scoreboards(selected_date + timedelta(days=1))
-            rows = backtest_nba_history(historical, 60)
-        if len(rows) < 15:
-            st.warning(f"Solo se pudieron evaluar {len(rows)} partidos con al menos cinco "
-                       "antecedentes por equipo. Se necesitan más datos para comparar modelos.")
-        else:
-            split = max(1, int(len(rows)*.8))
-            validation, test = rows[:split], rows[split:]
-            def mae(items, prefix):
-                return sum(abs(r[f"{prefix}_home"]-r["actual_home"])+
-                           abs(r[f"{prefix}_away"]-r["actual_away"]) for r in items)/(2*len(items))
-            st.metric("Partidos evaluados", len(rows))
-            st.caption(f"Validación: {len(validation)} partidos anteriores · "
-                       f"Prueba final: {len(test)} partidos posteriores.")
-            st.markdown("**Error absoluto medio por equipo (puntos; menor es mejor)**")
-            st.table([
-                {"Modelo":"Promedio simple", "Validación":round(mae(validation,"base"),2),
-                 "Prueba final":round(mae(test,"base"),2)},
-                {"Modelo":"Forma reciente ponderada", "Validación":round(mae(validation,"candidate"),2),
-                 "Prueba final":round(mae(test,"candidate"),2)}
-            ])
-            st.caption("Evaluación preliminar de proyección de puntos, no de rebotes, "
-                       "asistencias o triples. El backtesting utiliza medias analíticas "
-                       "equivalentes a la expectativa de una simulación Monte Carlo, "
-                       "sin ejecutar 10,000 muestras por partido. "
-                       "No se ha optimizado ni calibrado el modelo con estos resultados.")
-            st.dataframe([{"Fecha":r["date"],"Partido":r["match"],
-                           "Real":f'{r["actual_home"]:.0f} - {r["actual_away"]:.0f}',
-                           "Base":f'{r["base_home"]:.1f} - {r["base_away"]:.1f}',
-                           "Ponderado":f'{r["candidate_home"]:.1f} - {r["candidate_away"]:.1f}'}
-                          for r in reversed(test)], hide_index=True, use_container_width=True)
-
-sport_label = st.pills(
-    "Deporte", list(SPORTS.keys()), selection_mode="single",
-    default="⚽ Fútbol", label_visibility="collapsed", key="sport_tabs",
-) or "⚽ Fútbol"
-sport = SPORTS[sport_label]
 if sport_label == "⚾ KBO":
     st.info("KBO: la fuente ESPN utilizada no ofrece un endpoint válido para esta liga. "
             "Se ha desactivado esa consulta para evitar el error HTTP 400. "
@@ -2172,44 +2206,4 @@ try:
 
     st.caption(f"{league_name} · {len(matches)} partidos · {live} en vivo")
     if st.session_state.get("sn_trending", True):
-        st.caption("✦ Destacados primero · orden orientativo, no popularidad en tiempo real")
-
-
-
-    if not matches:
-        st.info(
-            "No se encontraron partidos para esta fecha. Puede que la competición "
-            "no tenga encuentros programados o que el proveedor gratuito no la cubra."
-        )
-    else:
-        # Obtener el historial una sola vez por liga y fecha.
-        historical_data = (
-            historical_events(sport["path"], league_code, selected_date)
-        )
-        # Automatically capture visible upcoming football fixtures before kickoff.
-        # Does not depend on the user expanding the match analysis.
-        if sport_label == "⚽ Fútbol":
-            for upcoming_match in matches:
-                record_upcoming_match(upcoming_match, historical_data,
-                                      sport["path"], league_code, selected_date)
-        for match in matches:
-            render_match_card(match, sport_label, league_name, historical_data, sport["path"], league_code, selected_date)
-
-except requests.HTTPError as exc:
-    st.error(f"El proveedor respondió con un error HTTP: {exc}")
-    st.info(
-        "Comprueba otra fecha o competición. Algunas ligas no están disponibles "
-        "en la fuente gratuita."
-    )
-except requests.RequestException as exc:
-    st.error(f"No se pudo conectar con el proveedor deportivo: {exc}")
-    st.info("Revisa tu conexión e inténtalo de nuevo.")
-except Exception as exc:
-    st.error(f"No se pudieron interpretar los datos: {exc}")
-
-st.divider()
-st.caption(
-    "Nyuz es un proyecto independiente. ESPN y las ligas mencionadas "
-    "pertenecen a sus respectivos titulares. Los datos pueden retrasarse, "
-    "cambiar o no estar disponibles. No se generan estadísticas inexistentes."
-)
+        st.caption("✦ Destacados pri
