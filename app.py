@@ -351,6 +351,20 @@ def historical_parameters(home_games, away_games, h2h):
         "fouls_home":12.0,"fouls_away":12.5,
     }
 
+def team_pair_html(home, away, center="VS", large=False):
+    """A single responsive flex row, not Streamlit columns."""
+    def item(team):
+        name = html.escape(team_name(team))
+        logo = safe_logo(team)
+        image = (f'<img src="{html.escape(logo, quote=True)}" alt="" loading="lazy" />'
+                 if isinstance(logo, str) and logo.startswith("https://") else
+                 '<span class="sn-logo-fallback">⚽</span>')
+        return f'<div class="sn-side">{image}<span>{name}</span></div>'
+    cls = "sn-teams sn-large" if large else "sn-teams"
+    return (f'<div class="{cls}">{item(home)}'
+            f'<div class="sn-center">{html.escape(str(center))}</div>'
+            f'{item(away)}</div>')
+
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     """Panel único: resultados Monte Carlo sin secciones de análisis técnico."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
@@ -372,19 +386,9 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
     av = result["averages"]
     st.markdown("### SIMULADORNY · ANALYSIS AI")
     st.success("Motor Monte Carlo · 10,000 simulaciones")
-    left, right = st.columns(2, vertical_alignment="center")
-    for col, team, name in ((left, match["home"], home_name),
-                            (right, match["away"], away_name)):
-        with col:
-            if safe_logo(team):
-                st.image(safe_logo(team), width=88)
-            st.markdown(f"**{name}**")
+    st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
+                unsafe_allow_html=True)
     st.divider()
-    st.markdown("#### Marcador más probable")
-    st.markdown(
-        f"<div class='predicted-score'>{result['score'][0]} - {result['score'][1]}</div>",
-        unsafe_allow_html=True)
-    st.caption(f"Frecuencia del marcador exacto: {result['score_frequency']:.1f}% de las simulaciones")
     st.markdown("#### Probabilidades")
     for label, value in (
         (f"Victoria {home_name}", result["home_win"]),
@@ -423,24 +427,13 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
     hlogo, alogo = safe_logo(home), safe_logo(away)
-    # Tarjeta compacta: tres columnas horizontales incluso en móvil.
     with st.container(border=True):
         st.caption(f"{league_name} · {match['status']}")
-        left, middle, right = st.columns([4, 2, 4], gap="small", vertical_alignment="center")
-        with left:
-            if hlogo:
-                st.image(hlogo, width=42)
-            st.markdown(f"<div class='compact-team'>{html.escape(hname)}</div>", unsafe_allow_html=True)
-        with middle:
-            if match["state"] == "pre":
-                shown = "VS"
-            else:
-                shown = f"{score_of(home)} : {score_of(away)}"
-            st.markdown(f"<div class='compact-score'>{html.escape(shown)}</div>", unsafe_allow_html=True)
-        with right:
-            if alogo:
-                st.image(alogo, width=42)
-            st.markdown(f"<div class='compact-team'>{html.escape(aname)}</div>", unsafe_allow_html=True)
+        if match["state"] == "pre":
+            shown = "VS"
+        else:
+            shown = f"{score_of(home)} : {score_of(away)}"
+        st.markdown(team_pair_html(home, away, shown), unsafe_allow_html=True)
         st.caption(f"🏟️ {match['venue']}")
     with st.expander("✦ Ver predicciones y estadísticas", expanded=False):
         if sport_label == "⚽ Fútbol":
@@ -484,6 +477,16 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"] {border-r
 .stat-row strong {color:#f7f7f7;white-space:nowrap;text-align:right;}
 .stProgress > div > div > div > div {background-color:#18a653 !important;}
 @media(max-width:650px){.stat-row{font-size:13px}.predicted-score{color:#18bb64!important;}}
+
+/* Equipo local y visitante siempre alineados en la misma fila */
+.sn-teams {display:flex;flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:6px;padding:12px 0;box-sizing:border-box;}
+.sn-side {width:40%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;font-weight:750;font-size:clamp(12px,3.3vw,16px);overflow-wrap:anywhere;line-height:1.25;}
+.sn-side img {display:block;width:56px;height:56px;max-width:100%;object-fit:contain;}
+.sn-center {width:20%;min-width:0;text-align:center;font-size:clamp(17px,4.5vw,25px);font-weight:800;white-space:nowrap;}
+.sn-large .sn-side img {width:82px;height:82px;}
+.sn-large .sn-side {font-size:clamp(13px,3.5vw,19px);}
+.sn-logo-fallback {font-size:36px;line-height:1.5;}
+@media(max-width:420px){.sn-side img{width:48px;height:48px}.sn-large .sn-side img{width:68px;height:68px}.sn-teams{gap:3px;}}
 </style>
 """, unsafe_allow_html=True)
 
