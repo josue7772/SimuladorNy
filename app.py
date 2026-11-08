@@ -352,73 +352,72 @@ def historical_parameters(home_games, away_games, h2h):
     }
 
 def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
+    """Panel único: resultados Monte Carlo sin secciones de análisis técnico."""
     home_name, away_name = team_name(match["home"]), team_name(match["away"])
     home_games, away_games, h2h = history_for_match(
         match, events, sport_path, league_code, cutoff)
-    hn, an = len(home_games), len(away_games)
-    st.markdown("#### ✦ Análisis predictivo")
-    st.caption("Últimos cinco partidos por equipo · enfrentamientos directos · 10,000 simulaciones")
-    st.markdown("**Forma reciente**")
-    c1,c2=st.columns(2)
-    for col,name,games in ((c1,home_name,home_games),(c2,away_name,away_games)):
-        with col:
-            st.markdown(f"**{name}**")
-            if games:
-                for g in games:
-                    st.caption(f"{g['date']:%d/%m} · {g['home']} {g['hs']:g}-{g['aws']:g} {g['away']}")
-            else:
-                st.caption("Sin resultados recuperados")
-    st.markdown("**Enfrentamientos anteriores**")
-    if h2h:
-        for g in h2h:
-            st.caption(f"{g['date']:%d/%m/%Y} · {g['home']} {g['hs']:g}-{g['aws']:g} {g['away']}")
-    else:
-        st.caption("Sin enfrentamientos directos recuperados en el periodo consultado.")
-
-    if not home_games or not away_games:
-        st.warning("No se pudo recuperar el historial completo. Mostraremos una simulación exploratoria con promedios generales de referencia, NO una predicción personalizada. No la uses como pronóstico fiable.")
     params = historical_parameters(home_games, away_games, h2h)
     hid = str(match["home"].get("team", {}).get("id") or "")
     if h2h:
-        hh = sum(g["hs"] if g["home_id"]==hid else g["aws"] for g in h2h)/len(h2h)
-        ah = sum(g["aws"] if g["home_id"]==hid else g["hs"] for g in h2h)/len(h2h)
-        params["xg_home"] = max(.15,min(4.5,.88*params["xg_home"]+.12*hh))
-        params["xg_away"] = max(.15,min(4.5,.88*params["xg_away"]+.12*ah))
-        params["shots_home"] = 7.5+3.5*params["xg_home"]
-        params["shots_away"] = 7.5+3.5*params["xg_away"]
-        params["corners_home"] = 3+1.35*params["xg_home"]
-        params["corners_away"] = 3+1.35*params["xg_away"]
+        hh = sum(g["hs"] if g["home_id"] == hid else g["aws"] for g in h2h) / len(h2h)
+        ah = sum(g["aws"] if g["home_id"] == hid else g["hs"] for g in h2h) / len(h2h)
+        params["xg_home"] = max(.15, min(4.5, .88*params["xg_home"] + .12*hh))
+        params["xg_away"] = max(.15, min(4.5, .88*params["xg_away"] + .12*ah))
+        params["shots_home"] = 7.5 + 3.5*params["xg_home"]
+        params["shots_away"] = 7.5 + 3.5*params["xg_away"]
+        params["corners_home"] = 3 + 1.35*params["xg_home"]
+        params["corners_away"] = 3 + 1.35*params["xg_away"]
     seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
-    result = run_monte_carlo(params,10000,seed=seed)
-    top = result["top_scores"][0]
-    st.markdown("**Marcador más frecuente en las simulaciones**")
-    st.markdown(f"<div class='predicted-score'>{top[0][0]} - {top[0][1]}</div>",unsafe_allow_html=True)
-    st.caption(f"{top[1]:,} de 10,000 simulaciones · {top[1]/100:.2f}%")
-    st.markdown("**Probabilidades 1 · X · 2**")
-    cols=st.columns(3)
-    for col,label,value in zip(cols,("Local","Empate","Visitante"),
-                               (result["home_win"],result["draw"],result["away_win"])):
-        col.metric(label,f"{value:.1f}%")
-    st.markdown("**Cinco marcadores más probables**")
-    for i,((h,a),count) in enumerate(result["top_scores"],1):
-        st.caption(f"{i}. {h}-{a} · {count/100:.2f}% · {count:,} simulaciones")
-        st.progress(count/10000)
-    av=result["averages"]
-    st.markdown("**Estadísticas proyectadas · 10,000 simulaciones**")
-    st.dataframe([
-        {"Métrica":"Goles estimados (proxy de xG)",home_name:f'{params["xg_home"]:.2f}',away_name:f'{params["xg_away"]:.2f}'},
-        {"Métrica":"Tiros totales*",home_name:f'{av["shots_home"]:.1f}',away_name:f'{av["shots_away"]:.1f}'},
-        {"Métrica":"Tiros a puerta*",home_name:f'{av["sot_home"]:.1f}',away_name:f'{av["sot_away"]:.1f}'},
-        {"Métrica":"Córners*",home_name:f'{av["corners_home"]:.1f}',away_name:f'{av["corners_away"]:.1f}'},
-        {"Métrica":"Faltas*",home_name:f'{av["fouls_home"]:.1f}',away_name:f'{av["fouls_away"]:.1f}'},
-        {"Métrica":"Tarjetas amarillas*",home_name:f'{av["yellow_home"]:.1f}',away_name:f'{av["yellow_away"]:.1f}'},
-    ],hide_index=True,use_container_width=True)
-    c1,c2=st.columns(2)
-    c1.metric("Ambos anotan",f'{result["both_score"]:.1f}%')
-    c2.metric("Más de 2.5 goles",f'{result["over_25"]:.1f}%')
-    if min(hn,an)<5:
-        st.warning(f"Muestra parcial: {home_name} {hn}/5 · {away_name} {an}/5 partidos. Los resultados usan promedios generales para suplir los datos faltantes; confianza baja.")
-    st.caption("Goles estimados a partir de marcadores previos, no xG oficial. *Tiros, córners, faltas y tarjetas son simulaciones con supuestos generales, NO estimaciones basadas en históricos específicos de esas métricas. La fuente gratuita puede ser incompleta.")
+    result = run_monte_carlo(params, 10000, seed=seed)
+    av = result["averages"]
+    st.markdown("### SIMULADORNY · ANALYSIS AI")
+    st.success("Motor Monte Carlo · 10,000 simulaciones")
+    left, right = st.columns(2, vertical_alignment="center")
+    for col, team, name in ((left, match["home"], home_name),
+                            (right, match["away"], away_name)):
+        with col:
+            if safe_logo(team):
+                st.image(safe_logo(team), width=88)
+            st.markdown(f"**{name}**")
+    st.divider()
+    st.markdown("#### Marcador más probable")
+    st.markdown(
+        f"<div class='predicted-score'>{result['score'][0]} - {result['score'][1]}</div>",
+        unsafe_allow_html=True)
+    st.caption(f"Frecuencia del marcador exacto: {result['score_frequency']:.1f}% de las simulaciones")
+    st.markdown("#### Probabilidades")
+    for label, value in (
+        (f"Victoria {home_name}", result["home_win"]),
+        ("Empate", result["draw"]),
+        (f"Victoria {away_name}", result["away_win"]),
+    ):
+        st.markdown(
+            f"<div class='prob-label'><b>{html.escape(label)}</b><b>{value:.1f}%</b></div>",
+            unsafe_allow_html=True)
+        st.progress(value / 100)
+    st.divider()
+    st.markdown("#### Estadísticas proyectadas")
+    stats = [
+        ("Goles esperados (proxy xG)", f"{params['xg_home']:.2f} – {params['xg_away']:.2f}"),
+        ("Tiros totales", f"{av['shots_home'] + av['shots_away']:.1f}"),
+        ("Tiros a puerta", f"{av['sot_home'] + av['sot_away']:.1f}"),
+        ("Tiros de esquina", f"{av['corners_home'] + av['corners_away']:.1f}"),
+        ("Tarjetas amarillas", f"{av['yellow_home'] + av['yellow_away']:.1f}"),
+        ("Faltas", f"{av['fouls_home'] + av['fouls_away']:.1f}"),
+        ("Ambos equipos anotan", f"{result['both_score']:.1f}%"),
+        ("Más de 2.5 goles", f"{result['over_25']:.1f}%"),
+    ]
+    for label, value in stats:
+        st.markdown(
+            f"<div class='stat-row'><span>{html.escape(label)}</span>"
+            f"<strong>{html.escape(value)}</strong></div>",
+            unsafe_allow_html=True)
+    st.caption(
+        "Proyecciones de un modelo experimental. Si faltan resultados históricos, "
+        "se usan promedios generales; tiros, córners, faltas y tarjetas usan "
+        "supuestos generales, no datos históricos específicos. "
+        "El xG mostrado es una aproximación basada en goles, no xG oficial."
+    )
 
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
@@ -443,45 +442,12 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
                 st.image(alogo, width=42)
             st.markdown(f"<div class='compact-team'>{html.escape(aname)}</div>", unsafe_allow_html=True)
         st.caption(f"🏟️ {match['venue']}")
-    with st.expander("Ver análisis y estadísticas", expanded=False):
+    with st.expander("✦ Ver predicciones y estadísticas", expanded=False):
         if sport_label == "⚽ Fútbol":
-            render_monte_carlo_panel(match, historical_data, sport_path, league_code, selected_date)
-            st.markdown("---")
-        st.write("**Estadísticas oficiales del encuentro (si existen)**")
-        if sport_label == "⚽ Fútbol":
-            try:
-                summary = fetch_summary(match["id"])
-                stats_by_team = extract_team_stats(summary)
-                if stats_by_team:
-                    cols = st.columns(len(stats_by_team))
-                    for i, team_data in enumerate(stats_by_team[:2]):
-                        with cols[i]:
-                            st.markdown(f"**{team_data['name']}**")
-                            stats = team_data["stats"]
-                            rows = [
-                                ("Posesión", stat_value(stats, "possession")),
-                                ("Tiros", stat_value(stats, "total shots", "shots")),
-                                ("Tiros a puerta", stat_value(stats, "shots on target")),
-                                ("Córners", stat_value(stats, "won corners", "corners")),
-                                ("Faltas", stat_value(stats, "fouls")),
-                                ("Amarillas", stat_value(stats, "yellow cards")),
-                                ("Rojas", stat_value(stats, "red cards")),
-                                ("Goles esperados (xG)", stat_value(stats, "expected goals", "xg")),
-                            ]
-                            for label, value in rows:
-                                st.write(f"{label}: **{value}**")
-                else:
-                    st.info("El proveedor no publicó estadísticas detalladas para este partido.")
-            except Exception:
-                st.info("Las estadísticas detalladas no están disponibles para este partido.")
+            render_monte_carlo_panel(
+                match, historical_data, sport_path, league_code, selected_date)
         else:
-            st.info(
-                "El marcador está disponible si ESPN cubre este encuentro. "
-                "Las estadísticas avanzadas de NBA, KBO y NHL requieren un feed "
-                "específico; esta versión no inventa xG, córners, tarjetas ni métricas."
-            )
-
-        st.caption("Las proyecciones son probabilísticas y se distinguen de los datos reales del proveedor.")
+            st.info("El panel Monte Carlo de este deporte todavía no está implementado; no se mostrarán cifras inventadas.")
 
 # --------------------------- ESTILO ---------------------------
 st.markdown("""
@@ -513,6 +479,11 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div[style*="border"] {border-r
  div[data-testid="column"] {min-width:0 !important;}
  .block-container {padding-left:.7rem;padding-right:.7rem;}
 }
+.stat-row {display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid #2a3032;font-size:15px;}
+.stat-row span {color:#f0f1f2;}
+.stat-row strong {color:#f7f7f7;white-space:nowrap;text-align:right;}
+.stProgress > div > div > div > div {background-color:#18a653 !important;}
+@media(max-width:650px){.stat-row{font-size:13px}.predicted-score{color:#18bb64!important;}}
 </style>
 """, unsafe_allow_html=True)
 
