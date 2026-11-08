@@ -2175,7 +2175,16 @@ st.toggle("Destacados primero ✦", value=True, key="sn_trending",
           help="Orden editorial: partidos en vivo, transmisiones y equipos reconocidos. No son tendencias medidas por audiencia.")
 search = st.text_input("Buscar equipos", placeholder="⌕  Buscar equipos...", label_visibility="collapsed")
 with st.expander("Liga o competición", expanded=False):
-    league_name = st.selectbox("Selecciona una liga", list(sport["leagues"].keys()))
+    league_options = list(sport["leagues"].keys())
+    # st.pills renders actual touch buttons, avoiding the iOS keyboard that
+    # st.selectbox may open when its searchable dropdown receives focus.
+    league_name = st.pills(
+        "Selecciona una liga",
+        options=league_options,
+        default=league_options[0],
+        selection_mode="single",
+        key=f"nyuz_league_{sport_label}",
+    ) or league_options[0]
 
 
 league_code = sport["leagues"][league_name]
