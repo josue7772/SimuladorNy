@@ -430,6 +430,178 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         "El total proyectado es la suma de las tasas de gol de ambos equipos, no xG oficial."
     )
 
+
+@st.cache_data(ttl=1800, show_spinner=False)
+def sport_boxscore(sport_path, league_code, event_id):
+    url = league_url(sport_path, league_code, "summary") + f"?event={event_id}"
+    return fetch_json(url)
+
+
+def boxscore_team_metrics(payload):
+    """Only use actual published team boxscore numbers, never synthetic assists/rebounds."""
+    result = {}
+    for entry in (payload.get("boxscore") or {}).get("teams") or []:
+        tid = str((entry.get("team") or {}).get("id") or "")
+        if not tid:
+            continue
+        stats = {}
+        for item in entry.get("statistics") or []:
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("name") or item.get("abbreviation") or item.get("label") or "").lower().replace(" ", "")
+            val = item.get("value", item.get("displayValue"))
+            if isinstance(val, (int, float)):
+                stats[key] = float(val)
+            elif isinstance(val, str):
+                try:
+                    stats[key] = float(val.replace(",", ""))
+                except ValueError:
+                    pass
+        result[tid] = stats
+    return result
+
+
+def get_stat(stats, names):
+    for key in names:
+        if key.lower() in stats:
+            return stats[key.lower()]
+    return None
+
+
+def recent_stat_means(games, team_id, sport_path, league_code, definitions):
+    """Fetch the five preceding games; missing boxscores remain missing."""
+    collected = {key: [] for key in definitions}
+    for game in games[:5]:
+        eid = game.get("id")
+        if not eid:
+            continue
+        try:
+            box = boxscore_team_metrics(sport_path, league_code, eid)
+            stats = box.get(team_id, {})
+            for key, aliases in definitions.items():
+                value = get_stat(stats, aliases)
+                if value is not None and value >= 0:
+                    collected[key].append(value)
+        except (requests.RequestException, ValueError, KeyError):
+            continue
+    return {key: (sum(vals) / len(vals) if len(vals) >= 3 else None)
+            for key, vals in collected.items()}
+
+
+def simulate_other_sport(home_games, away_games, sport, seed, iterations=10000):
+    """Scores derive from five historical games; no default fictitious projections."""
+    if len(home_games) < 3 or len(away_games) < 3:
+        return None
+    def mean(games, key):
+        return sum(float(g[key]) for g in games) / len(games)
+    h = max(.05, .55 * mean(home_games, "gf") + .45 * mean(away_games, "ga"))
+    a = max(.05, .55 * mean(away_games, "gf") + .45 * mean(home_games, "ga"))
+    if sport == "basketball":
+        # Normal distribution is more suitable for high-count NBA scoring.
+        hs = [float(g["gf"]) for g in home_games]
+        ass = [float(g["gf"]) for g in away_games]
+        def spread(vals):
+            avg = sum(vals) / len(vals)
+            return max(8.0, (sum((v-avg)**2 for v in vals)/len(vals))**.5)
+        sh, sa = spread(hs), spread(ass)
+    rng = random.Random(seed)
+    wins = losses = draws = 0
+    sumh = suma = 0
+    over = 0
+    threshold = {"basketball": 220.5, "hockey": 5.5, "baseball": 8.5}[sport]
+    for _ in range(iterations):
+        if sport == "basketball":
+            x = max(0, round(rng.gauss(h, sh)))
+            y = max(0, round(rng.gauss(a, sa)))
+            if x == y:  # NBA has overtime; simulate the winner, not a draw.
+                if rng.random() < h / (h+a):
+                    x += 1
+                else:
+                    y += 1
+        else:
+            x, y = sample_poisson(rng, h), sample_poisson(rng, a)
+            if sport == "baseball" and x == y:
+                if rng.random() < h / (h+a): x += 1
+                else: y += 1
+            if sport == "hockey" and x == y:
+                if rng.random() < h / (h+a): x += 1
+                else: y += 1
+        sumh += x; suma += y
+        wins += x > y; losses += x < y; draws += x == y
+        over += (x + y) > threshold
+    return {"home":sumh/iterations, "away":suma/iterations,
+            "win_h":100*wins/iterations, "win_a":100*losses/iterations,
+            "draw":100*draws/iterations, "over":100*over/iterations,
+            "threshold":threshold}
+
+
+def render_other_sport_panel(match, events, sport_path, league_code, cutoff):
+    names = (team_name(match["home"]), team_name(match["away"]))
+    st.markdown("<div class='sn-panel-head'><div class='sn-kicker'>SIMULADORNY / PREDICTION ENGINE</div>"
+                "<div class='sn-panel-title'>Predicciones del partido</div>"
+                "<div class='sn-chip'>✦ 10,000 simulaciones Monte Carlo</div></div>",
+                unsafe_allow_html=True)
+    st.markdown(team_pair_html(match["home"], match["away"], "VS", large=True),
+                unsafe_allow_html=True)
+    home_games, away_games, _ = history_for_match(match, events, sport_path, league_code, cutoff)
+    seed = sum((i+1)*ord(ch) for i,ch in enumerate(str(match["id"])))
+    prediction = simulate_other_sport(home_games, away_games, sport_path, seed)
+    if prediction is None:
+        st.warning(f"No hay suficientes partidos previos con resultados: {names[0]} ({len(home_games)}), {names[1]} ({len(away_games)}). Se requieren al menos 3 por equipo para evitar predicciones inventadas.")
+        return
+    st.markdown("<div class='sn-section-title'>Probabilidades del encuentro</div>", unsafe_allow_html=True)
+    for label, value in ((f"Victoria {names[0]}", prediction["win_h"]),
+                         (f"Victoria {names[1]}", prediction["win_a"])):
+        st.markdown(f"<div class='sn-prob'><div class='sn-prob-top'><span>{html.escape(label)}</span>"
+                    f"<strong>{value:.1f}%</strong></div><div class='sn-track'>"
+                    f"<div class='sn-fill' style='width:{value:.1f}%'></div></div></div>",
+                    unsafe_allow_html=True)
+    st.divider()
+    st.markdown("<div class='sn-section-title'>Estadísticas proyectadas</div>", unsafe_allow_html=True)
+    if sport_path == "basketball":
+        definitions = {
+            "assists": ["assists", "ast"],
+            "rebounds": ["totalrebounds", "rebounds", "reb", "trb"],
+            "threes": ["threepointfieldgoalsmade", "threepointfieldgoals", "3pm"],
+            "turnovers": ["turnovers", "to"],
+        }
+        unit = "Puntos"
+    elif sport_path == "hockey":
+        definitions = {"shots": ["shots", "shotsongoal", "sog"],
+                       "powerplay": ["powerplaygoals", "ppg"]}
+        unit = "Goles"
+    else:
+        definitions = {"hits": ["hits", "h"], "errors": ["errors", "e"],
+                       "walks": ["basesonballs", "walks", "bb"]}
+        unit = "Carreras"
+    stats = [(f"{unit} · {names[0]}", f"{prediction['home']:.1f}"),
+             (f"{unit} · {names[1]}", f"{prediction['away']:.1f}"),
+             (f"{unit} totales", f"{prediction['home']+prediction['away']:.1f}"),
+             (f"Más de {prediction['threshold']} {unit.lower()}", f"{prediction['over']:.1f}%")]
+    ids = [str(match[side].get("team", {}).get("id") or "") for side in ("home", "away")]
+    means = [recent_stat_means(games, tid, sport_path, league_code, definitions)
+             for games, tid in ((home_games, ids[0]), (away_games, ids[1]))]
+    titles = {"assists":"Asistencias", "rebounds":"Rebotes", "threes":"Triples anotados",
+              "turnovers":"Pérdidas de balón", "shots":"Tiros a portería",
+              "powerplay":"Goles en power play", "hits":"Hits", "errors":"Errores",
+              "walks":"Bases por bolas"}
+    for key in definitions:
+        left, right = means[0][key], means[1][key]
+        # Averages from real boxscores, not from Monte Carlo: label honestly.
+        stats.append((f"{titles[key]} · {names[0]} (últimos juegos)",
+                      f"{left:.1f}" if left is not None else "No disponible"))
+        stats.append((f"{titles[key]} · {names[1]} (últimos juegos)",
+                      f"{right:.1f}" if right is not None else "No disponible"))
+        stats.append((f"{titles[key]} · total (últimos juegos)",
+                      f"{left+right:.1f}" if left is not None and right is not None else "No disponible"))
+    for label, value in stats:
+        st.markdown(f"<div class='stat-row'><span>{html.escape(label)}</span>"
+                    f"<strong>{html.escape(value)}</strong></div>", unsafe_allow_html=True)
+    st.caption("Puntos/goles/carreras y probabilidades: modelo Monte Carlo experimental basado en resultados recientes. "
+               "Asistencias, rebotes y demás métricas: promedios históricos de boxscores disponibles, "
+               "NO simulaciones de esas métricas. Sin suficientes datos se indica 'No disponible'. "
+               "No son predicciones garantizadas.")
+
 def render_match_card(match, sport_label, league_name, historical_data, sport_path, league_code, selected_date):
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
@@ -447,7 +619,7 @@ def render_match_card(match, sport_label, league_name, historical_data, sport_pa
             render_monte_carlo_panel(
                 match, historical_data, sport_path, league_code, selected_date)
         else:
-            st.info("El panel Monte Carlo de este deporte todavía no está implementado; no se mostrarán cifras inventadas.")
+            render_other_sport_panel(match, historical_data, sport_path, league_code, selected_date)
 
 # --------------------------- ESTILO ---------------------------
 st.markdown("""
@@ -588,7 +760,6 @@ try:
         # Obtener el historial una sola vez por liga y fecha.
         historical_data = (
             historical_events(sport["path"], league_code, selected_date)
-            if sport_label == "⚽ Fútbol" else []
         )
         for match in matches:
             render_match_card(match, sport_label, league_name, historical_data, sport["path"], league_code, selected_date)
