@@ -230,110 +230,110 @@ def run_monte_carlo(params, iterations=10000):
         "over_25": over_25 / iterations * 100,
         "score": best_score,
         "score_frequency": best_count / iterations * 100,
+        "top_scores": scores.most_common(5),
         "averages": averages,
     }
 
-def render_monte_carlo_panel(match):
-    """Panel visual de predicción; los parámetros son internos y no editables."""
+@st.cache_data(ttl=1800, show_spinner=False)
+def historical_events(sport_path, league_code, selected_date):
+    """Resultados recientes; la cobertura del feed gratuito puede ser incompleta."""
+    start = selected_date - timedelta(days=35)
+    url = league_url(sport_path, league_code) + f"?dates={start:%Y%m%d}-{selected_date:%Y%m%d}&limit=500"
+    try:
+        return fetch_json(url).get("events", [])
+    except (requests.RequestException, ValueError):
+        return []
+
+def historical_parameters(match, events):
+    """Estima intensidades a partir de goles recientes, sin controles del visitante."""
+    home_id = str(match["home"].get("team", {}).get("id", ""))
+    away_id = str(match["away"].get("team", {}).get("id", ""))
+    records = {home_id: [], away_id: []}
+    for event in events:
+        parsed = parse_event(event)
+        if not parsed or not parsed["completed"] or parsed["id"] == match["id"]:
+            continue
+        for side, other in (("home", "away"), ("away", "home")):
+            team = parsed[side]
+            team_id = str(team.get("team", {}).get("id", ""))
+            if team_id not in records:
+                continue
+            try:
+                gf = float(team["score"])
+                ga = float(parsed[other]["score"])
+            except (KeyError, TypeError, ValueError):
+                continue
+            records[team_id].append((gf, ga))
+    home_games = records[home_id][-10:]
+    away_games = records[away_id][-10:]
+    # Priors de liga para reducir ruido; nunca se presentan como xG oficiales.
+    def blended(games, idx, prior):
+        return (sum(x[idx] for x in games) + 5 * prior) / (len(games) + 5)
+    home_attack = blended(home_games, 0, 1.4)
+    home_defense = blended(home_games, 1, 1.3)
+    away_attack = blended(away_games, 0, 1.3)
+    away_defense = blended(away_games, 1, 1.4)
+    xgh = min(4.5, max(.15, (home_attack*.55 + away_defense*.45)*1.06))
+    xga = min(4.5, max(.15, (away_attack*.55 + home_defense*.45)*.94))
+    # Estas métricas auxiliares son aproximaciones, no históricos oficiales.
+    return {
+        "xg_home": xgh, "xg_away": xga,
+        "shots_home": 8 + 3.0*xgh, "shots_away": 8 + 3.0*xga,
+        "corners_home": 3 + 1.2*xgh, "corners_away": 3 + 1.2*xga,
+        "yellow_home": 1.9, "yellow_away": 2.0,
+    }, len(home_games), len(away_games)
+
+def render_monte_carlo_panel(match, events):
     home_name = team_name(match["home"])
     away_name = team_name(match["away"])
-
-    # Parámetros provisionales internos. No son controles del usuario ni
-    # estadísticas históricas verificadas. Se sustituirán al conectar
-    # una fuente histórica fiable por equipo.
-    params = {
-        "xg_home": 1.55,
-        "xg_away": 1.30,
-        "shots_home": 13.0,
-        "shots_away": 11.0,
-        "corners_home": 5.2,
-        "corners_away": 4.6,
-        "yellow_home": 1.9,
-        "yellow_away": 2.1,
-    }
-
-    st.markdown("### 🔬 Análisis predictivo · Monte Carlo")
-    st.caption("10,000 simulaciones · proyecciones automáticas · parámetros no editables")
-
-    if st.button("▶ Ejecutar 10,000 simulaciones", key=f"mc_run_{match['id']}",
-                 use_container_width=True, type="primary"):
-        st.session_state[f"mc_result_{match['id']}"] = run_monte_carlo(params, 10000)
-
-    result = st.session_state.get(f"mc_result_{match['id']}")
-    if result is None:
-        result = run_monte_carlo(params, 10000)
-        st.session_state[f"mc_result_{match['id']}"] = result
-
-    av = result["averages"]
-    home_logo = safe_logo(match["home"])
-    away_logo = safe_logo(match["away"])
-
-    # Encabezado visual de equipos y marcador probable.
-    left, center, right = st.columns([2, 3, 2], vertical_alignment="center")
-    with left:
-        if home_logo:
-            st.image(home_logo, width=64)
-        st.markdown(f"<div style='text-align:center;font-weight:800'>{home_name}</div>",
-                    unsafe_allow_html=True)
-        st.caption("LOCAL")
-    with center:
-        st.markdown(
-            f"<div style='text-align:center;color:#9ca3af;font-size:11px;font-weight:700;"
-            f"letter-spacing:2px'>MARCADOR MÁS PROBABLE</div>"
-            f"<div class='predicted-score'>{result['score'][0]} - {result['score'][1]}</div>"
-            f"<div style='text-align:center;color:#9ca3af;font-size:12px'>"
-            f"Aparece en {result['score_frequency']:.1f}% de las simulaciones</div>",
-            unsafe_allow_html=True,
-        )
-    with right:
-        if away_logo:
-            st.image(away_logo, width=64)
-        st.markdown(f"<div style='text-align:center;font-weight:800'>{away_name}</div>",
-                    unsafe_allow_html=True)
-        st.caption("VISITANTE")
-
-    st.markdown("---")
-    st.markdown("**Probabilidades del resultado**")
-    probability_rows = [
+    params, hn, an = historical_parameters(match, events)
+    result = run_monte_carlo(params, 10000)
+    st.markdown("### ✦ SIMULADORNY · ANALYSIS AI")
+    st.caption("10,000 simulaciones Monte Carlo · xG calculado automáticamente")
+    c1, c2, c3 = st.columns([2,3,2], vertical_alignment="center")
+    with c1:
+        if safe_logo(match["home"]):
+            st.image(safe_logo(match["home"]), width=60)
+        st.markdown(f"**{home_name}**")
+    with c2:
+        st.markdown(f"<div class='predicted-score'>{result['score'][0]} - {result['score'][1]}</div>", unsafe_allow_html=True)
+        st.caption(f"Marcador más frecuente · {result['score_frequency']:.2f}%")
+    with c3:
+        if safe_logo(match["away"]):
+            st.image(safe_logo(match["away"]), width=60)
+        st.markdown(f"**{away_name}**")
+    st.markdown("**Probabilidades de resultado**")
+    for label, value in [
         (f"Victoria {home_name}", result["home_win"]),
         ("Empate", result["draw"]),
         (f"Victoria {away_name}", result["away_win"]),
-    ]
-    for label, value in probability_rows:
-        st.markdown(
-            f"<div class='prob-label'><span>{label}</span><b>{value:.1f}%</b></div>",
-            unsafe_allow_html=True,
-        )
-        st.progress(min(1.0, max(0.0, value / 100.0)))
-
+    ]:
+        st.markdown(f"<div class='prob-label'><span>{label}</span><b>{value:.1f}%</b></div>", unsafe_allow_html=True)
+        st.progress(value / 100)
+    st.markdown("**5 marcadores más probables**")
+    for i, ((h, a), count) in enumerate(result["top_scores"], 1):
+        st.markdown(f"**{i}. {h} - {a}** · {count / 100:.2f}% ({count:,} de 10,000)")
+        st.progress(count / 10000)
     st.markdown("**Estadísticas proyectadas**")
-    st.caption("Promedios estimados a partir de las simulaciones, no estadísticas reales del partido.")
+    av = result["averages"]
     table_data = [
-        {"Métrica": "Goles esperados (xG)", home_name: f"{params['xg_home']:.2f}",
-         away_name: f"{params['xg_away']:.2f}"},
-        {"Métrica": "Tiros totales", home_name: f"{av['shots_home']:.1f}",
-         away_name: f"{av['shots_away']:.1f}"},
-        {"Métrica": "Tiros a puerta", home_name: f"{av['sot_home']:.1f}",
-         away_name: f"{av['sot_away']:.1f}"},
-        {"Métrica": "Tiros de esquina", home_name: f"{av['corners_home']:.1f}",
-         away_name: f"{av['corners_away']:.1f}"},
-        {"Métrica": "Tarjetas amarillas", home_name: f"{av['yellow_home']:.1f}",
-         away_name: f"{av['yellow_away']:.1f}"},
+        {"Métrica": "xG estimado", home_name: f"{params['xg_home']:.2f}", away_name: f"{params['xg_away']:.2f}"},
+        {"Métrica": "Tiros totales*", home_name: f"{av['shots_home']:.1f}", away_name: f"{av['shots_away']:.1f}"},
+        {"Métrica": "Tiros a puerta*", home_name: f"{av['sot_home']:.1f}", away_name: f"{av['sot_away']:.1f}"},
+        {"Métrica": "Córners*", home_name: f"{av['corners_home']:.1f}", away_name: f"{av['corners_away']:.1f}"},
+        {"Métrica": "Tarjetas amarillas*", home_name: f"{av['yellow_home']:.1f}", away_name: f"{av['yellow_away']:.1f}"},
     ]
     st.dataframe(table_data, hide_index=True, use_container_width=True)
-
-    m1, m2 = st.columns(2)
-    m1.metric("Ambos equipos anotan", f"{result['both_score']:.1f}%")
-    m2.metric("Más de 2.5 goles", f"{result['over_25']:.1f}%")
-    st.caption(
-        "Modelo Poisson/binomial con 10,000 iteraciones. En esta versión los "
-        "parámetros base son provisionales y comunes; para personalizar el xG "
-        "y las demás proyecciones por equipo falta conectar históricos fiables. "
-        "El xG se calcula internamente y no puede ser modificado desde la interfaz."
-    )
+    c1, c2 = st.columns(2)
+    c1.metric("Ambos anotan", f"{result['both_score']:.1f}%")
+    c2.metric("Más de 2.5 goles", f"{result['over_25']:.1f}%")
+    st.caption(f"Historial encontrado en la liga: {home_name} {hn} partidos; {away_name} {an} partidos.")
+    if hn < 3 or an < 3:
+        st.warning("Muestra histórica insuficiente: se emplean promedios de referencia y la confianza es baja.")
+    st.caption("El xG es una estimación basada en goles recientes, NO xG oficial de tiros. *Tiros, córners y tarjetas se aproximan mediante parámetros base, no mediante históricos detallados. Las simulaciones no garantizan resultados.")
 
 
-def render_match_card(match, sport_label, league_name):
+def render_match_card(match, sport_label, league_name, historical_data):
     home, away = match["home"], match["away"]
     hname, aname = team_name(home), team_name(away)
     hlogo, alogo = safe_logo(home), safe_logo(away)
@@ -370,7 +370,7 @@ def render_match_card(match, sport_label, league_name):
     st.caption(f"🏟️ {match['venue']}")
     with st.expander("Ver análisis y estadísticas", expanded=False):
         if sport_label == "⚽ Fútbol":
-            render_monte_carlo_panel(match)
+            render_monte_carlo_panel(match, historical_data)
             st.markdown("---")
         st.write("**Estadísticas reales publicadas por el proveedor (si existen)**")
         if sport_label == "⚽ Fútbol":
@@ -406,11 +406,7 @@ def render_match_card(match, sport_label, league_name):
                 "específico; esta versión no inventa xG, córners, tarjetas ni métricas."
             )
 
-        st.caption(
-            "Marcador exacto: no se muestra una predicción hasta disponer de "
-            "promedios recientes verificables de ambos equipos. Los valores no "
-            "publicados por la fuente se indican como no disponibles."
-        )
+        st.caption("Las proyecciones son probabilísticas y se distinguen de los datos reales del proveedor.")
     st.markdown("</div>", unsafe_allow_html=True)
 
 # --------------------------- ESTILO ---------------------------
@@ -418,13 +414,13 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
-.stApp { background: #0b0d10; color: #f3f4f6; }
+.stApp { background: #090b0d; color: #f3f4f6; }
 section[data-testid="stSidebar"] { background: #10131a; border-right: 1px solid #252a36; }
 h1, h2, h3, p, label { color: #f3f4f6; }
 div[data-testid="stMetric"] { background: #141923; border: 1px solid #252a36; padding: 14px; border-radius: 14px; }
-.match-card { background: #12151c; border: 1px solid #252a36; border-radius: 16px; padding: 16px; margin: 0 0 16px 0; }
+.match-card { background: linear-gradient(135deg,#171c20,#101417); border: 1px solid #252a36; border-radius: 20px; padding: 18px; margin: 0 0 16px 0; }
 .score { text-align: center; font-size: 27px; font-weight: 800; padding-top: 8px; }
-.predicted-score { text-align:center; font-size:42px; font-weight:800; letter-spacing:2px; padding:8px 0; color:#22c55e; }
+.predicted-score { text-align:center; font-size:38px; font-weight:800; letter-spacing:2px; padding:8px 0; color:#f4f6f7; }
 .prob-label { display:flex; justify-content:space-between; margin:8px 0 2px; color:#e5e7eb; font-size:14px; }
 div[data-testid="stExpander"] { border: 1px solid #252a36; border-radius: 12px; }
 .stButton button { border-radius: 10px; }
@@ -442,16 +438,17 @@ st.markdown("""
   </div>
 </div>
 """, unsafe_allow_html=True)
-st.caption("Centro de partidos · predicciones Monte Carlo · 10,000 simulaciones")
+st.caption("SPORTS PREDICTION LAB · 10,000 SIMULACIONES MONTE CARLO")
 
 # --------------------------- CONTROLES ---------------------------
 with st.sidebar:
-    st.markdown("## ⚙️ Configuración")
-    sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=False)
+    st.markdown("## ⚡ Explorar deportes")
+    sport_label = st.radio("Deporte", list(SPORTS.keys()), horizontal=True)
     sport = SPORTS[sport_label]
     league_name = st.selectbox("Liga / competición", list(sport["leagues"].keys()))
     selected_date = st.date_input("Fecha de partidos", value=date.today())
-    search = st.text_input("Buscar equipo", placeholder="Ej. América, Lakers, Doosan...")
+    search = st.text_input("Buscar equipo", placeholder="🔎 Buscar equipos...")
+    status_filter = st.radio("Estado", ["Todos", "En vivo", "Próximos", "Finalizados"], horizontal=True)
     st.divider()
     st.caption("Fuentes gratuitas / sin clave")
     st.markdown("- ESPN scoreboard (no oficial)\n- Escudos entregados por el proveedor")
@@ -469,6 +466,12 @@ try:
             if q in team_name(m["home"]).lower() or q in team_name(m["away"]).lower()
         ]
 
+    if status_filter == "En vivo":
+        matches = [m for m in matches if m["state"] == "in"]
+    elif status_filter == "Próximos":
+        matches = [m for m in matches if m["state"] == "pre"]
+    elif status_filter == "Finalizados":
+        matches = [m for m in matches if m["completed"]]
     live = sum(1 for m in matches if m["state"] == "in")
     finished = sum(1 for m in matches if m["completed"])
     upcoming = len(matches) - live - finished
@@ -478,7 +481,7 @@ try:
     b.metric("En vivo", live)
     c.metric("Finalizados", finished)
 
-    st.markdown(f"### {sport_label} · {league_name}")
+    st.markdown(f"### 🏟️ Partidos · {sport_label} · {league_name}")
     st.caption(f"{selected_date.strftime('%d/%m/%Y')} · {len(matches)} partido(s) encontrados")
 
     if not matches:
