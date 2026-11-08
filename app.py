@@ -1021,10 +1021,6 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
             fitted.append(label)
         else:
             limited.append(label)
-    if fitted:
-        st.caption("Basadas parcialmente en estadísticas históricas verificadas: " + ", ".join(fitted) + ".")
-    if limited:
-        st.caption("Estimaciones con datos históricos insuficientes (utilizan valores base): " + ", ".join(limited) + ".")
 
     metrics=[
         ("Goles esperados",params["lambda_home"],params["lambda_away"]),
