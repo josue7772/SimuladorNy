@@ -369,6 +369,33 @@ def team_recent_games(sport_path, league_code, team_id, cutoff):
             continue
     return list(events.values())
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def soccer_daily_history(league_code, cutoff):
+    """Daily scoreboards fallback when ESPN does not honor range queries."""
+    found = {}
+    # Recent six weeks; cache shared by all fixtures in the league.
+    for back in range(1, 43):
+        day = cutoff - timedelta(days=back)
+        try:
+            for event in get_events("soccer", league_code, day):
+                if event.get("id"):
+                    found[str(event["id"])] = event
+        except (requests.RequestException, ValueError, KeyError):
+            continue
+    return list(found.values())
+
+
+def normalize_history_event(event):
+    """ESPN team schedules sometimes nest the competition and status differently."""
+    if not isinstance(event, dict):
+        return None
+    if event.get("competitions"):
+        return event
+    competition = event.get("competition")
+    if isinstance(competition, dict):
+        return {**event, "competitions": [competition]}
+    return event
+
 def numeric_score(competitor):
     value = competitor.get("score")
     if isinstance(value, dict):
@@ -393,15 +420,24 @@ def history_for_match(match, league_events, sport_path, league_code, cutoff):
     raw = {str(e.get("id")): e for e in league_events if e.get("id")}
     for tid in (hid, aid):
         for e in team_recent_games(sport_path, league_code, tid, cutoff):
-            if e.get("id"):
+            e = normalize_history_event(e)
+            if e and e.get("id"):
                 raw[str(e["id"])] = e
+    # If range queries returned no completed games, request calendar days explicitly.
+    if sport_path == "soccer":
+        candidates = [e for e in raw.values() if e.get("competitions")]
+        usable = sum(bool((parse_event(e) or {}).get("completed")) for e in candidates)
+        if usable < 10:
+            for e in soccer_daily_history(league_code, cutoff):
+                if e.get("id"):
+                    raw[str(e["id"])] = e
     home_games, away_games, h2h = [], [], []
     for e in raw.values():
         day = event_day(e)
         if day is None or day >= cutoff or str(e.get("id")) == str(match["id"]):
             continue
         m = parse_event(e)
-        if not m or not m["completed"]:
+        if not m or not (m["completed"] or m["state"] == "post"):
             continue
         h, a = m["home"], m["away"]
         hs, aws = numeric_score(h), numeric_score(a)
@@ -832,14 +868,19 @@ def render_monte_carlo_panel(match, events, sport_path, league_code, cutoff):
         symbols=form_symbols(games)
         pills=''.join('<span class="sn-mi-form sn-mi-form-'+sym.lower()+'">'+sym+'</span>' for sym in symbols)
         if not symbols:
-            pills='<span class="sn-mi-form-none">Historial no disponible</span>'
+            pills='<span class="sn-mi-form-none">Sin resultados verificados</span>'
+        elif len(symbols)<5:
+            pills += ''.join('<span class="sn-mi-form sn-mi-form-missing">—</span>' for _ in range(5-len(symbols)))
         return '<div class="sn-mi-form-team"><span>'+html.escape(name)+'</span><div class="sn-mi-form-pills">'+pills+'</div></div>'
     st.markdown('<div class="sn-mi-section">Forma reciente</div>'
                 '<div class="sn-mi-form-grid">'+form_html(home_name,home_games)
                 +form_html(away_name,away_games)+'</div>',unsafe_allow_html=True)
     if len(home_games)<5 or len(away_games)<5:
-        st.caption(f"Forma reciente: {len(home_games)} partidos disponibles para {home_name} "
-                   f"y {len(away_games)} para {away_name}. Se muestran únicamente resultados recuperados.")
+        st.caption(f"Historial verificado: {len(home_games)}/5 de {home_name} "
+                   f"y {len(away_games)}/5 de {away_name}. Las casillas vacías no representan derrotas.")
+        st.warning("Datos históricos incompletos: las probabilidades y proyecciones "
+                   "dependen parcialmente de promedios generales. No deben "
+                   "interpretarse como estimaciones personalizadas fiables.", icon="⚠️")
 
     metrics=[
         ("Goles esperados",params["lambda_home"],params["lambda_away"]),
@@ -1636,7 +1677,7 @@ div[data-testid="stHorizontalBlock"]:has(.sn-date-title){align-items:center}
 .sn-mi-form-pills{display:flex;gap:4px;margin-top:10px}
 .sn-mi-form{flex:1;text-align:center;padding:7px 0;border-radius:7px;font-weight:750;font-size:11px;color:#f4f4f4}
 .sn-mi-form-w{background:#315c4b}.sn-mi-form-d{background:#5a5140}.sn-mi-form-l{background:#633b40}
-.sn-mi-form-none{color:#92959a;font-size:11px}
+.sn-mi-form-none{color:#92959a;font-size:11px}.sn-mi-form-missing{background:#35363b;color:#8b8d92}
 .sn-mi-stat-wrap{border-radius:18px;background:#17181b;padding:14px 12px;border:1px solid #33353a}
 .sn-mi-stat{margin:10px 0 17px}.sn-mi-stat:last-child{margin-bottom:5px}
 .sn-mi-stat-label{display:grid;grid-template-columns:1fr 2fr 1fr;gap:4px;align-items:center;margin-bottom:8px}
